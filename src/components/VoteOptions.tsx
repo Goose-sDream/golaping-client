@@ -27,9 +27,7 @@ const VoteOptions = () => {
   console.log("errors =>", errors);
   console.log("timeOption =>", timeOption);
 
-  const handleClickPicker = (
-    e: React.MouseEvent<HTMLInputElement, MouseEvent>
-  ) => {
+  const handleClickPicker = (e: React.MouseEvent<HTMLInputElement, MouseEvent>) => {
     const rect = (e.target as HTMLInputElement).getBoundingClientRect();
     setShowPicker((prev) => !prev);
     setPosition({
@@ -100,11 +98,7 @@ const VoteOptions = () => {
           </div>
         )}
 
-        <input
-          placeholder="투표가능 횟수"
-          defaultValue=""
-          {...register("voteNums", { required: true })}
-        />
+        <input placeholder="투표가능 횟수" defaultValue="" {...register("voteNums", { required: true })} />
         <input type="submit" value="생성하기" />
       </form>
     </div>
