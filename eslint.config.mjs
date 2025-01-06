@@ -1,13 +1,14 @@
-import typescriptEslint from "@typescript-eslint/eslint-plugin";
-import react from "eslint-plugin-react";
-import prettier from "eslint-plugin-prettier";
-import globals from "globals";
-import tsParser from "@typescript-eslint/parser";
-import importPlugin from "eslint-plugin-import";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import js from "@eslint/js";
+
 import { FlatCompat } from "@eslint/eslintrc";
+import js from "@eslint/js";
+import typescriptEslint from "@typescript-eslint/eslint-plugin";
+import tsParser from "@typescript-eslint/parser";
+import importPlugin from "eslint-plugin-import";
+import prettier from "eslint-plugin-prettier";
+import react from "eslint-plugin-react";
+import globals from "globals";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -41,6 +42,7 @@ export default [
     languageOptions: {
       globals: {
         ...globals.browser,
+        ...globals.node,
       },
 
       parser: tsParser,
@@ -82,6 +84,25 @@ export default [
           },
         },
       ],
+    },
+  },
+  {
+    // webpack.config.js에 대한 별도 설정
+    files: ["webpack.config.js"],
+
+    languageOptions: {
+      globals: {
+        ...globals.node, // Node.js 전역 변수 허용
+      },
+
+      ecmaVersion: "latest",
+      sourceType: "commonjs", // CommonJS 모듈 스타일
+    },
+
+    rules: {
+      "@typescript-eslint/no-require-imports": "off", // require() 허용
+      "no-unused-vars": "warn", // 사용하지 않는 변수 경고
+      "@typescript-eslint/no-unused-vars": "warn", // TypeScript에서도 경고
     },
   },
   {

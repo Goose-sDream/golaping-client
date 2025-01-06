@@ -1,16 +1,14 @@
-const HtmlWebpackPlugin = require("html-webpack-plugin");
+const path = require("path");
+
 const { CleanWebpackPlugin } = require("clean-webpack-plugin");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
-
-const path = require("path");
+const HtmlWebpackPlugin = require("html-webpack-plugin");
 const webpack = require("webpack");
 
 module.exports = (webpackEnv) => {
   const isEnvDevelopment = webpackEnv === "development";
   const isEnvProduction = webpackEnv === "production";
-  const mode = isEnvProduction
-    ? "production"
-    : isEnvDevelopment && "development";
+  const mode = isEnvProduction ? "production" : isEnvDevelopment && "development";
 
   const pathConfig = {
     entry: "./src/index",
@@ -66,7 +64,7 @@ module.exports = (webpackEnv) => {
           }
         : false,
     }),
-   
+
     new CleanWebpackPlugin(),
   ];
 
