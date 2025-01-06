@@ -1,5 +1,5 @@
 import React from "react";
-import VoteOptions from "./components/VoteOptions";
+import VoteOptions from "./components/create/VoteOptions";
 
 const App: React.FC = () => {
   return (
