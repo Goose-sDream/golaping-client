@@ -18,7 +18,7 @@ closed #Issue_number를 적어주세요 -->
 
 ```
 
-### TroubleShotting
+### 🚨 TroubleShotting
 
 <!-- TroubleShotting이 있었다면 이야기 해주세요! -->
 
