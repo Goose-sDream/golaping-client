@@ -3,6 +3,7 @@ import react from "eslint-plugin-react";
 import prettier from "eslint-plugin-prettier";
 import globals from "globals";
 import tsParser from "@typescript-eslint/parser";
+import importPlugin from "eslint-plugin-import";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import js from "@eslint/js";
@@ -28,6 +29,7 @@ export default [
       "@typescript-eslint": typescriptEslint,
       react,
       prettier,
+      import: importPlugin,
     },
 
     settings: {
@@ -56,6 +58,30 @@ export default [
       "no-unused-vars": "warn",
       "no-console": "off",
       "react/react-in-jsx-scope": "off",
+      "import/order": [
+        // import 순서 정렬 규칙 추가
+        "warn",
+        {
+          groups: ["builtin", "external", "internal", ["parent", "sibling", "index"]],
+          // Node.js 기본모듈, 외부 라이브러리, 프로젝트 내부 경로, 상대 경로 기준의 모듈
+          pathGroups: [
+            // 특정 패키지(react) 위치 정의
+            {
+              pattern: "react",
+              group: "external",
+              position: "before",
+            },
+          ],
+          pathGroupsExcludedImportTypes: ["builtin"],
+          "newlines-between": "always",
+          // 그룹 간 줄바꿈 여부
+          alphabetize: {
+            // 알파벳 순서 오름차순 정렬
+            order: "asc",
+            caseInsensitive: true,
+          },
+        },
+      ],
     },
   },
   {
