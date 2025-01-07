@@ -31,39 +31,58 @@ const VoteOptions = () => {
   console.log("errors =>", errors);
 
   return (
-    <form
+    <OptionForm
       onSubmit={handleSubmit(onSubmit)}
       style={{
         display: "flex",
         flexDirection: "column",
+        justifyContent: "center",
+        gap: "10px",
+        width: "200px",
       }}
     >
-      <Switch checked={isHour}>
-        <ToggleInput type="checkbox" checked={isHour} onChange={handleToggle} />
-        <SliderSpan />
-        <Text checked={isHour}>{isHour ? "시간" : "분"}</Text>
-      </Switch>
-      <input placeholder="투표시간" defaultValue="" {...register("voteTime", { required: true })}></input>
+      <VoteTimeDiv>
+        <Switch checked={isHour}>
+          <ToggleInput type="checkbox" checked={isHour} onChange={handleToggle} />
+          <SliderSpan />
+          <Text checked={isHour}>{isHour ? "시간" : "분"}</Text>
+        </Switch>
+        <input placeholder="투표시간" defaultValue="" {...register("voteTime", { required: true })}></input>
+      </VoteTimeDiv>
+
       <input
         placeholder="투표가능 횟수"
         defaultValue=""
         {...register("voteNums", { required: true, min: 1, max: 5 })}
       />
       <input type="submit" value="생성하기" />
-    </form>
+    </OptionForm>
   );
 };
 
 export default VoteOptions;
 
-const Switch = styled.label<CheckedProps>`
+const OptionForm = styled.form`
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 10px;
+  width: 200px;
+`;
+
+const VoteTimeDiv = styled.div`
+  width: 100%;
   position: relative;
-  display: inline-block;
-  width: 55px;
+`;
+
+const Switch = styled.label<CheckedProps>`
+  position: absolute;
+  right: 10px;
+  width: 65px;
   height: 25px;
   display: flex;
   justify-content: ${(Checkedprops) => (Checkedprops.checked ? "flex-start" : "flex-end")};
-  padding: 0 5px 0 5px;
+  align-items: center;
 `;
 
 const ToggleInput = styled.input`
@@ -76,7 +95,7 @@ const ToggleInput = styled.input`
   }
 
   &:checked + span:before {
-    transform: translate(190%, -50%);
+    transform: translate(180%, -50%);
   }
 `;
 
@@ -87,7 +106,7 @@ const SliderSpan = styled.span`
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: #ccc;
+  background-color: #2196f3;
   transition: 0.4s;
   border-radius: 30px;
 
@@ -96,7 +115,7 @@ const SliderSpan = styled.span`
     content: "";
     height: 20px;
     width: 20px;
-    left: 4px;
+    left: 5px;
     top: 50%;
     transform: translate(0, -50%);
     background-color: white;
@@ -106,10 +125,8 @@ const SliderSpan = styled.span`
 `;
 
 const Text = styled.span<CheckedProps>`
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
+  position: relative;
   font-size: 14px;
   color: white;
-  transition: opacity 0.4s;
+  margin: 0 10px 0 0;
 `;
