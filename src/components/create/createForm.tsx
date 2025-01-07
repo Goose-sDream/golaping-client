@@ -1,11 +1,11 @@
 import { JSX, useState } from "react";
 import { useForm, FormProvider } from "react-hook-form";
 import styled from "styled-components";
-import CreateNShareVote from "./CreateNShareVote";
 import { BasicForm } from "./steps/BasicForm";
 import { LandingForm } from "./steps/LandingForm";
 import { Button } from "../common/Button";
 import OptionForm from "./steps/OptionForm";
+import ShareVote from "./steps/ShareVote";
 
 export const CreateForm = () => {
   const methods = useForm();
@@ -14,7 +14,7 @@ export const CreateForm = () => {
     1: <LandingForm />,
     2: <BasicForm />,
     3: <OptionForm />,
-    4: <CreateNShareVote />,
+    4: <ShareVote />,
   };
 
   return (

@@ -2,9 +2,9 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { v4 as uuid } from "uuid";
-import { Button } from "../common/Button";
+import { Button } from "../../common/Button";
 
-const CreateNShareVote = () => {
+const ShareVote = () => {
   const [randomLink, setRandomLink] = useState("");
   const navigate = useNavigate();
 
@@ -46,7 +46,7 @@ const CreateNShareVote = () => {
   );
 };
 
-export default CreateNShareVote;
+export default ShareVote;
 
 const RedirectForm = styled.div`
   display: flex;
