@@ -1,26 +1,33 @@
-import { useState } from "react";
+import { JSX, useState } from "react";
 import { useForm, FormProvider } from "react-hook-form";
 import styled from "styled-components";
+import CreateNShareVote from "./CreateNShareVote";
 import { BasicForm } from "./steps/BasicForm";
 import { LandingForm } from "./steps/LandingForm";
 import { Button } from "../common/Button";
+import OptionForm from "./steps/OptionForm";
 
 export const CreateForm = () => {
   const methods = useForm();
   const [step, setStep] = useState<number>(1);
+  const steps: { [key: number]: JSX.Element } = {
+    1: <LandingForm />,
+    2: <BasicForm />,
+    3: <OptionForm />,
+    4: <CreateNShareVote />,
+  };
 
   return (
     <FormProvider {...methods}>
       <form>
-        {step === 1 && <LandingForm />}
-        {step === 2 && <BasicForm />}
+        {steps[step]}
         <ButtonContainer>
           {step === 1 && (
             <Button type="button" onClick={() => setStep(step + 1)}>
               투표 생성하기
             </Button>
           )}
-          {step > 1 && step < 4 && (
+          {step > 1 && (
             <Button
               type="button"
               variant="secondary"
@@ -40,6 +47,7 @@ export const CreateForm = () => {
               type="button"
               variant="primary"
               onClick={methods.handleSubmit(() => {
+                setStep(step + 1);
                 console.log("생성 완료");
               })}
               style={{ marginLeft: "auto" }}

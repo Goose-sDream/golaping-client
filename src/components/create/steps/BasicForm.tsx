@@ -34,6 +34,7 @@ export const BasicForm = () => {
         render={({ field, fieldState: { error } }) => (
           <Select
             label="옵션"
+            id="options"
             options={[
               { value: "majority", label: "다수결" },
               { value: "random", label: "랜덤" },

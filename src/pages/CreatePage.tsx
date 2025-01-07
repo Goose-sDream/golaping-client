@@ -1,10 +1,9 @@
-import React from "react";
-import CreateNShareVote from "../components/create/CreateNShareVote";
+import { CreateForm } from "../components/create/CreateForm";
 
 const CreatePage = () => {
   return (
     <div>
-      <CreateNShareVote />
+      <CreateForm />
     </div>
   );
 };

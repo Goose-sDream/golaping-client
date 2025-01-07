@@ -3,15 +3,16 @@ import styled from "styled-components";
 
 interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   label?: string;
-  options: { value: string; label: string }[];
+  options: { value: string | number; label: string }[];
   error?: string;
+  id?: string;
 }
 
 export const Select = ({ label, options, error, ...props }: SelectProps) => {
   return (
     <Wrapper>
       {label && <Label htmlFor={props.id}>{label}</Label>}
-      <StyledSelect {...props}>
+      <StyledSelect id={props.id} {...props}>
         {options.map((option) => (
           <option key={option.value} value={option.value}>
             {option.label}
