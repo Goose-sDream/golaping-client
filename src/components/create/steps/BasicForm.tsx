@@ -1,6 +1,7 @@
 import { useFormContext, Controller } from "react-hook-form";
 
 import { Input } from "../../common/Input";
+import { Select } from "../../common/Select";
 
 export const BasicForm = () => {
   const { control } = useFormContext();
@@ -31,7 +32,16 @@ export const BasicForm = () => {
         defaultValue="다수결"
         rules={{ required: "투표 옵션 선택이 필요합니다" }}
         render={({ field, fieldState: { error } }) => (
-          <Input label="옵션" placeholder="옵션" {...field} error={error?.message} />
+          <Select
+            label="옵션"
+            options={[
+              { value: "majority", label: "다수결" },
+              { value: "random", label: "랜덤" },
+              { value: "lottery", label: "제비뽑기" },
+            ]}
+            {...field}
+            error={error?.message}
+          />
         )}
       />
     </div>
