@@ -31,32 +31,42 @@ const VoteOptions = () => {
   console.log("errors =>", errors);
 
   return (
-    <OptionForm
-      onSubmit={handleSubmit(onSubmit)}
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "center",
-        gap: "10px",
-        width: "200px",
-      }}
-    >
-      <VoteTimeDiv>
-        <Switch checked={isHour}>
-          <ToggleInput type="checkbox" checked={isHour} onChange={handleToggle} />
-          <SliderSpan />
-          <Text checked={isHour}>{isHour ? "시간" : "분"}</Text>
-        </Switch>
-        <input placeholder="투표시간" defaultValue="" {...register("voteTime", { required: true })}></input>
-      </VoteTimeDiv>
+    <>
+      <OptionForm
+        onSubmit={handleSubmit(onSubmit)}
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          gap: "10px",
+          width: "200px",
+        }}
+      >
+        <VoteTimeDiv>
+          <Switch checked={isHour}>
+            <ToggleInput type="checkbox" checked={isHour} onChange={handleToggle} />
+            <SliderSpan />
+            <Text checked={isHour}>{isHour ? "시간" : "분"}</Text>
+          </Switch>
+          <input
+            placeholder="투표시간"
+            defaultValue=""
+            {...register("voteTime", { required: true, max: isHour ? 2 : 59 })}
+            style={{
+              width: "50%",
+            }}
+          ></input>
+        </VoteTimeDiv>
 
-      <input
-        placeholder="투표가능 횟수"
-        defaultValue=""
-        {...register("voteNums", { required: true, min: 1, max: 5 })}
-      />
-      <input type="submit" value="생성하기" />
-    </OptionForm>
+        <input
+          placeholder="투표가능 횟수"
+          defaultValue=""
+          {...register("voteNums", { required: true, min: 1, max: 5 })}
+          // 일단 max 5로 해둠
+        />
+        <input type="submit" value="생성하기" />
+      </OptionForm>
+    </>
   );
 };
 
@@ -68,21 +78,26 @@ const OptionForm = styled.form`
   justify-content: center;
   gap: 10px;
   width: 200px;
+  padding: 0 5px 0 5px;
 `;
 
 const VoteTimeDiv = styled.div`
   width: 100%;
+  height: 40px;
   position: relative;
+  display: flex;
+  align-items: center;
 `;
 
 const Switch = styled.label<CheckedProps>`
   position: absolute;
-  right: 10px;
-  width: 65px;
+  right: 0;
+  width: 60px;
   height: 25px;
   display: flex;
   justify-content: ${(Checkedprops) => (Checkedprops.checked ? "flex-start" : "flex-end")};
   align-items: center;
+  padding: 0 5px 0 0;
 `;
 
 const ToggleInput = styled.input`
@@ -128,5 +143,4 @@ const Text = styled.span<CheckedProps>`
   position: relative;
   font-size: 14px;
   color: white;
-  margin: 0 10px 0 0;
 `;
