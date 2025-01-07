@@ -7,19 +7,23 @@ const CreateNShareVote = () => {
   const navigate = useNavigate();
 
   const generateLink = () => {
-    const randomId = uuid();
-    const link = `/vote/${randomId}`;
+    const link = `/vote/${uuid()}`;
     setRandomLink(link);
     return link;
   };
 
   const handleNavigate = () => {
-    const link = generateLink();
-    navigate(link);
+    if (randomLink) {
+      navigate(randomLink);
+    } else {
+      const link = generateLink();
+      navigate(link);
+    }
   };
 
   const handleCopy = () => {
-    const fullUrl = `${window.location.origin}${randomLink}`;
+    const fullUrl = `${window.location.origin}${generateLink()}`;
+    console.log("fullUrl =>", fullUrl);
     navigator.clipboard
       .writeText(fullUrl)
       .then(() => alert("링크가 클립보드에 복사되었습니다!"))
@@ -28,7 +32,7 @@ const CreateNShareVote = () => {
 
   return (
     <div>
-      <h2 style={{ whiteSpace: "pre-line" }}>투표 생성이 완료되었습니다. {"\n"}투표를 공유해보세요!</h2>
+      <h2 style={{ whiteSpace: "pre-line" }}>투표생성이 완료되었습니다. {"\n"}투표를 공유해보세요!</h2>
       <button onClick={handleNavigate}>투표화면으로 이동하기</button>
       <button onClick={handleCopy}>공유하기</button>
     </div>
