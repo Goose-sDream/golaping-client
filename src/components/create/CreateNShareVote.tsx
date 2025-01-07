@@ -33,6 +33,7 @@ const CreateNShareVote = () => {
   return (
     <div>
       <h2 style={{ whiteSpace: "pre-line" }}>투표생성이 완료되었습니다. {"\n"}투표를 공유해보세요!</h2>
+      {/* 스타일 변경 예정이라 styled-component 미완 */}
       <button onClick={handleNavigate}>투표화면으로 이동하기</button>
       <button onClick={handleCopy}>공유하기</button>
     </div>
