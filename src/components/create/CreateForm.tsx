@@ -17,15 +17,10 @@ export const CreateForm = () => {
     3: <OptionForm />,
     4: <ShareVote />,
   };
-  const handlePrevClick = () => {
-    if (step > 1) {
-      setStep((prev) => prev - 1);
-    }
-  };
 
   return (
     <FormProvider {...methods}>
-      {step > 1 && step < 4 && <Stepper currentStep={step - 1} totalSteps={2} onPrevClick={handlePrevClick} />}
+      {step > 1 && step < 4 && <Stepper currentStep={step - 1} totalSteps={2} onPrevClick={() => setStep(step - 1)} />}
       <FormContainer>
         {steps[step]}
         <ButtonContainer>
