@@ -44,9 +44,6 @@ jobs:
           docker build -t ${{ secrets.DOCKER_USERNAME }}/golaping-app:latest .
           docker push ${{ secrets.DOCKER_USERNAME }}/golaping-app:latest
 
-      - name: Check Docker Image Name
-        run: echo "DOCKER_IMAGE = $DOCKER_IMAGE"
-
       - name: Deploy to EC2
         uses: appleboy/ssh-action@v1.0.0
         with:
@@ -54,7 +51,12 @@ jobs:
           username: ${{ env.EC2_USERNAME }}
           key: ${{ env.EC2_KEY }}
           script: |
-            docker pull $DOCKER_IMAGE:latest
             docker stop golaping-app || true
             docker rm golaping-app || true
+            docker pull $DOCKER_IMAGE:latest
             docker run -d --name golaping-app -p 80:80 $DOCKER_IMAGE:latest
+            docker container prune -f
+            docker image prune -af
+            docker ps -a
+            docker logs golaping-app
+            sudo lsof -i :80
