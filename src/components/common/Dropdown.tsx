@@ -1,0 +1,111 @@
+import { useState } from "react";
+import styled from "styled-components";
+
+interface DropdownProps {
+  label?: string;
+  options: { value: string; label: string }[];
+  value: string;
+  onChange: (value: string) => void;
+  error?: string;
+}
+
+export const Dropdown = ({ label, options, value, onChange, error }: DropdownProps) => {
+  const [isOpen, setIsOpen] = useState<boolean>(false);
+
+  const toggleDropdown = () => setIsOpen((prev) => !prev);
+
+  const handleSelect = (selectedValue: string) => {
+    onChange(selectedValue);
+    setIsOpen(false);
+  };
+
+  return (
+    <Wrapper>
+      {label && <Label>{label}</Label>}
+      <DropdownButton type="button" onClick={toggleDropdown} isOpen={isOpen}>
+        {options.find((option) => option.value === value)?.label}
+        <Arrow />
+      </DropdownButton>
+      {isOpen && (
+        <OptionsList>
+          {options.map((option) => (
+            <OptionItem
+              key={option.value}
+              onClick={() => handleSelect(option.value)}
+              isSelected={option.value === value}
+            >
+              {option.label}
+            </OptionItem>
+          ))}
+        </OptionsList>
+      )}
+      {error && <ErrorMessage>{error}</ErrorMessage>}
+    </Wrapper>
+  );
+};
+
+const Wrapper = styled.div`
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 30px;
+  position: relative;
+`;
+
+const Label = styled.label`
+  margin-bottom: 8px;
+  font-size: 20px;
+  font-weight: bold;
+  color: black;
+`;
+
+const DropdownButton = styled.button<{ isOpen: boolean }>`
+  width: 100%;
+  padding: 18px;
+  font-size: 20px;
+  text-align: left;
+  border: None;
+  border-radius: ${({ isOpen }) => (isOpen ? "12px 12px 0 0" : "12px")};
+  background-color: #efefef;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+`;
+
+const Arrow = styled.div`
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid black;
+`;
+
+const OptionsList = styled.ul`
+  position: absolute;
+  top: calc(100%);
+  width: 100%;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  border: None;
+  border-radius: 0 0 12px 12px;
+  background-color: #efefef;
+`;
+
+const OptionItem = styled.li<{ isSelected?: boolean }>`
+  padding: 18px;
+  font-size: 16px;
+  cursor: pointer;
+  color: black;
+  font-size: 20px;
+  justify-content: space-between;
+  align-items: center;
+
+  ${({ isSelected }) => isSelected && `font-weight: bold;`}
+`;
+
+const ErrorMessage = styled.p`
+  margin-top: 4px;
+  font-size: 12px;
+  color: red;
+`;
