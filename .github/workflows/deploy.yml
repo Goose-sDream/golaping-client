@@ -51,14 +51,7 @@ jobs:
           username: ${{ env.EC2_USERNAME }}
           key: ${{ env.EC2_KEY }}
           script: |
-            # 1️⃣ Docker 최신 이미지 Pull
             docker pull $DOCKER_IMAGE:latest
-            # 2️⃣ 기존 golaping-app 컨테이너 중지 및 삭제
             docker stop golaping-app || true
             docker rm golaping-app || true
-            # 3️⃣ golaping-app 컨테이너 실행
             docker run -d --name golaping-app -p 80:80 $DOCKER_IMAGE:latest
-            # 4️⃣ 중지된 컨테이너 정리 (새로 실행 중인 컨테이너 제외)
-            docker rm $(docker ps -f status=exited -q) || true
-            # 5️⃣ 사용하지 않는 이미지 삭제 (태그 없는 이미지만)
-            docker image prune -f
