@@ -45,7 +45,7 @@ jobs:
           docker push ${{ secrets.DOCKER_USERNAME }}/golaping-app:latest
 
       - name: Check Docker Image Name
-        run: echo DOCKER_IMAGE=> $DOCKER_IMAGE
+        run: echo "DOCKER_IMAGE = $DOCKER_IMAGE"
 
       - name: Deploy to EC2
         uses: appleboy/ssh-action@v1.0.0
