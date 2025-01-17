@@ -1,7 +1,7 @@
 # 1. Build 단계
 FROM node:22 AS build
 # pnpm 설치
-RUN corepack enable && RUN corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@latest --activate
 WORKDIR /app
 # 의존성 설치
 COPY package.json pnpm-lock.yaml ./
