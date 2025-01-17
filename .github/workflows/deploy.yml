@@ -52,6 +52,7 @@ jobs:
           key: ${{ env.EC2_KEY }}
           script: |
             docker pull $DOCKER_IMAGE:latest
-            docker stop golaping-app || true
-            docker rm golaping-app || true
+            docker stop $(docker ps -qa)
             docker run -d --name golaping-app -p 80:80 $DOCKER_IMAGE:latest
+            docker rm $(docker ps —filter 'status=exited' -qa)
+            docker image prune -f
