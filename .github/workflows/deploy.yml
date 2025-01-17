@@ -10,9 +10,9 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      AWS_HOST: ${{ secrets.AWS_HOST }}
-      AWS_USERNAME: ${{ secrets.AWS_USERNAME }}
-      AWS_KEY: ${{ secrets.AWS_KEY }}
+      AWS_HOST: ${{ secrets.EC2_HOST }}
+      AWS_USERNAME: ${{ secrets.EC2_USERNAME }}
+      AWS_KEY: ${{ secrets.EC2_KEY }}
       DOCKER_IMAGE: ${{ secrets.DOCKER_USERNAME }}/golaping-app
 
     steps:
