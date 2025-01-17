@@ -27,19 +27,15 @@ const Label = styled.label`
   color: black;
 `;
 
-const StyledInput = styled.input`
+const StyledInput = styled.input<{ disabled?: boolean }>`
   padding: 18px;
   font-size: 20px;
   border: none;
   border-radius: 12px;
   transition: border-color 0.2s;
   background-color: #efefef;
+  opacity: ${({ disabled }) => (disabled ? 0.5 : 1)};
   min-width: 300px;
-
-  &:focus {
-    border-color: lightgray;
-    outline: none;
-  }
 `;
 
 const ErrorMessage = styled.p`
