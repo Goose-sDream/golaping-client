@@ -41,8 +41,8 @@ jobs:
 
       - name: Build and Push Docker Image
         run: |
-          docker build -t twilight9758@gmail/golaping-app:latest .
-          docker push twilight9758@gmail:latest
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/golaping-app:latest .
+          docker push ${{ secrets.DOCKER_USERNAME }}/golaping-app:latest
 
       - name: Deploy to EC2
         uses: appleboy/ssh-action@v1.0.0
