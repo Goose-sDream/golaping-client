@@ -1,0 +1,57 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    env:
+      AWS_HOST: ${{ secrets.AWS_HOST }}
+      AWS_USERNAME: ${{ secrets.AWS_USERNAME }}
+      AWS_KEY: ${{ secrets.AWS_KEY }}
+      DOCKER_IMAGE: ${{ secrets.DOCKER_USERNAME }}/golaping-app
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build Project
+        run: pnpm build
+
+      - name: Log in to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and Push Docker Image
+        run: |
+          docker build -t $DOCKER_IMAGE:latest .
+          docker push $DOCKER_IMAGE:latest
+
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ env.AWS_HOST }}
+          username: ${{ env.AWS_USERNAME }}
+          key: ${{ env.AWS_KEY }}
+          script: |
+            docker pull $DOCKER_IMAGE:latest
+            docker stop golaping-app || true
+            docker rm golaping-app || true
+            docker run -d --name golaping-app -p 80:80 $DOCKER_IMAGE:latest
