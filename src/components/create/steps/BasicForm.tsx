@@ -13,18 +13,14 @@ export const BasicForm = () => {
         control={control}
         defaultValue=""
         rules={{ required: "투표 제목 입력이 필요합니다" }}
-        render={({ field, fieldState: { error } }) => (
-          <Input label="제목" placeholder="제목" {...field} error={error?.message} />
-        )}
+        render={({ field, fieldState: { error } }) => <Input label="제목" {...field} error={error?.message} />}
       />
       <Controller
         name="nickname"
         control={control}
         defaultValue=""
         rules={{ required: "방장 닉네임 입력이 필요합니다" }}
-        render={({ field, fieldState: { error } }) => (
-          <Input label="닉네임" placeholder="닉네임" {...field} error={error?.message} />
-        )}
+        render={({ field, fieldState: { error } }) => <Input label="닉네임" {...field} error={error?.message} />}
       />
       <Controller
         name="options"

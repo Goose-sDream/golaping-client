@@ -17,21 +17,24 @@ export const Input = ({ label, error, ...props }: InputProps) => (
 const InputWrapper = styled.div`
   display: flex;
   flex-direction: column;
-  margin-bottom: 16px;
+  margin-bottom: 30px;
 `;
 
 const Label = styled.label`
   margin-bottom: 8px;
-  font-size: 14px;
+  font-size: 20px;
+  font-weight: bold;
   color: black;
 `;
 
 const StyledInput = styled.input`
-  padding: 10px 12px;
-  font-size: 16px;
-  border: 1px solid black;
-  border-radius: 4px;
+  padding: 18px;
+  font-size: 20px;
+  border: none;
+  border-radius: 12px;
   transition: border-color 0.2s;
+  background-color: #efefef;
+  min-width: 300px;
 
   &:focus {
     border-color: lightgray;
