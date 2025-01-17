@@ -1,45 +1,29 @@
 import { ButtonHTMLAttributes } from "react";
-import styled, { css } from "styled-components";
+import styled from "styled-components";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "primary" | "secondary";
-  size?: "small" | "medium" | "large";
+  size?: "small" | "large";
+  disabled?: boolean;
 }
 
-export const Button = ({ children, variant = "primary", size = "medium", ...props }: ButtonProps) => {
+export const Button = ({ children, size = "large", disabled = false, ...props }: ButtonProps) => {
   return (
-    <StyledButton variant={variant} size={size} {...props}>
+    <StyledButton size={size} disabled={disabled} {...props}>
       {children}
     </StyledButton>
   );
 };
 
-const StyledButton = styled.button<{ variant: string; size: string }>`
-  font-size: 16px;
+const StyledButton = styled.button<{ size: string }>`
+  font-size: ${({ size }) => (size === "small" ? "24px" : "32px")};
   border: none;
-  border-radius: 4px;
+  border-radius: ${({ size }) => (size === "small" ? "16px" : "20px")};
   cursor: pointer;
+  background-color: black;
+  color: white;
+  min-width: ${({ size }) => (size === "small" ? "100px" : "300px")};
   transition:
     background-color 0.2s,
     color 0.2s;
-  padding: ${({ size }) => (size === "small" ? "6px 12px" : size === "large" ? "12px 24px" : "8px 16px")};
-
-  ${({ variant }) =>
-    variant === "primary"
-      ? css`
-          background-color: blue;
-          color: white;
-
-          &:hover {
-            background-color: lightblue;
-          }
-        `
-      : css`
-          background-color: gray;
-          color: black;
-
-          &:hover {
-            background-color: lightgray;
-          }
-        `}
+  padding: ${({ size }) => (size === "small" ? "6px 12px" : "10px 60px")};
 `;
