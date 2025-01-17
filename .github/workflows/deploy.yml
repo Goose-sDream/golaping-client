@@ -54,5 +54,5 @@ jobs:
             docker pull $DOCKER_IMAGE:latest
             docker stop $(docker ps -qa)
             docker run -d --name golaping-app -p 80:80 $DOCKER_IMAGE:latest
-            docker rm $(docker ps —filter 'status=exited' -qa)
+            docker rm $(docker ps --filter 'status=exited' -qa)
             docker image prune -f
