@@ -1,6 +1,7 @@
 import React from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import CreatePage from "./pages/CreatePage";
+import OptionTestPage from "./pages/OptionTestPage";
 import VotePage from "./pages/VotePage";
 
 const App: React.FC = () => {
@@ -9,6 +10,7 @@ const App: React.FC = () => {
       <Routes>
         <Route path="/" element={<CreatePage />}></Route>
         <Route path="/vote/:id" element={<VotePage />}></Route>
+        <Route path="/timer" element={<OptionTestPage />}></Route>
       </Routes>
     </BrowserRouter>
   );

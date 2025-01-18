@@ -23,27 +23,53 @@ const OptionForm = () => {
 
   return (
     <div>
-      <VoteTimeDiv>
-        <Switch checked={isHour}>
-          <ToggleInput type="checkbox" checked={isHour} onChange={handleToggle} />
-          <SliderSpan />
-          <Text checked={isHour}>{isHour ? "시간" : "분"}</Text>
-        </Switch>
-        <Controller
-          name="time"
-          control={control}
-          defaultValue={5}
-          rules={{
-            required: "투표시간은 필수 입력 값입니다.",
-            max: {
-              value: isHour ? 24 : 59,
-              message: `최대 ${isHour ? 24 : 59}${isHour ? "시간" : "분"}까지 가능합니다.`,
-            },
+      <VoteDiv>
+        <div
+          style={{
+            display: "flex",
+            width: "100%",
+            justifyContent: "space-between",
+            gap: "10px",
+            padding: "0 10px 0 10px",
           }}
-          render={({ field, fieldState: { error } }) => (
-            <Input label="투표시간" placeholder="투표시간" {...field} error={error?.message} />
-          )}
-        />
+        >
+          <Switch checked={isHour}>
+            <ToggleInput type="checkbox" checked={isHour} onChange={handleToggle} />
+            <SliderSpan />
+            <Text checked={isHour}>{isHour ? "시간" : "분"}</Text>
+          </Switch>
+          <Controller
+            name="time"
+            control={control}
+            defaultValue={5}
+            rules={{
+              required: "투표시간은 필수 입력 값입니다.",
+              max: {
+                value: isHour ? 24 : 59,
+                message: `최대 ${isHour ? 24 : 59}${isHour ? "시간" : "분"}까지 가능합니다.`,
+              },
+            }}
+            render={({ field, fieldState: { error } }) => (
+              <Input label="타이머" placeholder="투표시간" {...field} error={error?.message} />
+            )}
+          />
+          <Controller
+            name="time"
+            control={control}
+            defaultValue={5}
+            rules={{
+              required: "투표시간은 필수 입력 값입니다.",
+              max: {
+                value: isHour ? 24 : 59,
+                message: `최대 ${isHour ? 24 : 59}${isHour ? "시간" : "분"}까지 가능합니다.`,
+              },
+            }}
+            render={({ field, fieldState: { error } }) => (
+              <Input label="타이머" placeholder="투표시간" {...field} error={error?.message} />
+            )}
+          />
+        </div>
+
         <Controller
           name="voteNums"
           control={control}
@@ -59,14 +85,14 @@ const OptionForm = () => {
             />
           )}
         />
-      </VoteTimeDiv>
+      </VoteDiv>
     </div>
   );
 };
 
 export default OptionForm;
 
-const VoteTimeDiv = styled.div`
+const VoteDiv = styled.div`
   width: 100%;
   position: relative;
 `;
