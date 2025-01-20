@@ -1,5 +1,6 @@
 import { InputHTMLAttributes } from "react";
 import styled from "styled-components";
+import { LIGHTGRAY } from "../../styles/color";
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label: string;
@@ -33,7 +34,7 @@ const StyledInput = styled.input<{ disabled?: boolean }>`
   border: none;
   border-radius: 12px;
   transition: border-color 0.2s;
-  background-color: #efefef;
+  background-color: ${LIGHTGRAY};
   opacity: ${({ disabled }) => (disabled ? 0.5 : 1)};
   min-width: 300px;
 `;
