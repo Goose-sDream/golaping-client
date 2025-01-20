@@ -17,26 +17,25 @@ export const Input = ({ label, error, ...props }: InputProps) => (
 const InputWrapper = styled.div`
   display: flex;
   flex-direction: column;
-  margin-bottom: 16px;
+  margin-bottom: 30px;
 `;
 
 const Label = styled.label`
   margin-bottom: 8px;
-  font-size: 14px;
+  font-size: 20px;
+  font-weight: bold;
   color: black;
 `;
 
-const StyledInput = styled.input`
-  padding: 10px 12px;
-  font-size: 16px;
-  border: 1px solid black;
-  border-radius: 4px;
+const StyledInput = styled.input<{ disabled?: boolean }>`
+  padding: 18px;
+  font-size: 20px;
+  border: none;
+  border-radius: 12px;
   transition: border-color 0.2s;
-
-  &:focus {
-    border-color: lightgray;
-    outline: none;
-  }
+  background-color: #efefef;
+  opacity: ${({ disabled }) => (disabled ? 0.5 : 1)};
+  min-width: 300px;
 `;
 
 const ErrorMessage = styled.p`

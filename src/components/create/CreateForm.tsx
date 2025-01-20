@@ -19,33 +19,22 @@ export const CreateForm = () => {
 
   return (
     <FormProvider {...methods}>
-      <form>
+      <FormContainer>
         {steps[step]}
         <ButtonContainer>
           {step === 1 && (
             <Button type="button" onClick={() => setStep(step + 1)}>
-              투표 생성하기
-            </Button>
-          )}
-          {step > 1 && (
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => setStep(step - 1)}
-              style={{ alignSelf: "flex-start" }}
-            >
-              이전
+              투표 만들기
             </Button>
           )}
           {step === 2 && (
-            <Button type="button" variant="primary" onClick={() => setStep(step + 1)} style={{ marginLeft: "auto" }}>
+            <Button type="button" onClick={() => setStep(step + 1)}>
               다음
             </Button>
           )}
           {step === 3 && (
             <Button
               type="button"
-              variant="primary"
               onClick={methods.handleSubmit(() => {
                 setStep(step + 1);
                 console.log("생성 완료");
@@ -56,17 +45,25 @@ export const CreateForm = () => {
             </Button>
           )}
         </ButtonContainer>
-      </form>
+      </FormContainer>
     </FormProvider>
   );
 };
 
-const ButtonContainer = styled.div<{ center?: boolean }>`
+const FormContainer = styled.form`
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  align-items: center;
+  justify-content: center;
+`;
+
+const ButtonContainer = styled.div`
   position: fixed;
   bottom: 20px;
   width: 100%;
   display: flex;
-  justify-content: ${({ center }) => (center ? "center" : "space-between")};
+  justify-content: center;
   padding: 0 20px;
   box-sizing: border-box;
 `;
