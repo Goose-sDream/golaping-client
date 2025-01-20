@@ -43,11 +43,6 @@ module.exports = (webpackEnv) => {
       {
         test: /\.(png|jpg|svg)$/,
         type: "asset/resource",
-        exclude: /\.svg$/,
-      },
-      {
-        test: /\.svg$/,
-        use: ["@svgr/webpack"],
       },
       {
         test: /\.css$/i,
