@@ -6,6 +6,7 @@ import { LandingForm } from "./steps/LandingForm";
 import { Button } from "../common/Button";
 import OptionForm from "./steps/OptionForm";
 import ShareVote from "./steps/ShareVote";
+import Stepper from "../common/Stepper";
 
 export const CreateForm = () => {
   const methods = useForm();
@@ -16,9 +17,15 @@ export const CreateForm = () => {
     3: <OptionForm />,
     4: <ShareVote />,
   };
+  const handlePrevClick = () => {
+    if (step > 1) {
+      setStep((prev) => prev - 1);
+    }
+  };
 
   return (
     <FormProvider {...methods}>
+      {step > 1 && step < 4 && <Stepper currentStep={step - 1} totalSteps={2} onPrevClick={handlePrevClick} />}
       <FormContainer>
         {steps[step]}
         <ButtonContainer>
