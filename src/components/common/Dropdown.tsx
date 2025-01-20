@@ -1,5 +1,6 @@
 import { useState } from "react";
 import styled from "styled-components";
+import ArrowIcon from "../../assets/Arrow.svg";
 
 interface DropdownProps {
   label?: string;
@@ -24,7 +25,7 @@ export const Dropdown = ({ label, options, value, onChange, error }: DropdownPro
       {label && <Label>{label}</Label>}
       <DropdownButton type="button" onClick={toggleDropdown} isOpen={isOpen}>
         {options.find((option) => option.value === value)?.label}
-        <Arrow />
+        <ArrowIcon style={{ transform: isOpen ? "rotate(90deg)" : "rotate(-90deg)" }} />
       </DropdownButton>
       {isOpen && (
         <OptionsList>
@@ -72,14 +73,6 @@ const DropdownButton = styled.button<{ isOpen: boolean }>`
   align-items: center;
 `;
 
-const Arrow = styled.div`
-  width: 0;
-  height: 0;
-  border-left: 6px solid transparent;
-  border-right: 6px solid transparent;
-  border-top: 6px solid black;
-`;
-
 const OptionsList = styled.ul`
   position: absolute;
   top: calc(100%);
@@ -92,7 +85,7 @@ const OptionsList = styled.ul`
   background-color: #efefef;
 `;
 
-const OptionItem = styled.li<{ isSelected?: boolean }>`
+const OptionItem = styled.li<{ isSelected: boolean }>`
   padding: 18px;
   font-size: 16px;
   cursor: pointer;
