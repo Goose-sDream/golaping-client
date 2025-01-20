@@ -51,7 +51,13 @@ jobs:
           username: ${{ env.EC2_USERNAME }}
           key: ${{ env.EC2_KEY }}
           script: |
-            docker pull $DOCKER_IMAGE:latest
+            echo "Deploying with image: ${DOCKER_IMAGE}:latest"
             docker stop golaping-app || true
             docker rm golaping-app || true
-            docker run -d --name golaping-app -p 80:80 $DOCKER_IMAGE:latest
+            docker pull ${{ secrets.DOCKER_USERNAME }}/golaping-app:latest
+            docker run -d --name golaping-app -p 80:80 ${{ secrets.DOCKER_USERNAME }}/golaping-app:latest
+            docker container prune -f
+            docker image prune -af
+            docker ps -a
+            docker logs golaping-app
+            sudo lsof -i :80
