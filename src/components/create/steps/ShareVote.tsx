@@ -1,47 +1,28 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
-import { v4 as uuid } from "uuid";
-import { Button } from "../../common/Button";
+import GreenLogo from "../../../assets/GreenLogo.svg";
+import LinkIcon from "../../../assets/Link.svg";
 
-const ShareVote = () => {
-  const [randomLink, setRandomLink] = useState("");
-  const navigate = useNavigate();
+interface ShareVoteProps {
+  onCopy: () => void;
+}
 
-  const generateLink = () => {
-    const link = `/vote/${uuid()}`;
-    setRandomLink(link);
-    return link;
-  };
-
-  const handleNavigate = () => {
-    if (randomLink) {
-      navigate(randomLink);
-    } else {
-      const link = generateLink();
-      navigate(link);
-    }
-  };
-
-  const handleCopy = () => {
-    const fullUrl = `${window.location.origin}${generateLink()}`;
-    console.log("fullUrl =>", fullUrl);
-    navigator.clipboard
-      .writeText(fullUrl)
-      .then(() => alert("링크가 클립보드에 복사되었습니다!"))
-      .catch((err) => alert(`복사 실패! ${err}`));
-  };
-
+const ShareVote = ({ onCopy }: ShareVoteProps) => {
   return (
     <RedirectForm>
-      <h2 style={{ whiteSpace: "pre-line" }}>투표생성이 완료되었습니다. {"\n"}투표를 공유해보세요!</h2>
-      {/* 스타일 변경 예정이라 styled-component 미완 */}
-      <Button type="button" onClick={handleNavigate}>
-        투표화면으로 이동하기
-      </Button>
-      <Button type="button" onClick={handleCopy}>
-        공유하기
-      </Button>
+      <header>
+        <h2 style={{ whiteSpace: "pre-line", textAlign: "center" }}>
+          투표가 생성되었습니다!{"\n"}투표를 공유해보세요!
+        </h2>
+        <LinkButton onClick={onCopy}>
+          <LinkIcon />
+        </LinkButton>
+      </header>
+
+      <main>
+        <LogoWrapper>
+          <GreenLogo />
+        </LogoWrapper>
+      </main>
     </RedirectForm>
   );
 };
@@ -51,5 +32,52 @@ export default ShareVote;
 const RedirectForm = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  align-items: center;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+
+  header {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    font-size: 24px;
+    min-height: 40%;
+  }
+
+  main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 60%;
+  }
+`;
+
+const LinkButton = styled.button`
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    opacity: 0.8;
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+`;
+
+const LogoWrapper = styled.div`
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+
+  svg {
+    object-fit: cover;
+  }
 `;
