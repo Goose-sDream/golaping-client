@@ -1,5 +1,6 @@
 import { InputHTMLAttributes } from "react";
 import styled from "styled-components";
+import { LIGHTGRAY } from "../../styles/color";
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;
@@ -9,7 +10,7 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 export const Input = ({ label, error, ...props }: InputProps) => (
   <InputWrapper>
     <Label>{label}</Label>
-    <StyledInput {...props} />
+    <StyledInput {...props} error={error} />
     {error && <ErrorMessage>{error}</ErrorMessage>}
   </InputWrapper>
 );
@@ -17,30 +18,35 @@ export const Input = ({ label, error, ...props }: InputProps) => (
 const InputWrapper = styled.div`
   display: flex;
   flex-direction: column;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
+  min-height: 140px;
 `;
 
 const Label = styled.label`
   margin-bottom: 8px;
-  font-size: 14px;
+  font-size: 20px;
+  font-weight: bold;
   color: black;
 `;
 
-const StyledInput = styled.input`
-  padding: 10px 12px;
-  font-size: 16px;
-  border: 1px solid black;
-  border-radius: 4px;
+const StyledInput = styled.input<{ error?: string; disabled?: boolean }>`
+  padding: 18px;
+  font-size: 20px;
+  border: ${({ error }) => (error ? "1px solid red" : `1px solid ${LIGHTGRAY}`)};
+  border-radius: 12px;
   transition: border-color 0.2s;
+  background-color: ${LIGHTGRAY};
+  opacity: ${({ disabled }) => (disabled ? 0.5 : 1)};
+  min-width: 300px;
 
   &:focus {
-    border-color: lightgray;
     outline: none;
   }
 `;
 
 const ErrorMessage = styled.p`
-  margin-top: 4px;
-  font-size: 12px;
+  margin-top: 10px;
+  font-size: 16px;
   color: red;
+  visibility: visible;
 `;
