@@ -11,7 +11,9 @@ import ShareVote from "./steps/ShareVote";
 import Stepper from "../common/Stepper";
 
 export const CreateForm = () => {
-  const methods = useForm();
+   const methods = useForm({
+    mode: "onBlur",
+  });
   const navigate = useNavigate();
   const [step, setStep] = useState<number>(1);
   const [randomLink, setRandomLink] = useState<string>("");

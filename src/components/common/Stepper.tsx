@@ -34,6 +34,7 @@ const StepperContainer = styled.div`
   justify-content: center;
   position: relative;
   padding: 20px;
+  margin-bottom: 20px;
 `;
 
 const Steps = styled.div`

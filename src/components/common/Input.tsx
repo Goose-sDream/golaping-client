@@ -10,7 +10,7 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 export const Input = ({ label, error, ...props }: InputProps) => (
   <InputWrapper>
     <Label>{label}</Label>
-    <StyledInput {...props} />
+    <StyledInput {...props} error={error} />
     {error && <ErrorMessage>{error}</ErrorMessage>}
   </InputWrapper>
 );
@@ -18,7 +18,8 @@ export const Input = ({ label, error, ...props }: InputProps) => (
 const InputWrapper = styled.div`
   display: flex;
   flex-direction: column;
-  margin-bottom: 30px;
+  margin-bottom: 20px;
+  min-height: 140px;
 `;
 
 const Label = styled.label`
@@ -28,19 +29,24 @@ const Label = styled.label`
   color: black;
 `;
 
-const StyledInput = styled.input<{ disabled?: boolean }>`
+const StyledInput = styled.input<{ error?: string; disabled?: boolean }>`
   padding: 18px;
   font-size: 20px;
-  border: none;
+  border: ${({ error }) => (error ? "1px solid red" : `1px solid ${LIGHTGRAY}`)};
   border-radius: 12px;
   transition: border-color 0.2s;
   background-color: ${LIGHTGRAY};
   opacity: ${({ disabled }) => (disabled ? 0.5 : 1)};
   min-width: 300px;
+
+  &:focus {
+    outline: none;
+  }
 `;
 
 const ErrorMessage = styled.p`
-  margin-top: 4px;
-  font-size: 12px;
+  margin-top: 10px;
+  font-size: 16px;
   color: red;
+  visibility: visible;
 `;

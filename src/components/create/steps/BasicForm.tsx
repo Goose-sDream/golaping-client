@@ -1,4 +1,5 @@
 import { useFormContext, Controller } from "react-hook-form";
+import styled from "styled-components";
 import { Vote } from "../../../types/voteTypes";
 import { Dropdown } from "../../common/Dropdown";
 import { Input } from "../../common/Input";
@@ -7,19 +8,23 @@ export const BasicForm = () => {
   const { control } = useFormContext<Vote>();
 
   return (
-    <div>
+    <Wrapper>
       <Controller
         name="title"
         control={control}
         defaultValue=""
-        rules={{ required: "투표 제목 입력이 필요합니다" }}
+        rules={{
+          required: "투표 제목 입력이 필요합니다",
+        }}
         render={({ field, fieldState: { error } }) => <Input label="제목" {...field} error={error?.message} />}
       />
       <Controller
         name="nickname"
         control={control}
         defaultValue=""
-        rules={{ required: "방장 닉네임 입력이 필요합니다" }}
+        rules={{
+          required: "방장 닉네임 입력이 필요합니다",
+        }}
         render={({ field, fieldState: { error } }) => <Input label="닉네임" {...field} error={error?.message} />}
       />
       <Controller
@@ -40,6 +45,12 @@ export const BasicForm = () => {
           />
         )}
       />
-    </div>
+    </Wrapper>
   );
 };
+
+const Wrapper = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+`;
