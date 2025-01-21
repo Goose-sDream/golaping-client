@@ -45,7 +45,7 @@ const Wrapper = styled.div`
 `;
 
 const LogoText = styled.p`
-  position: absolute;
+  position: fixed;
   font-size: 24px;
   color: black;
   text-align: center;
@@ -59,8 +59,6 @@ const LogoText = styled.p`
 `;
 
 const LogoWrapper = styled.div`
-  width: 100%;
-  height: 100%;
   overflow: hidden;
 
   svg {

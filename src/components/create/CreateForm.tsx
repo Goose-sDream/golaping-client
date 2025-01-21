@@ -1,6 +1,8 @@
 import { JSX, useState } from "react";
 import { useForm, FormProvider } from "react-hook-form";
+import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
+import { v4 as uuid } from "uuid";
 import { BasicForm } from "./steps/BasicForm";
 import { LandingForm } from "./steps/LandingForm";
 import { Button } from "../common/Button";
@@ -12,12 +14,26 @@ export const CreateForm = () => {
   const methods = useForm({
     mode: "onBlur",
   });
+  const navigate = useNavigate();
   const [step, setStep] = useState<number>(1);
+  const [randomLink, setRandomLink] = useState<string>("");
+
+  const generateLink = () => {
+    if (!randomLink) {
+      const link = `/vote/${uuid()}`;
+      setRandomLink(link);
+    }
+  };
+
+  const handleNavigate = () => {
+    navigate(randomLink);
+  };
+
   const steps: { [key: number]: JSX.Element } = {
     1: <LandingForm />,
     2: <BasicForm />,
     3: <OptionForm />,
-    4: <ShareVote />,
+    4: <ShareVote randomLink={randomLink} />,
   };
 
   return (
@@ -39,13 +55,17 @@ export const CreateForm = () => {
           {step === 3 && (
             <Button
               type="button"
-              onClick={methods.handleSubmit((data) => {
-                console.log("생성 완료", data);
+              onClick={methods.handleSubmit(() => {
+                generateLink();
                 setStep(step + 1);
               })}
-              style={{ marginLeft: "auto" }}
             >
               생성하기
+            </Button>
+          )}
+          {step === 4 && (
+            <Button type="button" onClick={handleNavigate}>
+              투표하러 가기
             </Button>
           )}
         </ButtonContainer>
