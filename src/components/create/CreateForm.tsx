@@ -55,17 +55,17 @@ export const CreateForm = () => {
 const FormContainer = styled.form`
   display: flex;
   flex-direction: column;
-  padding: 20px;
   align-items: center;
   justify-content: center;
 `;
 
 const ButtonContainer = styled.div`
-  position: fixed;
+  position: absolute;
   bottom: 20px;
   width: 100%;
   display: flex;
   justify-content: center;
   padding: 0 20px;
   box-sizing: border-box;
+  z-index: 100;
 `;
