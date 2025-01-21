@@ -9,7 +9,9 @@ import ShareVote from "./steps/ShareVote";
 import Stepper from "../common/Stepper";
 
 export const CreateForm = () => {
-  const methods = useForm();
+  const methods = useForm({
+    mode: "onBlur",
+  });
   const [step, setStep] = useState<number>(1);
   const steps: { [key: number]: JSX.Element } = {
     1: <LandingForm />,
@@ -37,9 +39,9 @@ export const CreateForm = () => {
           {step === 3 && (
             <Button
               type="button"
-              onClick={methods.handleSubmit(() => {
+              onClick={methods.handleSubmit((data) => {
+                console.log("생성 완료", data);
                 setStep(step + 1);
-                console.log("생성 완료");
               })}
               style={{ marginLeft: "auto" }}
             >
