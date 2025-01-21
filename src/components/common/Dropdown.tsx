@@ -98,7 +98,8 @@ const OptionItem = styled.li<{ isSelected: boolean }>`
 `;
 
 const ErrorMessage = styled.p`
-  margin-top: 4px;
-  font-size: 12px;
+  margin-top: 10px;
+  font-size: 16px;
   color: red;
+  visibility: visible;
 `;
