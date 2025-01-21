@@ -3,17 +3,25 @@ import GreenLogo from "../../../assets/GreenLogo.svg";
 import LinkIcon from "../../../assets/Link.svg";
 
 interface ShareVoteProps {
-  onCopy: () => void;
+  randomLink: string;
 }
 
-const ShareVote = ({ onCopy }: ShareVoteProps) => {
+const ShareVote = ({ randomLink }: ShareVoteProps) => {
+  const handleCopy = () => {
+    const fullUrl = `${window.location.origin}${randomLink}`;
+    navigator.clipboard
+      .writeText(fullUrl)
+      .then(() => alert("링크가 클립보드에 복사되었습니다!"))
+      .catch((err) => alert(`복사 실패! ${err}`));
+  };
+
   return (
     <RedirectForm>
       <header>
         <h2 style={{ whiteSpace: "pre-line", textAlign: "center" }}>
           투표가 생성되었습니다!{"\n"}투표를 공유해보세요!
         </h2>
-        <LinkButton onClick={onCopy}>
+        <LinkButton type="button" onClick={handleCopy}>
           <LinkIcon />
         </LinkButton>
       </header>

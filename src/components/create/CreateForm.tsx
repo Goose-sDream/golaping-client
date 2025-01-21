@@ -16,34 +16,22 @@ export const CreateForm = () => {
   const [step, setStep] = useState<number>(1);
   const [randomLink, setRandomLink] = useState<string>("");
 
-  const generateLink = (): string => {
-    const link = `/vote/${uuid()}`;
-    setRandomLink(link);
-    return link;
-  };
-
-  const handleNavigate = () => {
-    if (randomLink) {
-      navigate(randomLink);
-    } else {
-      const link = generateLink();
-      navigate(link);
+  const generateLink = () => {
+    if (!randomLink) {
+      const link = `/vote/${uuid()}`;
+      setRandomLink(link);
     }
   };
 
-  const handleCopy = () => {
-    const fullUrl = `${window.location.origin}${randomLink || generateLink()}`;
-    navigator.clipboard
-      .writeText(fullUrl)
-      .then(() => alert("링크가 클립보드에 복사되었습니다!"))
-      .catch((err) => alert(`복사 실패! ${err}`));
+  const handleNavigate = () => {
+    navigate(randomLink);
   };
 
   const steps: { [key: number]: JSX.Element } = {
     1: <LandingForm />,
     2: <BasicForm />,
     3: <OptionForm />,
-    4: <ShareVote onCopy={handleCopy} />,
+    4: <ShareVote randomLink={randomLink} />,
   };
 
   return (
@@ -66,8 +54,8 @@ export const CreateForm = () => {
             <Button
               type="button"
               onClick={methods.handleSubmit(() => {
+                generateLink();
                 setStep(step + 1);
-                console.log("생성 완료");
               })}
             >
               생성하기
