@@ -19,19 +19,17 @@ const TimePicker2 = ({ field, error, type = "hour" }: TimePickerProps) => {
   const [isClicked, setIsClicked] = useState(false);
   const [startY, setStartY] = useState(0);
   const currentOffsetRef = useRef(0);
-  // const [currentOffset, setCurrentOffset] = useState(0);
   const animationFrameRef = useRef<number | null>(null);
+  const targetIdxRef = useRef(0);
 
   const translateSlide = (offset: number) => {
     if (!containerRef.current || !wrapperRef.current) return;
-
     const wrapperHeight = wrapperRef.current.offsetHeight;
     const center = wrapperHeight / 2; // 화면 중간을 기준으로 설정
 
     timeItemsRef.current.forEach((item, index) => {
       if (!item) return;
       const baseY = offset + index * 40; // 각 요소의 Y 위치
-      // console.log(`${index}번째 위치 - ${baseY}`);
       const distanceFromCenter = Math.abs(baseY - center); // 중심과의 거리
       const scale = Math.max(1 - distanceFromCenter / 200, 0.6); // 중심에서 멀어질수록 축소
       const opacity = Math.max(1 - distanceFromCenter / 300, 0); // 중심에서 멀어질수록 투명도 감소
@@ -39,6 +37,15 @@ const TimePicker2 = ({ field, error, type = "hour" }: TimePickerProps) => {
       item.style.transform = `translateY(${baseY}px) scale(${scale})`;
       item.style.opacity = `${opacity}`;
       item.style.transition = `transform 0.5s ease-out, opacity 0.2s ease-out`;
+    });
+  };
+
+  const handleAnimation = (offset: number) => {
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+    }
+    animationFrameRef.current = requestAnimationFrame(() => {
+      translateSlide(offset);
     });
   };
 
@@ -52,16 +59,9 @@ const TimePicker2 = ({ field, error, type = "hour" }: TimePickerProps) => {
     if (!isClicked) return;
     const currentY = "clientY" in e ? e.clientY : e.touches[0].clientY;
     const deltaY = currentY - startY;
+
     currentOffsetRef.current += deltaY;
-    if (animationFrameRef.current) {
-      cancelAnimationFrame(animationFrameRef.current);
-    }
-
-    animationFrameRef.current = requestAnimationFrame(() => {
-      translateSlide(currentOffsetRef.current);
-    });
-    // setCurrentOffset((prev) => prev + deltaY);
-
+    handleAnimation(currentOffsetRef.current);
     setStartY(currentY);
   };
 
@@ -73,27 +73,32 @@ const TimePicker2 = ({ field, error, type = "hour" }: TimePickerProps) => {
   };
 
   useEffect(() => {
-    // 안전장치
     if (!isClicked) {
       if (timeItemsRef.current.every((time) => time !== null) && wrapperRef && wrapperRef.current) {
-        if (
-          currentOffsetRef.current === 0 ||
-          timeItemsRef.current[0]?.getBoundingClientRect().top >
-            wrapperRef.current?.getBoundingClientRect().top + wrapperRef.current?.offsetHeight / 2
-        ) {
-          currentOffsetRef.current = 150;
+        const centerHeight = wrapperRef.current?.offsetHeight / 2; // 중앙 높이
+        // 초기 슬라이드 위치
+        if (currentOffsetRef.current === 0) {
+          currentOffsetRef.current = centerHeight;
+          handleAnimation(currentOffsetRef.current);
+          return;
         }
-        if (
-          currentOffsetRef.current !== 150 &&
-          timeItemsRef.current[times.length - 1]?.getBoundingClientRect().top <
-            wrapperRef.current?.getBoundingClientRect().top + wrapperRef.current?.offsetHeight / 2
-        ) {
-          currentOffsetRef.current = -770;
-        }
+
+        // 현재 offset 기준으로 목표 index 계산
+        // const targetIdx = Math.round(-currentOffsetRef.current / 40);
+        console.log("currentOffsetRef =>", currentOffsetRef.current);
+        console.log("중앙과의 차이 =>", centerHeight - currentOffsetRef.current);
+        const targetIdx =
+          currentOffsetRef.current > 0 ? (targetIdxRef.current -= 1) : Math.max(0, (targetIdxRef.current += 1));
+        const targetOffset = centerHeight - targetIdx * 40; // 화면 중앙과 targetIdx 간의 차이
+        console.log("targetIdx =>", targetIdx);
+
+        // 안전장치
+        const maxOffset = centerHeight;
+        const minOffset = -((times.length - 1) * 40 - centerHeight);
+        currentOffsetRef.current = Math.min(maxOffset, Math.max(minOffset, targetOffset));
       }
-      animationFrameRef.current = requestAnimationFrame(() => {
-        translateSlide(currentOffsetRef.current);
-      });
+
+      handleAnimation(currentOffsetRef.current);
     }
   }, [isClicked]);
 

@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import styled from "styled-components";
-import TimePicker from "./TimePicker";
 import TimePicker2 from "./TimePicker2";
 import { Vote } from "../../../types/voteTypes";
 import { Input } from "../../common/Input";
@@ -16,7 +15,7 @@ const OptionForm = () => {
   const { control } = useFormContext<Vote>();
   const [isHour, setIsHour] = useState(false);
   const voteNums = [1, 2, 3, 4, 5];
-  // const [timeSetOpen, setTimeSetOpen] = useState(true);
+  const [timeSetOpen, setTimeSetOpen] = useState(true);
 
   const handleToggle = () => {
     setIsHour((prev) => !prev);
@@ -50,39 +49,38 @@ const OptionForm = () => {
                   padding: "0 10px 0 10px",
                   position: "relative",
                 }}
-                // onClick={() => setTimeSetOpen((prev) => !prev)}
+                onClick={() => setTimeSetOpen((prev) => !prev)}
               >
-                {/* {timeSetOpen && ( */}
-                <div
-                  style={{
-                    position: "absolute",
-                    backgroundColor: "lightGray",
-                    opacity: 0.8,
-                    width: "100%",
-                    display: "flex",
-                    justifyContent: "space-around",
-                  }}
-                >
+                {timeSetOpen && (
                   <div
                     style={{
+                      position: "absolute",
+                      backgroundColor: "lightGray",
+                      opacity: 0.8,
+                      width: "100%",
                       display: "flex",
-                      alignItems: "center",
-                      gap: "5px",
-                      position: "relative",
+                      justifyContent: "space-around",
                     }}
                   >
-                    {/* <Input placeholder="00" {...field} error={errors?.message} /> */}
-                    <TimePicker field={field} error={error?.message} type="hour" fullAngle={120} />
-                    <TimePicker2 field={field} error={error?.message} type="hour" threshold={50} />
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "5px",
+                        position: "relative",
+                      }}
+                    >
+                      <Input placeholder="00" {...field} error={error?.message} />
+                      <TimePicker2 field={field} error={error?.message} type="hour" threshold={50} />
 
-                    <h3>시간</h3>
+                      <h3>시간</h3>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+                      <Input placeholder="00" {...field} error={error?.message} />
+                      <h3>분</h3>
+                    </div>
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-                    <Input placeholder="00" {...field} error={error?.message} />
-                    <h3>분</h3>
-                  </div>
-                </div>
-                {/* )} */}
+                )}
                 <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
                   <Input placeholder="00" {...field} error={error?.message} />
                   <h3>시간</h3>
