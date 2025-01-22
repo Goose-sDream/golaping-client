@@ -6,7 +6,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   disabled?: boolean;
 }
 
-export const Button = ({ children, size = "large", disabled = false, ...props }: ButtonProps) => {
+const Button = ({ children, size = "large", disabled = false, ...props }: ButtonProps) => {
   return (
     <StyledButton size={size} disabled={disabled} {...props}>
       {children}
@@ -27,3 +27,5 @@ const StyledButton = styled.button<{ size: string }>`
     color 0.2s;
   padding: ${({ size }) => (size === "small" ? "6px 12px" : "10px 60px")};
 `;
+
+export default Button;

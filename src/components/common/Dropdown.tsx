@@ -1,6 +1,6 @@
 import { useState } from "react";
 import styled from "styled-components";
-import ArrowIcon from "../../assets/Arrow.svg";
+import ArrowIcon from "@/assets/Arrow.svg";
 
 interface DropdownProps {
   label?: string;
@@ -10,7 +10,7 @@ interface DropdownProps {
   error?: string;
 }
 
-export const Dropdown = ({ label, options, value, onChange, error }: DropdownProps) => {
+const Dropdown = ({ label, options, value, onChange, error }: DropdownProps) => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
 
   const toggleDropdown = () => setIsOpen((prev) => !prev);
@@ -103,3 +103,5 @@ const ErrorMessage = styled.p`
   color: red;
   visibility: visible;
 `;
+
+export default Dropdown;
