@@ -8,7 +8,7 @@ interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   id?: string;
 }
 
-export const Select = ({ label, options, error, ...props }: SelectProps) => {
+const Select = ({ label, options, error, ...props }: SelectProps) => {
   return (
     <Wrapper>
       {label && <Label htmlFor={props.id}>{label}</Label>}
@@ -53,3 +53,5 @@ const ErrorText = styled.p`
   font-size: 12px;
   margin-top: 5px;
 `;
+
+export default Select;

@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import styled from "styled-components";
-import { Vote } from "../../../types/voteTypes";
-import { Input } from "../../common/Input";
-import { Select } from "../../common/Select";
+import { Input, Select } from "@/components/common";
+import { Vote } from "@/types/voteTypes";
 
 type CheckedProps = {
   checked: boolean;

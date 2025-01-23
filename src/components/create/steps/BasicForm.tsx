@@ -1,10 +1,9 @@
 import { useFormContext, Controller } from "react-hook-form";
 import styled from "styled-components";
-import { Vote } from "../../../types/voteTypes";
-import { Dropdown } from "../../common/Dropdown";
-import { Input } from "../../common/Input";
+import { Dropdown, Input } from "@/components/common";
+import { Vote } from "@/types/voteTypes";
 
-export const BasicForm = () => {
+const BasicForm = () => {
   const { control } = useFormContext<Vote>();
 
   return (
@@ -48,6 +47,8 @@ export const BasicForm = () => {
     </Wrapper>
   );
 };
+
+export default BasicForm;
 
 const Wrapper = styled.div`
   display: flex;

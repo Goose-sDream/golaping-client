@@ -1,7 +1,7 @@
 import styled from "styled-components";
-import PurpleLogo from "../../../assets/PurpleLogo.svg";
+import PurpleLogo from "@/assets/PurpleLogo.svg";
 
-export const LandingForm = () => {
+const LandingForm = () => {
   return (
     <Wrapper>
       <header>
@@ -18,6 +18,8 @@ export const LandingForm = () => {
     </Wrapper>
   );
 };
+
+export default LandingForm;
 
 const Wrapper = styled.div`
   display: flex;

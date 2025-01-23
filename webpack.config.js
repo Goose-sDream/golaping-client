@@ -31,7 +31,9 @@ module.exports = (webpackEnv) => {
 
   const resolve = {
     extensions: [".js", ".jsx", ".ts", ".tsx"],
-    alias: {},
+    alias: {
+      "@": path.resolve(__dirname, "src"),
+    },
   };
 
   const module = {

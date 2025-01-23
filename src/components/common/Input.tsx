@@ -1,13 +1,13 @@
 import { InputHTMLAttributes } from "react";
 import styled from "styled-components";
-import { LIGHTGRAY } from "../../styles/color";
+import { LIGHTGRAY } from "@/styles/color";
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label: string;
   error?: string;
 }
 
-export const Input = ({ label, error, ...props }: InputProps) => (
+const Input = ({ label, error, ...props }: InputProps) => (
   <InputWrapper>
     <Label>{label}</Label>
     <StyledInput {...props} error={error} />
@@ -50,3 +50,5 @@ const ErrorMessage = styled.p`
   color: red;
   visibility: visible;
 `;
+
+export default Input;

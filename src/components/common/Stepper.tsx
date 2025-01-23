@@ -1,6 +1,6 @@
 import styled from "styled-components";
-import ArrowIcon from "../../assets/Arrow.svg";
-import { LIGHTGRAY, PURPLE } from "../../styles/color";
+import ArrowIcon from "@/assets/Arrow.svg";
+import { LIGHTGRAY, PURPLE } from "@/styles/color";
 
 interface StepperProps {
   currentStep: number;
