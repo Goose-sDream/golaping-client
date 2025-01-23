@@ -21,6 +21,7 @@ const TimePicker = ({ type, itemHeight = 60, threshold = 5, name, setValue }: Ti
   const [startY, setStartY] = useState(0);
   const currentOffsetRef = useRef(0);
   const animationFrameRef = useRef<number | null>(null);
+  const timeOutRef = useRef<NodeJS.Timeout | null>(null);
 
   const translateSlide = (offset: number) => {
     if (!containerRef.current || !wrapperRef.current) return;
@@ -50,6 +51,7 @@ const TimePicker = ({ type, itemHeight = 60, threshold = 5, name, setValue }: Ti
   };
 
   const handleStart = (e: React.MouseEvent | React.TouchEvent) => {
+    if (timeOutRef.current) clearTimeout(timeOutRef.current);
     setIsClicked(true);
     const initialY = "clientY" in e ? e.clientY : e.touches[0].clientY;
     setStartY(initialY);
@@ -94,6 +96,12 @@ const TimePicker = ({ type, itemHeight = 60, threshold = 5, name, setValue }: Ti
     currentOffsetRef.current = Math.min(maxOffset, Math.max(minOffset, targetOffset));
   };
 
+  const handleSnapToClosestIdx = (center: number) => {
+    const targetOffset = handleTargetIdx(center);
+    handleSafeDistance(center, targetOffset);
+    handleAnimation(currentOffsetRef.current);
+  };
+
   useEffect(() => {
     if (!isClicked) {
       if (timeItemsRef.current.every((time) => time !== null) && wrapperRef && wrapperRef.current) {
@@ -104,12 +112,32 @@ const TimePicker = ({ type, itemHeight = 60, threshold = 5, name, setValue }: Ti
           handleAnimation(currentOffsetRef.current);
           return;
         }
-        const targetOffset = handleTargetIdx(centerHeight);
-        handleSafeDistance(centerHeight, targetOffset);
+        handleSnapToClosestIdx(centerHeight);
       }
-      handleAnimation(currentOffsetRef.current);
     }
   }, [isClicked]);
+
+  useEffect(() => {
+    if (isClicked && wrapperRef && wrapperRef.current) {
+      const centerHeight = wrapperRef.current?.offsetHeight / 2;
+      const handleTimeOut = () => {
+        // 중앙 높이
+        setTimeout(() => {
+          setIsClicked(false);
+          if (timeOutRef.current) {
+            clearTimeout(timeOutRef.current); // 타이머 해제
+            timeOutRef.current = null;
+          }
+          handleSnapToClosestIdx(centerHeight);
+        });
+      };
+
+      document.addEventListener("click", handleTimeOut);
+      return () => {
+        document.removeEventListener("click", handleTimeOut);
+      };
+    }
+  }, []);
 
   useEffect(() => {
     const handleMouseLeave = () => {
