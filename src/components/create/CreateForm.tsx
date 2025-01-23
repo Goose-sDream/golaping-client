@@ -3,12 +3,8 @@ import { useForm, FormProvider } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { v4 as uuid } from "uuid";
-import { BasicForm } from "./steps/BasicForm";
-import { LandingForm } from "./steps/LandingForm";
-import { Button } from "../common/Button";
-import OptionForm from "./steps/OptionForm";
-import ShareVote from "./steps/ShareVote";
-import Stepper from "../common/Stepper";
+import { BasicForm, LandingForm, OptionForm, ShareVote } from "./steps";
+import { Button, Stepper } from "@/components/common";
 
 export const CreateForm = () => {
   const methods = useForm({

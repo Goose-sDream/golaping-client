@@ -1,6 +1,6 @@
 import styled from "styled-components";
-import GreenLogo from "../../../assets/GreenLogo.svg";
-import LinkIcon from "../../../assets/Link.svg";
+import GreenLogo from "@/assets/GreenLogo.svg";
+import LinkIcon from "@/assets/Link.svg";
 
 interface ShareVoteProps {
   randomLink: string;

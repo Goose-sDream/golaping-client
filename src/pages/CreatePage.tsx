@@ -1,4 +1,4 @@
-import { CreateForm } from "../components/create/CreateForm";
+import { CreateForm } from "@/components/create/CreateForm";
 
 const CreatePage = () => {
   return (
