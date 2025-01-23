@@ -13,6 +13,7 @@
   "license": "ISC",
   "dependencies": {
     "@tanstack/react-query": "^5.62.15",
+    "axios": "^1.7.9",
     "install": "^0.13.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
