@@ -2,9 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import styled from "styled-components";
 import TimePicker from "./TimePicker";
-import { Vote } from "../../../types/voteTypes";
-import { Input } from "../../common/Input";
-import { Select } from "../../common/Select";
+import Input from "@/components/common/Input";
+import Select from "@/components/common/Select";
+import { Vote } from "@/types/voteTypes";
 
 const OptionForm = () => {
   const { control, setValue } = useFormContext<Vote>();
