@@ -3,7 +3,7 @@ import styled from "styled-components";
 import { LIGHTGRAY } from "@/styles/color";
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
-  label: string;
+  label?: string;
   error?: string;
 }
 
@@ -18,6 +18,7 @@ const Input = ({ label, error, ...props }: InputProps) => (
 const InputWrapper = styled.div`
   display: flex;
   flex-direction: column;
+  justify-content: center;
   margin-bottom: 20px;
   min-height: 140px;
 `;
