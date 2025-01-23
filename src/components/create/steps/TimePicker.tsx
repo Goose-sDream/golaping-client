@@ -1,16 +1,17 @@
 import React, { useEffect, useRef, useState } from "react";
-import { ControllerRenderProps } from "react-hook-form";
+import { UseFormSetValue } from "react-hook-form";
+import { LIGHTGRAY } from "../../../styles/color";
 import { Vote } from "../../../types/voteTypes";
-import { Input } from "../../common/Input";
 
 type TimePickerProps = {
-  field: ControllerRenderProps<Vote, "time">;
-  error?: string | undefined;
   type: string;
-  threshold: number;
+  threshold?: number;
+  itemHeight?: number;
+  name: keyof Vote;
+  setValue: UseFormSetValue<Vote>;
 };
 
-const TimePicker2 = ({ field, error, type = "hour" }: TimePickerProps) => {
+const TimePicker = ({ type, itemHeight = 60, threshold = 5, name, setValue }: TimePickerProps) => {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const timeItemsRef = useRef<(HTMLDivElement | null)[]>([]);
@@ -20,7 +21,6 @@ const TimePicker2 = ({ field, error, type = "hour" }: TimePickerProps) => {
   const [startY, setStartY] = useState(0);
   const currentOffsetRef = useRef(0);
   const animationFrameRef = useRef<number | null>(null);
-  const targetIdxRef = useRef(0);
 
   const translateSlide = (offset: number) => {
     if (!containerRef.current || !wrapperRef.current) return;
@@ -29,7 +29,7 @@ const TimePicker2 = ({ field, error, type = "hour" }: TimePickerProps) => {
 
     timeItemsRef.current.forEach((item, index) => {
       if (!item) return;
-      const baseY = offset + index * 40; // 각 요소의 Y 위치
+      const baseY = offset + index * itemHeight; // 각 요소의 Y 위치
       const distanceFromCenter = Math.abs(baseY - center); // 중심과의 거리
       const scale = Math.max(1 - distanceFromCenter / 200, 0.6); // 중심에서 멀어질수록 축소
       const opacity = Math.max(1 - distanceFromCenter / 300, 0); // 중심에서 멀어질수록 투명도 감소
@@ -59,7 +59,6 @@ const TimePicker2 = ({ field, error, type = "hour" }: TimePickerProps) => {
     if (!isClicked) return;
     const currentY = "clientY" in e ? e.clientY : e.touches[0].clientY;
     const deltaY = currentY - startY;
-
     currentOffsetRef.current += deltaY;
     handleAnimation(currentOffsetRef.current);
     setStartY(currentY);
@@ -72,6 +71,30 @@ const TimePicker2 = ({ field, error, type = "hour" }: TimePickerProps) => {
     }
   };
 
+  const handleTargetIdx = (center: number) => {
+    // 현재 offset 기준으로 목표 index 계산
+    // 1. 1개씩 슬라이드 하는 법
+    // const targetIdx =
+    //   currentOffsetRef.current > 0 ? (targetIdxRef.current -= 1) : Math.max(0, (targetIdxRef.current += 1));
+    // 2. 여러개 쫙..
+    let targetIdx = Math.round(-currentOffsetRef.current / itemHeight);
+    const gap = -currentOffsetRef.current % itemHeight; // 현재 위치가 가장 가까운 인덱스에서 떨어진 정도
+    if (Math.abs(gap) < threshold) {
+      targetIdx = Math.floor(-currentOffsetRef.current / itemHeight); // 작은 이동은 가까운 쪽으로 스냅
+    }
+    console.log("targetIdx =>", targetIdx);
+    setValue(name, Math.max(0, targetIdx));
+    const targetOffset = center - targetIdx * itemHeight; // 화면 중앙과 targetIdx 간의 차이
+    return targetOffset;
+  };
+
+  const handleSafeDistance = (center: number, targetOffset: number) => {
+    //안전장치
+    const maxOffset = center;
+    const minOffset = -((times.length - 1) * itemHeight - center);
+    currentOffsetRef.current = Math.min(maxOffset, Math.max(minOffset, targetOffset));
+  };
+
   useEffect(() => {
     if (!isClicked) {
       if (timeItemsRef.current.every((time) => time !== null) && wrapperRef && wrapperRef.current) {
@@ -82,22 +105,9 @@ const TimePicker2 = ({ field, error, type = "hour" }: TimePickerProps) => {
           handleAnimation(currentOffsetRef.current);
           return;
         }
-
-        // 현재 offset 기준으로 목표 index 계산
-        // const targetIdx = Math.round(-currentOffsetRef.current / 40);
-        console.log("currentOffsetRef =>", currentOffsetRef.current);
-        console.log("중앙과의 차이 =>", centerHeight - currentOffsetRef.current);
-        const targetIdx =
-          currentOffsetRef.current > 0 ? (targetIdxRef.current -= 1) : Math.max(0, (targetIdxRef.current += 1));
-        const targetOffset = centerHeight - targetIdx * 40; // 화면 중앙과 targetIdx 간의 차이
-        console.log("targetIdx =>", targetIdx);
-
-        // 안전장치
-        const maxOffset = centerHeight;
-        const minOffset = -((times.length - 1) * 40 - centerHeight);
-        currentOffsetRef.current = Math.min(maxOffset, Math.max(minOffset, targetOffset));
+        const targetOffset = handleTargetIdx(centerHeight);
+        handleSafeDistance(centerHeight, targetOffset);
       }
-
       handleAnimation(currentOffsetRef.current);
     }
   }, [isClicked]);
@@ -119,13 +129,15 @@ const TimePicker2 = ({ field, error, type = "hour" }: TimePickerProps) => {
   return (
     <div
       style={{
-        width: "200px",
+        width: "300px",
         height: "300px",
-        backgroundColor: "lightblue",
+        backgroundColor: `${LIGHTGRAY}`,
+        borderRadius: "10px",
         position: "relative",
         overflow: "hidden",
         perspective: "1200px", // 원근법 유지
         userSelect: "none",
+        opacity: 0.8,
       }}
       ref={wrapperRef}
       onMouseDown={handleStart}
@@ -139,6 +151,9 @@ const TimePicker2 = ({ field, error, type = "hour" }: TimePickerProps) => {
         ref={containerRef}
         style={{
           position: "relative",
+          zIndex: 20,
+          display: "flex",
+          justifyContent: "center",
         }}
       >
         {times.map((time, idx) => (
@@ -149,39 +164,39 @@ const TimePicker2 = ({ field, error, type = "hour" }: TimePickerProps) => {
             }}
             style={{
               position: "absolute",
-              width: "100px",
-              height: "40px",
+              width: "280px",
+              height: itemHeight,
               top: "50%",
-              left: "25%",
               transition: "transform 0.2s ease-out, opacity 0.2s ease-out",
               display: "flex",
               justifyContent: "center",
               alignItems: "center",
               backgroundColor: "white",
-              borderRadius: "5px",
+              borderRadius: "10px",
               boxShadow: "0 2px 5px rgba(0,0,0,0.2)",
+              fontSize: 20,
             }}
           >
             {time}
           </div>
         ))}
       </div>
-      <div
+      {/* <div
         style={{
           position: "absolute",
           zIndex: 10,
-          height: "40px",
+          height: itemHeight,
           pointerEvents: "none",
-          top: "50%", // 선택 기준을 조정
+          top: "50%",
           width: "100%",
           borderTop: "2px solid red",
           borderBottom: "2px solid red",
         }}
       >
         <Input {...field} error={error} />
-      </div>
+      </div> */}
     </div>
   );
 };
 
-export default TimePicker2;
+export default TimePicker;

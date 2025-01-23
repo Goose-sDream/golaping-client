@@ -18,6 +18,7 @@ export const Input = ({ label, error, ...props }: InputProps) => (
 const InputWrapper = styled.div`
   display: flex;
   flex-direction: column;
+  justify-content: center;
   margin-bottom: 20px;
   min-height: 140px;
 `;
