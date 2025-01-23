@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { UseFormSetValue } from "react-hook-form";
 import { LIGHTGRAY } from "../../../styles/color";
-import { Vote } from "../../../types/voteTypes";
+import { Vote } from "@/types/voteTypes";
 
 type TimePickerProps = {
   type: string;
@@ -82,7 +82,6 @@ const TimePicker = ({ type, itemHeight = 60, threshold = 5, name, setValue }: Ti
     if (Math.abs(gap) < threshold) {
       targetIdx = Math.floor(-currentOffsetRef.current / itemHeight); // 작은 이동은 가까운 쪽으로 스냅
     }
-    console.log("targetIdx =>", targetIdx);
     setValue(name, Math.max(0, targetIdx));
     const targetOffset = center - targetIdx * itemHeight; // 화면 중앙과 targetIdx 간의 차이
     return targetOffset;
@@ -135,7 +134,7 @@ const TimePicker = ({ type, itemHeight = 60, threshold = 5, name, setValue }: Ti
         borderRadius: "10px",
         position: "relative",
         overflow: "hidden",
-        perspective: "1200px", // 원근법 유지
+        perspective: "1200px",
         userSelect: "none",
         opacity: 0.8,
       }}
@@ -181,20 +180,6 @@ const TimePicker = ({ type, itemHeight = 60, threshold = 5, name, setValue }: Ti
           </div>
         ))}
       </div>
-      {/* <div
-        style={{
-          position: "absolute",
-          zIndex: 10,
-          height: itemHeight,
-          pointerEvents: "none",
-          top: "50%",
-          width: "100%",
-          borderTop: "2px solid red",
-          borderBottom: "2px solid red",
-        }}
-      >
-        <Input {...field} error={error} />
-      </div> */}
     </div>
   );
 };
