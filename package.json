@@ -13,6 +13,7 @@
   "license": "ISC",
   "dependencies": {
     "@tanstack/react-query": "^5.62.15",
+    "axios": "^1.7.9",
     "install": "^0.13.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
@@ -35,6 +36,7 @@
     "babel-loader": "^9.2.1",
     "clean-webpack-plugin": "^4.0.0",
     "copy-webpack-plugin": "^12.0.2",
+    "dotenv": "^16.4.7",
     "eslint": "^9.17.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-import": "^2.31.0",
