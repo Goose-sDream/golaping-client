@@ -42,7 +42,7 @@ const OptionForm = () => {
                   required: "투표시간은 필수 입력 값입니다.",
                   max: {
                     value: 24,
-                    message: `최대 24시간 까지 가능합니다.`,
+                    message: `${idx > 0 ? "최대 59분 까지 가능!" : "최대 24시간 까지 가능!"}`,
                   },
                 }}
                 render={({ field, fieldState: { error } }) => (
