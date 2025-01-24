@@ -16,7 +16,7 @@ instance.interceptors.request.use(
 
 instance.interceptors.response.use(
   async (response: AxiosResponse) => {
-    return response;
+    return response.data;
   },
   async (error) => {
     console.error(error);

@@ -6,6 +6,7 @@ import { v4 as uuid } from "uuid";
 import { BasicForm, LandingForm, OptionForm, ShareVote } from "./steps";
 import { Button, Stepper } from "@/components/common";
 import Request from "@/services/requests";
+import { APIResponse } from "@/types/apiTypes";
 
 export const CreateForm = () => {
   const methods = useForm({
@@ -19,7 +20,7 @@ export const CreateForm = () => {
   const createVote = async (data: FieldValues) => {
     const timeLimit = data.hour * 60 + data.minute;
     const link = `${window.location.origin}${generateLink()}`;
-    const response = await request.post("/api/votes", {
+    const response = await request.post<APIResponse<{ websocketUrl: string; sessionId: string }>>("/api/votes", {
       title: data.title,
       nickname: data.nickname,
       type: data.type,
@@ -28,17 +29,22 @@ export const CreateForm = () => {
       link,
     });
     console.log(response);
-    if (response.data.isSuccess) {
-      setStep(step + 1);
+
+    handleResponse(response, () => setStep(step + 1));
+  };
+
+  const handleResponse = (response: APIResponse, onSuccess: () => void) => {
+    if (response.isSuccess) {
+      onSuccess();
+    } else {
+      console.error("Request failed:", response.message);
     }
   };
 
   const generateLink = () => {
-    if (!randomLink) {
-      const link = `/votes/${uuid()}`;
-      setRandomLink(link);
-      return link;
-    }
+    const link = `/votes/${uuid()}`;
+    setRandomLink(link);
+    return link;
   };
 
   const handleNavigate = () => {
