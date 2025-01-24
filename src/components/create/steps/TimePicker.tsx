@@ -11,7 +11,7 @@ type TimePickerProps = {
   setValue: UseFormSetValue<Vote>;
 };
 
-const TimePicker = ({ type, itemHeight = 60, threshold = 5, name, setValue }: TimePickerProps) => {
+const TimePicker = ({ type, itemHeight = 60, threshold = 10, name, setValue }: TimePickerProps) => {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const timeItemsRef = useRef<(HTMLDivElement | null)[]>([]);
@@ -20,6 +20,7 @@ const TimePicker = ({ type, itemHeight = 60, threshold = 5, name, setValue }: Ti
   const [isClicked, setIsClicked] = useState(false);
   const [startY, setStartY] = useState(0);
   const currentOffsetRef = useRef(0);
+  const movigRef = useRef({ start: 0, end: 0, targetIdx: 0 });
   const animationFrameRef = useRef<number | null>(null);
 
   const getCenter = () => {
@@ -61,6 +62,7 @@ const TimePicker = ({ type, itemHeight = 60, threshold = 5, name, setValue }: Ti
     setIsClicked(true);
     const initialY = "clientY" in e ? e.clientY : e.touches[0].clientY;
     setStartY(initialY);
+    movigRef.current.start = currentOffsetRef.current;
     console.log("시작 =>", currentOffsetRef.current);
   };
 
@@ -75,6 +77,7 @@ const TimePicker = ({ type, itemHeight = 60, threshold = 5, name, setValue }: Ti
 
   const handleEnd = () => {
     console.log("끝 =>", currentOffsetRef.current);
+    movigRef.current.end = currentOffsetRef.current;
     setIsClicked(false);
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
@@ -87,13 +90,14 @@ const TimePicker = ({ type, itemHeight = 60, threshold = 5, name, setValue }: Ti
     // const targetIdx =
     //   currentOffsetRef.current > 0 ? (targetIdxRef.current -= 1) : Math.max(0, (targetIdxRef.current += 1));
     // 2. 여러개 쫙..
-    let targetIdx = Math.round(-currentOffsetRef.current / itemHeight);
+    // let targetIdx = Math.round(-currentOffsetRef.current / itemHeight);
+    movigRef.current.targetIdx += Math.round((movigRef.current.start - movigRef.current.end) / itemHeight);
     const gap = -currentOffsetRef.current % itemHeight; // 현재 위치가 가장 가까운 인덱스에서 떨어진 정도
     if (Math.abs(gap) < threshold) {
-      targetIdx = Math.floor(-currentOffsetRef.current / itemHeight); // 작은 이동은 가까운 쪽으로 스냅
+      movigRef.current.targetIdx = Math.floor(-currentOffsetRef.current / itemHeight); // 작은 이동은 가까운 쪽으로 스냅
     }
-    setValue(name, Math.max(0, targetIdx));
-    const targetOffset = center - targetIdx * itemHeight; // 화면 중앙과 targetIdx 간의 차이
+    setValue(name, Math.max(0, movigRef.current.targetIdx));
+    const targetOffset = center - movigRef.current.targetIdx * itemHeight; // 화면 중앙과 targetIdx 간의 차이
     return targetOffset;
   };
 
