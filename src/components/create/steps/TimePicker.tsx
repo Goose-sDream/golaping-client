@@ -19,11 +19,8 @@ const TimePicker = ({ type, itemHeight = 60, threshold = 5, name, setValue }: Ti
 
   const [isClicked, setIsClicked] = useState(false);
   const [startY, setStartY] = useState(0);
-  const [offset, setOffset] = useState(0);
   const currentOffsetRef = useRef(0);
   const animationFrameRef = useRef<number | null>(null);
-  // const timeOutRef = useRef<NodeJS.Timeout | null>(null);
-  // console.log("offset!!! =>", offset);
 
   const getCenter = () => {
     let centerHeight;
@@ -33,10 +30,9 @@ const TimePicker = ({ type, itemHeight = 60, threshold = 5, name, setValue }: Ti
     }
     return 0;
   };
-  console.log(offset);
 
   const translateSlide = (offset: number) => {
-    if (!containerRef.current) return;
+    if (!containerRef.current || !wrapperRef.current) return;
     const center = getCenter(); // 화면 중간을 기준으로 설정
 
     timeItemsRef.current.forEach((item, index) => {
@@ -62,39 +58,27 @@ const TimePicker = ({ type, itemHeight = 60, threshold = 5, name, setValue }: Ti
   };
 
   const handleStart = (e: React.MouseEvent | React.TouchEvent) => {
-    // if (timeOutRef.current) clearTimeout(timeOutRef.current);
-
     setIsClicked(true);
     const initialY = "clientY" in e ? e.clientY : e.touches[0].clientY;
     setStartY(initialY);
-
-    // 클릭 시작 시 타임아웃 호출
-    // handleTimeOut();
+    console.log("시작 =>", currentOffsetRef.current);
   };
 
   const handleMove = (e: React.MouseEvent | React.TouchEvent) => {
     if (!isClicked) return;
-    const center = getCenter();
     const currentY = "clientY" in e ? e.clientY : e.touches[0].clientY;
     const deltaY = currentY - startY;
-    currentOffsetRef.current += Math.min(20, deltaY);
+    currentOffsetRef.current += deltaY;
     handleAnimation(currentOffsetRef.current);
-
-    // handleTimeOut();
-    const targetOffset = handleTargetIdx(center);
-    setOffset(targetOffset);
     setStartY(currentY);
   };
 
   const handleEnd = () => {
+    console.log("끝 =>", currentOffsetRef.current);
     setIsClicked(false);
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
     }
-    // if (timeOutRef.current) {
-    //   clearTimeout(timeOutRef.current); // 타이머 해제
-    //   timeOutRef.current = null;
-    // }
   };
 
   const handleTargetIdx = (center: number) => {
@@ -103,21 +87,18 @@ const TimePicker = ({ type, itemHeight = 60, threshold = 5, name, setValue }: Ti
     // const targetIdx =
     //   currentOffsetRef.current > 0 ? (targetIdxRef.current -= 1) : Math.max(0, (targetIdxRef.current += 1));
     // 2. 여러개 쫙..
-    console.log("오리지널 currentOffsetRef =>", currentOffsetRef.current);
-    // console.log("isClicked =>", isClicked);
-    let targetIdx = Math.max(0, Math.round(-currentOffsetRef.current / itemHeight));
-    console.log("targetIdx =>", targetIdx);
+    let targetIdx = Math.round(-currentOffsetRef.current / itemHeight);
     const gap = -currentOffsetRef.current % itemHeight; // 현재 위치가 가장 가까운 인덱스에서 떨어진 정도
     if (Math.abs(gap) < threshold) {
       targetIdx = Math.floor(-currentOffsetRef.current / itemHeight); // 작은 이동은 가까운 쪽으로 스냅
     }
-    setValue(name, targetIdx);
+    setValue(name, Math.max(0, targetIdx));
     const targetOffset = center - targetIdx * itemHeight; // 화면 중앙과 targetIdx 간의 차이
     return targetOffset;
   };
 
-  //안전장치
   const handleSafeDistance = (center: number, targetOffset: number) => {
+    //안전장치
     const maxOffset = center;
     const minOffset = -((times.length - 1) * itemHeight - center);
     currentOffsetRef.current = Math.min(maxOffset, Math.max(minOffset, targetOffset));
@@ -129,44 +110,20 @@ const TimePicker = ({ type, itemHeight = 60, threshold = 5, name, setValue }: Ti
     handleAnimation(currentOffsetRef.current);
   };
 
-  // const handleTimeOut = () => {
-  //   if (timeOutRef.current) clearTimeout(timeOutRef.current);
-  //   timeOutRef.current = setTimeout(() => {
-  //     console.log("타임아웃 실행");
-  //     // setIsClicked(false);
-  //     const center = getCenter();
-  //     handleSnapToClosestIdx(center);
-  //     timeOutRef.current = null; // 타이머 참조 초기화
-  //   }, 500); // 1초 후 스냅
-  // };
-
   useEffect(() => {
-    const center = getCenter();
     if (!isClicked) {
-      // 초기 슬라이드 위치
-      if (currentOffsetRef.current === 0) {
-        currentOffsetRef.current = center;
-        handleAnimation(currentOffsetRef.current);
-        return;
+      if (timeItemsRef.current.every((time) => time !== null) && wrapperRef && wrapperRef.current) {
+        const centerHeight = wrapperRef.current?.offsetHeight / 2; // 중앙 높이
+        // 초기 슬라이드 위치
+        if (currentOffsetRef.current === 0) {
+          currentOffsetRef.current = centerHeight;
+          handleAnimation(currentOffsetRef.current);
+          return;
+        }
+        handleSnapToClosestIdx(centerHeight);
       }
-      handleSnapToClosestIdx(center);
     }
-    // else {
-    // handleSafeDistance(center, offset);
-    // handleAnimation(currentOffsetRef.current);
-    // handleSnapToClosestIdx(center)
-    // }
   }, [isClicked]);
-
-  useEffect(() => {
-    if (timeItemsRef && timeItemsRef.current.every((item) => item !== null) && wrapperRef && wrapperRef.current) {
-      // timeItemsRef.current.forEach((item, idx) => {
-      //   console.log(`${idx}번째의 ${item.getBoundingClientRect().top}`);
-      // });
-      console.log("0번째 =>", timeItemsRef.current[0].getBoundingClientRect().top);
-      console.log("wrapper =>", wrapperRef.current.getBoundingClientRect().top);
-    }
-  }, [currentOffsetRef.current]);
 
   useEffect(() => {
     const handleMouseLeave = () => {
