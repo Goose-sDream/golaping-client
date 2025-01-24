@@ -1,0 +1,4 @@
+const ITEMHEIGHT = 60;
+const THRESHOLD = 30;
+
+export { ITEMHEIGHT, THRESHOLD };

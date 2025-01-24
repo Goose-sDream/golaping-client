@@ -1,17 +1,18 @@
 import React, { useEffect, useRef, useState } from "react";
 import { UseFormSetValue } from "react-hook-form";
-import { LIGHTGRAY } from "../../../styles/color";
+import { ITEMHEIGHT, THRESHOLD } from "@/constants/create";
+import { LIGHTGRAY } from "@/styles/color";
 import { Vote } from "@/types/voteTypes";
 
 type TimePickerProps = {
   type: string;
   threshold?: number;
-  itemHeight?: number;
+  ITEMHEIGHT?: number;
   name: keyof Vote;
   setValue: UseFormSetValue<Vote>;
 };
 
-const TimePicker = ({ type, itemHeight = 60, threshold = 10, name, setValue }: TimePickerProps) => {
+const TimePicker = ({ type, name, setValue }: TimePickerProps) => {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const timeItemsRef = useRef<(HTMLDivElement | null)[]>([]);
@@ -38,7 +39,7 @@ const TimePicker = ({ type, itemHeight = 60, threshold = 10, name, setValue }: T
 
     timeItemsRef.current.forEach((item, index) => {
       if (!item) return;
-      const baseY = offset + index * itemHeight; // 각 요소의 Y 위치
+      const baseY = offset + index * ITEMHEIGHT; // 각 요소의 Y 위치
       const distanceFromCenter = Math.abs(baseY - center); // 중심과의 거리
       const scale = Math.max(1 - distanceFromCenter / 200, 0.6); // 중심에서 멀어질수록 축소
       const opacity = Math.max(1 - distanceFromCenter / 300, 0); // 중심에서 멀어질수록 투명도 감소
@@ -63,7 +64,6 @@ const TimePicker = ({ type, itemHeight = 60, threshold = 10, name, setValue }: T
     const initialY = "clientY" in e ? e.clientY : e.touches[0].clientY;
     setStartY(initialY);
     movigRef.current.start = currentOffsetRef.current;
-    console.log("시작 =>", currentOffsetRef.current);
   };
 
   const handleMove = (e: React.MouseEvent | React.TouchEvent) => {
@@ -76,7 +76,6 @@ const TimePicker = ({ type, itemHeight = 60, threshold = 10, name, setValue }: T
   };
 
   const handleEnd = () => {
-    console.log("끝 =>", currentOffsetRef.current);
     movigRef.current.end = currentOffsetRef.current;
     setIsClicked(false);
     if (animationFrameRef.current) {
@@ -85,26 +84,19 @@ const TimePicker = ({ type, itemHeight = 60, threshold = 10, name, setValue }: T
   };
 
   const handleTargetIdx = (center: number) => {
-    // 현재 offset 기준으로 목표 index 계산
-    // 1. 1개씩 슬라이드 하는 법
-    // const targetIdx =
-    //   currentOffsetRef.current > 0 ? (targetIdxRef.current -= 1) : Math.max(0, (targetIdxRef.current += 1));
-    // 2. 여러개 쫙..
-    // let targetIdx = Math.round(-currentOffsetRef.current / itemHeight);
-    movigRef.current.targetIdx += Math.round((movigRef.current.start - movigRef.current.end) / itemHeight);
-    const gap = -currentOffsetRef.current % itemHeight; // 현재 위치가 가장 가까운 인덱스에서 떨어진 정도
-    if (Math.abs(gap) < threshold) {
-      movigRef.current.targetIdx = Math.floor(-currentOffsetRef.current / itemHeight); // 작은 이동은 가까운 쪽으로 스냅
+    const movedDistance = movigRef.current.start - movigRef.current.end;
+    if (Math.abs(movedDistance) > THRESHOLD) {
+      movigRef.current.targetIdx += Math.round((movigRef.current.start - movigRef.current.end) / ITEMHEIGHT);
     }
     setValue(name, Math.max(0, movigRef.current.targetIdx));
-    const targetOffset = center - movigRef.current.targetIdx * itemHeight; // 화면 중앙과 targetIdx 간의 차이
+    const targetOffset = center - movigRef.current.targetIdx * ITEMHEIGHT; // 화면 중앙과 targetIdx 간의 차이
     return targetOffset;
   };
 
   const handleSafeDistance = (center: number, targetOffset: number) => {
     //안전장치
     const maxOffset = center;
-    const minOffset = -((times.length - 1) * itemHeight - center);
+    const minOffset = -((times.length - 1) * ITEMHEIGHT - center);
     currentOffsetRef.current = Math.min(maxOffset, Math.max(minOffset, targetOffset));
   };
 
@@ -182,7 +174,7 @@ const TimePicker = ({ type, itemHeight = 60, threshold = 10, name, setValue }: T
             style={{
               position: "absolute",
               width: "280px",
-              height: itemHeight,
+              height: ITEMHEIGHT,
               top: "50%",
               transition: "transform 0.2s ease-out, opacity 0.2s ease-out",
               display: "flex",
