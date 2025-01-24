@@ -91,7 +91,7 @@ const OptionForm = () => {
         </div>
 
         <Controller
-          name="voteNums"
+          name="userVoteLimit"
           control={control}
           defaultValue={1}
           rules={{ required: false, min: 1, max: 5 }}
