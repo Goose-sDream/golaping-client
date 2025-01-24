@@ -6,8 +6,6 @@ import { Vote } from "@/types/voteTypes";
 
 type TimePickerProps = {
   type: string;
-  threshold?: number;
-  ITEMHEIGHT?: number;
   name: keyof Vote;
   setValue: UseFormSetValue<Vote>;
 };
