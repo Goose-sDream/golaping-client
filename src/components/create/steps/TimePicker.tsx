@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { UseFormSetValue } from "react-hook-form";
-import { LIGHTGRAY } from "../../../styles/color";
+import { LIGHTGRAY } from "@/styles/color";
 import { Vote } from "@/types/voteTypes";
 
 type TimePickerProps = {
@@ -82,11 +82,6 @@ const TimePicker = ({ type, itemHeight = 60, threshold = 5, name, setValue }: Ti
   };
 
   const handleTargetIdx = (center: number) => {
-    // 현재 offset 기준으로 목표 index 계산
-    // 1. 1개씩 슬라이드 하는 법
-    // const targetIdx =
-    //   currentOffsetRef.current > 0 ? (targetIdxRef.current -= 1) : Math.max(0, (targetIdxRef.current += 1));
-    // 2. 여러개 쫙..
     let targetIdx = Math.round(-currentOffsetRef.current / itemHeight);
     const gap = -currentOffsetRef.current % itemHeight; // 현재 위치가 가장 가까운 인덱스에서 떨어진 정도
     if (Math.abs(gap) < threshold) {
