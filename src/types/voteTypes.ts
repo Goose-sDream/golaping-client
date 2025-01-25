@@ -7,3 +7,13 @@ export interface Vote {
   userVoteLimit: number;
   link: string;
 }
+
+export type ModalState = {
+  elementId: string;
+  isOpen: boolean;
+  type: string;
+  title: "";
+  content: "";
+  onFunc: undefined;
+  offFunc: undefined;
+};
