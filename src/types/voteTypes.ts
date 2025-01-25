@@ -1,19 +1,9 @@
 export interface Vote {
   title: string;
   nickname: string;
-  type: "MAJORITY" | "RANDOM";
+  options: "majority" | "random" | "lottery";
   hour: number;
   minute: number;
-  userVoteLimit: number;
-  link: string;
+  voteNums: number;
+  // 시간, 횟수
 }
-
-export type ModalState = {
-  elementId: string;
-  isOpen: boolean;
-  type: string;
-  title: "";
-  content: "";
-  onFunc?: (() => void) | undefined; // 모달이 열리기 전에 선행될 함수
-  offFunc?: (() => void) | undefined; // 모달 닫을 때 선행될 함수
-};
