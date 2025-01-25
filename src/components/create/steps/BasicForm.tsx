@@ -27,16 +27,16 @@ const BasicForm = () => {
         render={({ field, fieldState: { error } }) => <Input label="닉네임" {...field} error={error?.message} />}
       />
       <Controller
-        name="options"
+        name="type"
         control={control}
-        defaultValue="majority"
+        defaultValue="MAJORITY"
         rules={{ required: "투표 옵션 선택이 필요합니다" }}
         render={({ field, fieldState: { error } }) => (
           <Dropdown
             label="투표 유형"
             options={[
-              { value: "majority", label: "다수결" },
-              { value: "random", label: "랜덤" },
+              { value: "MAJORITY", label: "다수결" },
+              { value: "RANDOM", label: "랜덤" },
             ]}
             value={field.value}
             onChange={field.onChange}
