@@ -2,7 +2,7 @@ import { CreateForm } from "@/components/create/CreateForm";
 
 const CreatePage = () => {
   return (
-    <div style={{ height: "100vh", overflow: "hidden" }}>
+    <div>
       <CreateForm />
     </div>
   );

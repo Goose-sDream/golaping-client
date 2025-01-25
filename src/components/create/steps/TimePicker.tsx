@@ -1,17 +1,17 @@
 import React, { useEffect, useRef, useState } from "react";
 import { UseFormSetValue } from "react-hook-form";
-import { ZINDEX } from "@/constants/common";
-import { ITEMHEIGHT, THRESHOLD } from "@/constants/create";
-import { LIGHTGRAY } from "@/styles/color";
-import { Vote } from "@/types/voteTypes";
+import { LIGHTGRAY } from "../../../styles/color";
+import { Vote } from "../../../types/voteTypes";
 
 type TimePickerProps = {
   type: string;
+  threshold?: number;
+  itemHeight?: number;
   name: keyof Vote;
   setValue: UseFormSetValue<Vote>;
 };
 
-const TimePicker = ({ type, name, setValue }: TimePickerProps) => {
+const TimePicker = ({ type, itemHeight = 60, threshold = 5, name, setValue }: TimePickerProps) => {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const timeItemsRef = useRef<(HTMLDivElement | null)[]>([]);
@@ -20,25 +20,16 @@ const TimePicker = ({ type, name, setValue }: TimePickerProps) => {
   const [isClicked, setIsClicked] = useState(false);
   const [startY, setStartY] = useState(0);
   const currentOffsetRef = useRef(0);
-  const movigRef = useRef({ start: 0, end: 0, targetIdx: 0 });
   const animationFrameRef = useRef<number | null>(null);
-
-  const getCenter = () => {
-    let centerHeight;
-    if (timeItemsRef.current.every((time) => time !== null) && wrapperRef && wrapperRef.current) {
-      centerHeight = wrapperRef.current?.offsetHeight / 2; // 중앙 높이
-      return centerHeight;
-    }
-    return 0;
-  };
 
   const translateSlide = (offset: number) => {
     if (!containerRef.current || !wrapperRef.current) return;
-    const center = getCenter(); // 화면 중간을 기준으로 설정
+    const wrapperHeight = wrapperRef.current.offsetHeight;
+    const center = wrapperHeight / 2; // 화면 중간을 기준으로 설정
 
     timeItemsRef.current.forEach((item, index) => {
       if (!item) return;
-      const baseY = offset + index * ITEMHEIGHT; // 각 요소의 Y 위치
+      const baseY = offset + index * itemHeight; // 각 요소의 Y 위치
       const distanceFromCenter = Math.abs(baseY - center); // 중심과의 거리
       const scale = Math.max(1 - distanceFromCenter / 200, 0.6); // 중심에서 멀어질수록 축소
       const opacity = Math.max(1 - distanceFromCenter / 300, 0); // 중심에서 멀어질수록 투명도 감소
@@ -62,7 +53,6 @@ const TimePicker = ({ type, name, setValue }: TimePickerProps) => {
     setIsClicked(true);
     const initialY = "clientY" in e ? e.clientY : e.touches[0].clientY;
     setStartY(initialY);
-    movigRef.current.start = currentOffsetRef.current;
   };
 
   const handleMove = (e: React.MouseEvent | React.TouchEvent) => {
@@ -75,7 +65,6 @@ const TimePicker = ({ type, name, setValue }: TimePickerProps) => {
   };
 
   const handleEnd = () => {
-    movigRef.current.end = currentOffsetRef.current;
     setIsClicked(false);
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
@@ -83,26 +72,27 @@ const TimePicker = ({ type, name, setValue }: TimePickerProps) => {
   };
 
   const handleTargetIdx = (center: number) => {
-    const movedDistance = movigRef.current.start - movigRef.current.end;
-    if (Math.abs(movedDistance) > THRESHOLD) {
-      movigRef.current.targetIdx += Math.round((movigRef.current.start - movigRef.current.end) / ITEMHEIGHT);
+    // 현재 offset 기준으로 목표 index 계산
+    // 1. 1개씩 슬라이드 하는 법
+    // const targetIdx =
+    //   currentOffsetRef.current > 0 ? (targetIdxRef.current -= 1) : Math.max(0, (targetIdxRef.current += 1));
+    // 2. 여러개 쫙..
+    let targetIdx = Math.round(-currentOffsetRef.current / itemHeight);
+    const gap = -currentOffsetRef.current % itemHeight; // 현재 위치가 가장 가까운 인덱스에서 떨어진 정도
+    if (Math.abs(gap) < threshold) {
+      targetIdx = Math.floor(-currentOffsetRef.current / itemHeight); // 작은 이동은 가까운 쪽으로 스냅
     }
-    setValue(name, Math.max(0, movigRef.current.targetIdx));
-    const targetOffset = center - movigRef.current.targetIdx * ITEMHEIGHT; // 화면 중앙과 targetIdx 간의 차이
+    console.log("targetIdx =>", targetIdx);
+    setValue(name, Math.max(0, targetIdx));
+    const targetOffset = center - targetIdx * itemHeight; // 화면 중앙과 targetIdx 간의 차이
     return targetOffset;
   };
 
   const handleSafeDistance = (center: number, targetOffset: number) => {
     //안전장치
     const maxOffset = center;
-    const minOffset = -((times.length - 1) * ITEMHEIGHT - center);
+    const minOffset = -((times.length - 1) * itemHeight - center);
     currentOffsetRef.current = Math.min(maxOffset, Math.max(minOffset, targetOffset));
-  };
-
-  const handleSnapToClosestIdx = (center: number) => {
-    const targetOffset = handleTargetIdx(center);
-    handleSafeDistance(center, targetOffset);
-    handleAnimation(currentOffsetRef.current);
   };
 
   useEffect(() => {
@@ -115,8 +105,10 @@ const TimePicker = ({ type, name, setValue }: TimePickerProps) => {
           handleAnimation(currentOffsetRef.current);
           return;
         }
-        handleSnapToClosestIdx(centerHeight);
+        const targetOffset = handleTargetIdx(centerHeight);
+        handleSafeDistance(centerHeight, targetOffset);
       }
+      handleAnimation(currentOffsetRef.current);
     }
   }, [isClicked]);
 
@@ -143,7 +135,7 @@ const TimePicker = ({ type, name, setValue }: TimePickerProps) => {
         borderRadius: "10px",
         position: "relative",
         overflow: "hidden",
-        perspective: "1200px",
+        perspective: "1200px", // 원근법 유지
         userSelect: "none",
         opacity: 0.8,
       }}
@@ -159,7 +151,7 @@ const TimePicker = ({ type, name, setValue }: TimePickerProps) => {
         ref={containerRef}
         style={{
           position: "relative",
-          zIndex: `${ZINDEX.timePicker}`,
+          zIndex: 20,
           display: "flex",
           justifyContent: "center",
         }}
@@ -173,7 +165,7 @@ const TimePicker = ({ type, name, setValue }: TimePickerProps) => {
             style={{
               position: "absolute",
               width: "280px",
-              height: ITEMHEIGHT,
+              height: itemHeight,
               top: "50%",
               transition: "transform 0.2s ease-out, opacity 0.2s ease-out",
               display: "flex",
@@ -189,6 +181,20 @@ const TimePicker = ({ type, name, setValue }: TimePickerProps) => {
           </div>
         ))}
       </div>
+      {/* <div
+        style={{
+          position: "absolute",
+          zIndex: 10,
+          height: itemHeight,
+          pointerEvents: "none",
+          top: "50%",
+          width: "100%",
+          borderTop: "2px solid red",
+          borderBottom: "2px solid red",
+        }}
+      >
+        <Input {...field} error={error} />
+      </div> */}
     </div>
   );
 };
