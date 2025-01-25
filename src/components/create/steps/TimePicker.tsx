@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { UseFormSetValue } from "react-hook-form";
+import { ZINDEX } from "@/constants/common";
 import { ITEMHEIGHT, THRESHOLD } from "@/constants/create";
 import { LIGHTGRAY } from "@/styles/color";
 import { Vote } from "@/types/voteTypes";
@@ -158,7 +159,7 @@ const TimePicker = ({ type, name, setValue }: TimePickerProps) => {
         ref={containerRef}
         style={{
           position: "relative",
-          zIndex: 20,
+          zIndex: `${ZINDEX.timePicker}`,
           display: "flex",
           justifyContent: "center",
         }}

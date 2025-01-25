@@ -31,7 +31,7 @@ const OptionForm = () => {
       <div style={{ display: "flex", flexDirection: "column" }}>
         <h2>타이머</h2>
         <div style={{ display: "flex", justifyContent: "space-around" }}>
-          {timeOpen.map((timeSet, idx) => (
+          {timeOpen.map((_, idx) => (
             <Controller
               key={idx}
               name={idx > 0 ? "minute" : "hour"}

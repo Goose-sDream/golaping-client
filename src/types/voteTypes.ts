@@ -14,6 +14,6 @@ export type ModalState = {
   type: string;
   title: "";
   content: "";
-  onFunc: undefined;
-  offFunc: undefined;
+  onFunc?: (() => void) | undefined; // 모달이 열리기 전에 선행될 함수
+  offFunc?: (() => void) | undefined; // 모달 닫을 때 선행될 함수
 };

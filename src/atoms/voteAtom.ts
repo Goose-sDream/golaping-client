@@ -1,7 +1,7 @@
 import { atom } from "recoil";
 import { ModalState } from "@/types/voteTypes";
 
-export const modalAtom = atom<ModalState>({
+export const modalState = atom<ModalState>({
   key: "modalState",
   default: {
     elementId: "root",
