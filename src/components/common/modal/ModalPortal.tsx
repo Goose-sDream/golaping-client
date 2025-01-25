@@ -7,7 +7,7 @@ const ModalPortal = ({ children }: PropsWithChildren) => {
   const [{ elementId }] = useRecoilState(modalState);
   const element = document.getElementById(elementId);
 
-  return element ? createPortal(children, element) : <div>ModalPortal</div>;
+  return element ? createPortal(children, element) : null;
 };
 
 export default ModalPortal;
