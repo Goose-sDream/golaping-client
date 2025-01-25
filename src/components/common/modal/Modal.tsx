@@ -18,7 +18,7 @@ const Modal = () => {
     requestAnimationFrame(() => {
       if (!modalRef.current) return;
       if (isOpen) {
-        modalRef.current.style.transform = "translate(-50%, -40%)";
+        modalRef.current.style.transform = "translate(-50%, -45%)";
         modalRef.current.style.opacity = "1";
         modalRef.current.style.transition = "transform 0.3s ease-in-out";
       }
