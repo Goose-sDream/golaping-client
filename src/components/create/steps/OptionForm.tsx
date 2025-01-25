@@ -10,7 +10,7 @@ const OptionForm = () => {
   const { control, setValue } = useFormContext<Vote>();
   const [timeOpen, setTimeOpen] = useState(Array(2).fill(false));
   const timeRef = useRef<(HTMLDivElement | null)[]>([]);
-  const voteNums = Array.from({ length: 5 }, (_, i) => i + 1);
+  const userVoteLimit = Array.from({ length: 5 }, (_, i) => i + 1);
 
   useEffect(() => {
     if (timeRef && timeRef.current) {
@@ -90,15 +90,15 @@ const OptionForm = () => {
       </div>
 
       <Controller
-        name="voteNums"
+        name="userVoteLimit"
         control={control}
         defaultValue={1}
         rules={{ required: false, min: 1, max: 5 }}
         render={({ field, fieldState: { error } }) => (
           <Select
             label="투표가능 횟수"
-            id="voteNums"
-            options={voteNums.map((num) => ({ value: num, label: `${num}` }))}
+            id="userVoteLimit"
+            options={userVoteLimit.map((num) => ({ value: num, label: `${num}` }))}
             {...field}
             error={error?.message}
           />

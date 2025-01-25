@@ -1,9 +1,9 @@
 export interface Vote {
   title: string;
   nickname: string;
-  options: "majority" | "random" | "lottery";
+  type: "MAJORITY" | "RANDOM";
   hour: number;
   minute: number;
-  voteNums: number;
-  // 시간, 횟수
+  userVoteLimit: number;
+  link: string;
 }
