@@ -27,7 +27,7 @@ const OptionForm = () => {
   }, []);
 
   return (
-    <div style={{ height: "500px", margin: "100px 20px 0 20px" }}>
+    <div>
       <VoteDiv>
         <div style={{ display: "flex", flexDirection: "column" }}>
           <h2>타이머</h2>
