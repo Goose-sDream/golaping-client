@@ -34,11 +34,11 @@ const Modal = () => {
     requestModalAnimation();
   }, [isOpen]);
 
-  if (!isOpen) return;
+  if (!isOpen) return null;
   return (
     <>
       <ModalPortal>
-        <ModalBackground />
+        <ModalBackground closeModal={closeModal} />
         <div
           ref={modalRef}
           aria-modal="true"
@@ -50,21 +50,22 @@ const Modal = () => {
             height: "300px",
             top: "50%",
             left: "50%",
-            transform: "translate(50%, -50%)",
+            transform: "translate(-50%, -50%)",
             display: "flex",
             flexDirection: "column",
             gap: "10px",
             backgroundColor: `${LIGHTGRAY}`,
-            opacity: 0,
+            opacity: "0",
             padding: "10px",
             overflow: "hidden",
             zIndex: `${ZINDEX.modal}`,
+            borderRadius: "5%",
           }}
         >
           {type === "alert" && (
             <button
               style={{
-                marginRight: "auto",
+                marginLeft: "auto",
                 width: "10px",
                 height: "10px",
                 borderRadius: "100%",
@@ -79,7 +80,7 @@ const Modal = () => {
             </button>
           )}
           <div id="modal-title" style={{ width: "100%", height: "50px" }}>
-            모달 제목{title}
+            <h1>모달 제목{title}</h1>
           </div>
           <div id="modal-content" style={{ width: "100%", height: "300px" }}>
             모달 컨텐츠{content}

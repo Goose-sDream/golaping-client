@@ -4,7 +4,7 @@ import { ModalState } from "@/types/voteTypes";
 export const modalState = atom<ModalState>({
   key: "modalState",
   default: {
-    elementId: "root",
+    elementId: "modal",
     isOpen: false,
     type: "alert",
     title: "",

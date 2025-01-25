@@ -1,6 +1,7 @@
 import React from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { RecoilRoot } from "recoil";
+import Modal from "./components/common/modal/Modal";
 import CreatePage from "./pages/CreatePage";
 import VotePage from "./pages/VotePage";
 import GlobalStyle from "./styles/GlobalStyle";
@@ -8,8 +9,9 @@ import GlobalStyle from "./styles/GlobalStyle";
 const App: React.FC = () => {
   return (
     <RecoilRoot>
+      <div id="modal"></div>
+      <Modal />
       <GlobalStyle />
-      <div id="root"></div>
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<CreatePage />}></Route>

@@ -1,16 +1,12 @@
 import { useEffect, useRef } from "react";
-import { useRecoilState } from "recoil";
-import { modalState } from "@/atoms/voteAtom";
 import { ZINDEX } from "@/constants/common";
 
-const ModalBackground = () => {
-  const [{ offFunc }, setModalState] = useRecoilState(modalState);
-  const backgroundRef = useRef<HTMLDivElement | null>(null);
+type ModalBackground = {
+  closeModal: () => void;
+};
 
-  const closeModal = () => {
-    if (offFunc) offFunc();
-    setModalState((prev) => ({ ...prev, isOpen: false }));
-  };
+const ModalBackground = ({ closeModal }: ModalBackground) => {
+  const backgroundRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!backgroundRef.current) return;
