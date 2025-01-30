@@ -59,6 +59,7 @@ export default [
       "no-unused-vars": "warn",
       "no-console": "off",
       "react/react-in-jsx-scope": "off",
+      "@typescript-eslint/no-explicit-any": "off",
       "import/order": [
         // import 순서 정렬 규칙 추가
         "warn",
