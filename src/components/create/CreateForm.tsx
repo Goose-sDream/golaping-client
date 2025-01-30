@@ -5,6 +5,8 @@ import styled from "styled-components";
 import { v4 as uuid } from "uuid";
 import { BasicForm, LandingForm, OptionForm, ShareVote } from "./steps";
 import { Button, Stepper } from "@/components/common";
+import useSessionId from "@/hooks/useSessionId";
+import useWebsocketUrl from "@/hooks/useWebsocketUrl";
 import Request from "@/services/requests";
 import { APIResponse } from "@/types/apiTypes";
 
@@ -16,6 +18,8 @@ export const CreateForm = () => {
   const [step, setStep] = useState<number>(1);
   const [randomLink, setRandomLink] = useState<string>("");
   const request = Request();
+  const { updateSessionId } = useSessionId();
+  const { setWebsocketUrl } = useWebsocketUrl();
 
   const createVote = async (data: FieldValues) => {
     const timeLimit = data.hour * 60 + data.minute;
@@ -30,14 +34,13 @@ export const CreateForm = () => {
     });
     console.log(response);
 
-    handleResponse(response, () => setStep(step + 1));
-  };
-
-  const handleResponse = (response: APIResponse, onSuccess: () => void) => {
     if (response.isSuccess) {
-      onSuccess();
+      const { sessionId, websocketUrl } = response.result;
+      updateSessionId(sessionId);
+      setWebsocketUrl(websocketUrl);
+      setStep(step + 1);
     } else {
-      console.error("Request failed:", response.message);
+      console.error("Vote creation failed:", response.message);
     }
   };
 
