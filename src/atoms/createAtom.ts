@@ -5,7 +5,7 @@ export const sessionIdState = atom<string | null>({
   default: null,
 });
 
-export const websocketUrlAtom = atom<string | null>({
-  key: "websocketUrlAtom",
+export const websocketUrlState = atom<string | null>({
+  key: "websocketUrlState",
   default: null,
 });

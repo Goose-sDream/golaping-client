@@ -1,21 +1,17 @@
 import { useRecoilState } from "recoil";
+import useCookies from "./useCookies";
 import { sessionIdState } from "@/atoms/createAtom";
-import { saveSessionIdToCookie, getSessionIdFromCookie } from "@/utils/cookieUtils";
 
 const useSessionId = () => {
   const [sessionId, setSessionId] = useRecoilState(sessionIdState);
+  const { setCookie } = useCookies();
 
   const updateSessionId = (newSessionId: string) => {
     setSessionId(newSessionId);
-    saveSessionIdToCookie(newSessionId);
+    setCookie("SESSION_ID", newSessionId);
   };
 
-  const loadSessionIdFromCookie = () => {
-    const savedSessionId = getSessionIdFromCookie();
-    if (savedSessionId) setSessionId(savedSessionId);
-  };
-
-  return { sessionId, updateSessionId, loadSessionIdFromCookie };
+  return { sessionId, updateSessionId };
 };
 
 export default useSessionId;

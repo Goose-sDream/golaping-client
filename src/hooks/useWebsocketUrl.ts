@@ -1,8 +1,8 @@
 import { useRecoilState } from "recoil";
-import { websocketUrlAtom } from "@/atoms/createAtom";
+import { websocketUrlState } from "@/atoms/createAtom";
 
 const useWebsocketUrl = () => {
-  const [websocketUrl, setWebsocketUrl] = useRecoilState(websocketUrlAtom);
+  const [websocketUrl, setWebsocketUrl] = useRecoilState(websocketUrlState);
 
   return {
     websocketUrl,
