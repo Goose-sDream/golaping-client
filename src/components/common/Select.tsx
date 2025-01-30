@@ -6,13 +6,14 @@ interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   options: { value: string | number; label: string }[];
   error?: string;
   id?: string;
+  disabled?: boolean;
 }
 
-const Select = ({ label, options, error, ...props }: SelectProps) => {
+const Select = ({ label, options, error, disabled, ...props }: SelectProps) => {
   return (
     <Wrapper>
       {label && <Label htmlFor={props.id}>{label}</Label>}
-      <StyledSelect id={props.id} {...props}>
+      <StyledSelect id={props.id} {...props} disabled={disabled}>
         {options.map((option) => (
           <option key={option.value} value={option.value}>
             {option.label}
