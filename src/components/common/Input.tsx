@@ -1,10 +1,12 @@
 import { InputHTMLAttributes } from "react";
 import styled from "styled-components";
 import { LIGHTGRAY } from "@/styles/color";
+import { InputStyleProps } from "@/types/voteTypes";
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   error?: string;
+  styleProps?: InputStyleProps;
 }
 
 const Input = ({ label, error, ...props }: InputProps) => (
@@ -30,7 +32,7 @@ const Label = styled.label`
   color: black;
 `;
 
-const StyledInput = styled.input<{ error?: string; disabled?: boolean }>`
+const StyledInput = styled.input<InputProps>`
   padding: 18px;
   font-size: 20px;
   border: ${({ error }) => (error ? "1px solid red" : `1px solid ${LIGHTGRAY}`)};
@@ -38,7 +40,8 @@ const StyledInput = styled.input<{ error?: string; disabled?: boolean }>`
   transition: border-color 0.2s;
   background-color: ${LIGHTGRAY};
   opacity: ${({ disabled }) => (disabled ? 0.5 : 1)};
-  min-width: 300px;
+  text-align: ${({ styleProps }) => styleProps?.textAlign || "center"};
+  width: ${({ styleProps }) => styleProps?.width || "300px"};
 
   &:focus {
     outline: none;

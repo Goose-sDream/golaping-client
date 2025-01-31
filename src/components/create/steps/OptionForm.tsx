@@ -33,11 +33,16 @@ const OptionForm = () => {
     setLimited(e.target.value);
   };
 
+  const inputStyleProps = {
+    width: "60px",
+    textAlign: "right",
+  };
+
   return (
     <VoteDiv>
-      <div style={{ display: "flex", flexDirection: "column", height: "50%" }}>
+      <div style={{ display: "flex", flexDirection: "column" }}>
         <Label>타이머</Label>
-        <div style={{ display: "flex", justifyContent: "space-around" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", width: "100%" }}>
           {timeOpen.map((_, idx) => (
             <Controller
               key={idx}
@@ -74,6 +79,7 @@ const OptionForm = () => {
                       error={error?.message}
                       value={field.value || ""}
                       autoComplete="off"
+                      styleProps={inputStyleProps}
                     />
                     <h3>{idx > 0 ? "분" : "시간"}</h3>
                     {timeOpen[idx] && (
@@ -98,7 +104,7 @@ const OptionForm = () => {
 
       <LimitWrapper>
         <Label>인당 투표 횟수</Label>
-        <div style={{ display: "flex", width: "100%", justifyContent: "space-around" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", width: "70%", alignItems: "center" }}>
           {limitList.map((limit, idx) => (
             <Radio
               key={idx}
@@ -109,7 +115,6 @@ const OptionForm = () => {
             />
           ))}
         </div>
-
         <Controller
           name="userVoteLimit"
           control={control}
@@ -117,7 +122,6 @@ const OptionForm = () => {
           rules={{ required: false, min: 1, max: 5 }}
           render={({ field, fieldState: { error } }) => (
             <Select
-              label=""
               id="userVoteLimit"
               options={userVoteLimit.map((num) => ({ value: num, label: `${num}` }))}
               {...field}
@@ -134,7 +138,6 @@ const OptionForm = () => {
 export default OptionForm;
 
 const VoteDiv = styled.div`
-  width: 100%;
   position: relative;
   display: flex;
   flex-direction: column;
@@ -143,6 +146,8 @@ const VoteDiv = styled.div`
 const LimitWrapper = styled.div`
   display: flex;
   flex-direction: column;
+  width: 100%;
+  gap: 10px;
 `;
 
 const Label = styled.label`
