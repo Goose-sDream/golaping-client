@@ -6,34 +6,36 @@ import { InputStyleProps } from "@/types/voteTypes";
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   error?: string;
+  name?: string;
   styleProps?: InputStyleProps;
 }
 
-const Input = ({ label, error, ...props }: InputProps) => (
-  <InputWrapper>
-    <Label>{label}</Label>
+const Input = ({ label, error, name, ...props }: InputProps) => (
+  <InputWrapper name={name}>
+    <Label {...props}>{label}</Label>
     <StyledInput {...props} error={error} />
     {error && <ErrorMessage>{error}</ErrorMessage>}
   </InputWrapper>
 );
 
-const InputWrapper = styled.div`
+const InputWrapper = styled.div<{ name: string | undefined }>`
   display: flex;
   flex-direction: column;
   justify-content: center;
-  margin-bottom: 20px;
+  margin-bottom: ${({ name }) => (name === "타이머" ? 0 : "20px")};
   min-height: 140px;
 `;
 
-const Label = styled.label`
+const Label = styled.label<InputProps>`
   margin-bottom: 8px;
   font-size: 20px;
   font-weight: bold;
   color: black;
+  display: ${({ styleProps }) => styleProps?.labelDisplay || "auto"};
 `;
 
 const StyledInput = styled.input<InputProps>`
-  padding: 18px;
+  padding: ${({ styleProps }) => styleProps?.padding || "18px"};
   font-size: 20px;
   border: ${({ error }) => (error ? "1px solid red" : `1px solid ${LIGHTGRAY}`)};
   border-radius: 12px;
@@ -42,6 +44,7 @@ const StyledInput = styled.input<InputProps>`
   opacity: ${({ disabled }) => (disabled ? 0.5 : 1)};
   text-align: ${({ styleProps }) => styleProps?.textAlign || "center"};
   width: ${({ styleProps }) => styleProps?.width || "300px"};
+  pointer-events: ${({ styleProps }) => styleProps?.pointerEvents || "auto"};
 
   &:focus {
     outline: none;

@@ -21,4 +21,7 @@ export type ModalState = {
 export interface InputStyleProps {
   width?: string;
   textAlign?: string;
+  pointerEvents?: string;
+  padding?: string;
+  labelDisplay?: string;
 }

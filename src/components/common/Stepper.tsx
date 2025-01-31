@@ -34,7 +34,6 @@ const StepperContainer = styled.div`
   justify-content: center;
   position: relative;
   padding: 20px;
-  margin-bottom: 20px;
 `;
 
 const Steps = styled.div`
@@ -58,7 +57,7 @@ const Bar = styled.div<{ isActive: boolean }>`
 const ArrowButtonContainer = styled.div`
   position: absolute;
   top: 20px;
-  left: 20px;
+  left: -20px;
 `;
 
 const ArrowButton = styled.button`

@@ -1,4 +1,5 @@
 import React from "react";
+import styled from "styled-components";
 
 type RadioProps = {
   label: string;
@@ -9,11 +10,23 @@ type RadioProps = {
 
 const Radio = ({ label, value, checked, onChange }: RadioProps) => {
   return (
-    <div style={{ display: "flex", gap: "10px" }}>
-      <input type="radio" value={value} checked={checked} onChange={onChange} />
+    <RadioWrapper>
+      <RadioInput type="radio" value={value} checked={checked} onChange={onChange} />
       {label}
-    </div>
+    </RadioWrapper>
   );
 };
 
 export default Radio;
+
+const RadioWrapper = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 40px;
+  font-size: 18px;
+`;
+
+const RadioInput = styled.input`
+  transform: scale(1.2);
+`;

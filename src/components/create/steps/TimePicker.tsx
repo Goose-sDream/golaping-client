@@ -8,10 +8,11 @@ import { Vote } from "@/types/voteTypes";
 type TimePickerProps = {
   type: string;
   name: keyof Vote;
+  value: number;
   setValue: UseFormSetValue<Vote>;
 };
 
-const TimePicker = ({ type, name, setValue }: TimePickerProps) => {
+const TimePicker = ({ type, name, value, setValue }: TimePickerProps) => {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const timeItemsRef = useRef<(HTMLDivElement | null)[]>([]);
@@ -20,13 +21,13 @@ const TimePicker = ({ type, name, setValue }: TimePickerProps) => {
   const [isClicked, setIsClicked] = useState(false);
   const [startY, setStartY] = useState(0);
   const currentOffsetRef = useRef(0);
-  const movigRef = useRef({ start: 0, end: 0, targetIdx: 0 });
+  const movigRef = useRef({ start: 0, end: 0, targetIdx: value || 0 });
   const animationFrameRef = useRef<number | null>(null);
 
   const getCenter = () => {
     let centerHeight;
     if (timeItemsRef.current.every((time) => time !== null) && wrapperRef && wrapperRef.current) {
-      centerHeight = wrapperRef.current?.offsetHeight / 2; // 중앙 높이
+      centerHeight = wrapperRef.current?.offsetHeight / 2 - THRESHOLD; // 중앙 높이
       return centerHeight;
     }
     return 0;
@@ -46,15 +47,6 @@ const TimePicker = ({ type, name, setValue }: TimePickerProps) => {
       item.style.transform = `translateY(${baseY}px) scale(${scale})`;
       item.style.opacity = `${opacity}`;
       item.style.transition = `transform 0.5s ease-out, opacity 0.2s ease-out`;
-    });
-  };
-
-  const handleAnimation = (offset: number) => {
-    if (animationFrameRef.current) {
-      cancelAnimationFrame(animationFrameRef.current);
-    }
-    animationFrameRef.current = requestAnimationFrame(() => {
-      translateSlide(offset);
     });
   };
 
@@ -99,6 +91,15 @@ const TimePicker = ({ type, name, setValue }: TimePickerProps) => {
     currentOffsetRef.current = Math.min(maxOffset, Math.max(minOffset, targetOffset));
   };
 
+  const handleAnimation = (offset: number) => {
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+    }
+    animationFrameRef.current = requestAnimationFrame(() => {
+      translateSlide(offset);
+    });
+  };
+
   const handleSnapToClosestIdx = (center: number) => {
     const targetOffset = handleTargetIdx(center);
     handleSafeDistance(center, targetOffset);
@@ -108,7 +109,7 @@ const TimePicker = ({ type, name, setValue }: TimePickerProps) => {
   useEffect(() => {
     if (!isClicked) {
       if (timeItemsRef.current.every((time) => time !== null) && wrapperRef && wrapperRef.current) {
-        const centerHeight = wrapperRef.current?.offsetHeight / 2; // 중앙 높이
+        const centerHeight = wrapperRef.current?.offsetHeight / 2 - THRESHOLD; // 중앙 높이
         // 초기 슬라이드 위치
         if (currentOffsetRef.current === 0) {
           currentOffsetRef.current = centerHeight;
@@ -137,8 +138,8 @@ const TimePicker = ({ type, name, setValue }: TimePickerProps) => {
   return (
     <div
       style={{
-        width: "300px",
-        height: "300px",
+        width: "80px",
+        height: "180px",
         backgroundColor: `${LIGHTGRAY}`,
         borderRadius: "10px",
         position: "relative",
@@ -172,7 +173,7 @@ const TimePicker = ({ type, name, setValue }: TimePickerProps) => {
             }}
             style={{
               position: "absolute",
-              width: "280px",
+              width: "70px",
               height: ITEMHEIGHT,
               top: "50%",
               transition: "transform 0.2s ease-out, opacity 0.2s ease-out",
