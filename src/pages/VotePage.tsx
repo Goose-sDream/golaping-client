@@ -1,11 +1,18 @@
-import React from "react";
-import { useParams } from "react-router-dom";
+import VoteForm from "@/components/vote/VoteForm";
 
 const VotePage = () => {
-  const { id } = useParams();
   return (
-    <div>
-      <h2>투표 id: {id}</h2>
+    <div
+      style={{
+        height: "100vh",
+        overflow: "hidden",
+        width: "100vw",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+      }}
+    >
+      <VoteForm />
     </div>
   );
 };

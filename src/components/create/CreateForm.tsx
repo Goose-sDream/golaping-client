@@ -1,10 +1,14 @@
 import { JSX, useState } from "react";
-import { useForm, FormProvider } from "react-hook-form";
+import { useForm, FormProvider, FieldValues } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { v4 as uuid } from "uuid";
 import { BasicForm, LandingForm, OptionForm, ShareVote } from "./steps";
 import { Button, Stepper } from "@/components/common";
+import useSessionId from "@/hooks/useSessionId";
+import useWebsocketUrl from "@/hooks/useWebsocketUrl";
+import Request from "@/services/requests";
+import { APIResponse } from "@/types/apiTypes";
 
 export const CreateForm = () => {
   const methods = useForm({
@@ -13,12 +17,37 @@ export const CreateForm = () => {
   const navigate = useNavigate();
   const [step, setStep] = useState<number>(1);
   const [randomLink, setRandomLink] = useState<string>("");
+  const request = Request();
+  const { updateSessionId } = useSessionId();
+  const { setWebsocketUrl } = useWebsocketUrl();
+
+  const createVote = async (data: FieldValues) => {
+    const timeLimit = data.hour * 60 + data.minute;
+    const link = `${window.location.origin}${generateLink()}`;
+    const response = await request.post<APIResponse<{ websocketUrl: string; sessionId: string }>>("/api/votes", {
+      title: data.title,
+      nickname: data.nickname,
+      type: data.type,
+      userVoteLimit: data.userVoteLimit,
+      timeLimit,
+      link,
+    });
+    console.log(response);
+
+    if (response.isSuccess) {
+      const { sessionId, websocketUrl } = response.result;
+      updateSessionId(sessionId);
+      setWebsocketUrl(websocketUrl);
+      setStep(step + 1);
+    } else {
+      console.error("Vote creation failed:", response.message);
+    }
+  };
 
   const generateLink = () => {
-    if (!randomLink) {
-      const link = `/vote/${uuid()}`;
-      setRandomLink(link);
-    }
+    const link = `/votes/${uuid()}`;
+    setRandomLink(link);
+    return link;
   };
 
   const handleNavigate = () => {
@@ -51,9 +80,8 @@ export const CreateForm = () => {
           {step === 3 && (
             <Button
               type="button"
-              onClick={methods.handleSubmit(() => {
-                generateLink();
-                setStep(step + 1);
+              onClick={methods.handleSubmit((data) => {
+                createVote(data as FieldValues);
               })}
             >
               생성하기
@@ -75,6 +103,8 @@ const FormContainer = styled.form`
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  max-width: 400px;
+  min-width: 300px;
 `;
 
 const ButtonContainer = styled.div`

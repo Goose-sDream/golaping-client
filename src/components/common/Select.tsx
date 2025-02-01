@@ -1,18 +1,20 @@
 import { SelectHTMLAttributes } from "react";
 import styled from "styled-components";
+import { LIGHTGRAY } from "@/styles/color";
 
 interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   label?: string;
   options: { value: string | number; label: string }[];
   error?: string;
   id?: string;
+  disabled?: boolean;
 }
 
-const Select = ({ label, options, error, ...props }: SelectProps) => {
+const Select = ({ label, options, error, disabled, ...props }: SelectProps) => {
   return (
     <Wrapper>
       {label && <Label htmlFor={props.id}>{label}</Label>}
-      <StyledSelect id={props.id} {...props}>
+      <StyledSelect id={props.id} {...props} disabled={disabled} color={LIGHTGRAY}>
         {options.map((option) => (
           <option key={option.value} value={option.value}>
             {option.label}
@@ -24,9 +26,7 @@ const Select = ({ label, options, error, ...props }: SelectProps) => {
   );
 };
 
-const Wrapper = styled.div`
-  margin-bottom: 20px;
-`;
+const Wrapper = styled.div``;
 
 const Label = styled.label`
   display: block;
@@ -35,12 +35,14 @@ const Label = styled.label`
   font-weight: bold;
 `;
 
-const StyledSelect = styled.select`
+const StyledSelect = styled.select<{ color: string }>`
   width: 100%;
   padding: 10px;
-  border: 1px solid black;
+  border: none;
   border-radius: 4px;
-  font-size: 16px;
+  font-size: 20px;
+  background-color: ${({ color }) => color || ""};
+  height: 60px;
 
   &:focus {
     border-color: gray;

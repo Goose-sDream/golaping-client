@@ -25,8 +25,8 @@ const Wrapper = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  height: 100%;
   overflow: hidden;
 
   header {
@@ -35,7 +35,7 @@ const Wrapper = styled.div`
     align-items: center;
     font-size: 24px;
     font-weight: bold;
-    min-height: 25%;
+    height: calc(10vh + 10px);
   }
 
   main {
@@ -43,6 +43,7 @@ const Wrapper = styled.div`
     flex-direction: column;
     align-items: center;
     height: 75%;
+    margin-left: 30px;
   }
 `;
 
