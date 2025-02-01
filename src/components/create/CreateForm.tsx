@@ -103,6 +103,8 @@ const FormContainer = styled.form`
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  max-width: 400px;
+  min-width: 300px;
 `;
 
 const ButtonContainer = styled.div`

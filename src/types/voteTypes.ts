@@ -17,3 +17,11 @@ export type ModalState = {
   onFunc?: (() => void) | undefined; // 모달이 열리기 전에 선행될 함수
   offFunc?: (() => void) | undefined; // 모달 닫을 때 선행될 함수
 };
+
+export interface InputStyleProps {
+  width?: string;
+  textAlign?: string;
+  pointerEvents?: string;
+  padding?: string;
+  labelDisplay?: string;
+}
