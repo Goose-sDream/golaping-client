@@ -52,7 +52,12 @@ const LogoWithInput = ({ register }: LogoWithInputProps) => {
           strokeLinejoin="round"
         />
         <foreignObject x="140" y="60" width="268" height="120">
-          <Input placeholder="닉네임" {...register("nickname")} style={{ border: "none", background: "none" }} />
+          <Input
+            placeholder="닉네임을 입력하세요"
+            {...register("nickname")}
+            style={{ border: "none", background: "none" }}
+            styleProps={{ textAlign: "center" }}
+          />
         </foreignObject>
       </g>
       <defs>
