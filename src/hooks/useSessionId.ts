@@ -8,7 +8,7 @@ const useSessionId = () => {
 
   const updateSessionId = (newSessionId: string) => {
     setSessionId(newSessionId);
-    setCookie("SESSION_ID", newSessionId);
+    setCookie("SESSIONID", newSessionId);
   };
 
   return { sessionId, updateSessionId };
