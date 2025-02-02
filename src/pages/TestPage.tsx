@@ -1,4 +1,5 @@
-import DoVote from "@/components/vote/DoVote";
+// import DoVote from "@/components/vote/DoVote";
+import MakeCandidate from "@/components/vote/MakeCandidate";
 
 const TestPage = () => {
   return (
@@ -12,7 +13,8 @@ const TestPage = () => {
         alignItems: "center",
       }}
     >
-      <DoVote />
+      {/* <DoVote /> */}
+      <MakeCandidate />
     </div>
   );
 };

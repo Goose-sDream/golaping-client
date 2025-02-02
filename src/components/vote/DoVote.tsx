@@ -10,7 +10,7 @@ const DoVote = () => {
   const candidatesRef = useRef<Body[]>([]);
   const currentEditBallRef = useRef<Body | null>(null); // ✅ 현재 편집 중인 원 관리
 
-  const animationFrameRef = useRef<number | null>(null);
+  // const animationFrameRef = useRef<number | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   const [inputPosition, setInputPosition] = useState({ x: 0, y: 0 });
@@ -19,6 +19,10 @@ const DoVote = () => {
 
   const smallRadius = 80;
   const largeRadius = 160;
+
+  console.log("현재까지 후보들 =>", candidatesRef && candidatesRef.current);
+  console.log("현재 후보 =>", currentEditBallRef && currentEditBallRef.current);
+  console.log("inputVisible =>", inputVisible);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -95,6 +99,21 @@ const DoVote = () => {
       }
     });
 
+    // ✅ Matter.js 렌더링 직전에 텍스트를 그리도록 beforeRender 사용
+    Events.on(render, "beforeRender", () => {
+      const context = render.context;
+      context.clearRect(0, 0, 800, 600); // 캔버스를 지우고 다시 그림
+      context.font = "16px Arial";
+      context.fillStyle = "black";
+      context.textAlign = "center";
+      context.textBaseline = "middle";
+
+      candidatesRef.current.forEach((ball) => {
+        const text = inputText[ball.id.toString()] || "";
+        context.fillText(text, ball.position.x, ball.position.y);
+      });
+    });
+
     Runner.run(runner, engine);
     Render.run(render);
 
@@ -107,46 +126,48 @@ const DoVote = () => {
     };
   }, []);
 
-  // ✅ 원의 위치 변화 감지하여 텍스트도 함께 이동하도록 설정
-  useEffect(() => {
-    const updatePosition = () => {
-      if (currentEditBallRef.current) {
-        setInputPosition({
-          x: currentEditBallRef.current.position.x,
-          y: currentEditBallRef.current.position.y,
-        });
-      }
+  // // ✅ 원의 위치 변화 감지하여 텍스트도 함께 이동하도록 설정
+  // useEffect(() => {
+  //   const updatePosition = () => {
+  //     if (currentEditBallRef.current) {
+  //       setInputPosition((prev) => {
+  //         const newX = currentEditBallRef.current!.position.x;
+  //         const newY = currentEditBallRef.current!.position.y;
+  //         if (prev.x === newX && prev.y === newY) return prev; // 위치 변화 없으면 업데이트 안 함
+  //         return { x: newX, y: newY };
+  //       });
+  //     }
 
-      // ✅ 모든 원의 위치를 지속적으로 업데이트하여 입력된 텍스트가 함께 움직이도록 함
-      candidatesRef.current.forEach((ball) => {
-        setInputText((prev) => ({
-          ...prev,
-          [ball.id.toString()]: prev[ball.id.toString()] || "",
-        }));
-      });
+  //     // ✅ 모든 원의 위치를 지속적으로 업데이트하여 입력된 텍스트가 함께 움직이도록 함
+  //     candidatesRef.current.forEach((ball) => {
+  //       setInputText((prev) => ({
+  //         ...prev,
+  //         [ball.id.toString()]: prev[ball.id.toString()] || "",
+  //       }));
+  //     });
 
-      animationFrameRef.current = requestAnimationFrame(updatePosition);
-    };
+  //     animationFrameRef.current = requestAnimationFrame(updatePosition);
+  //   };
 
-    animationFrameRef.current = requestAnimationFrame(updatePosition);
+  //   animationFrameRef.current = requestAnimationFrame(updatePosition);
 
-    return () => {
-      if (animationFrameRef.current !== null) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
-    };
-  }, []);
+  //   return () => {
+  //     if (animationFrameRef.current !== null) {
+  //       cancelAnimationFrame(animationFrameRef.current);
+  //     }
+  //   };
+  // }, []);
 
   const handleBlur = () => {
     if (currentEditBallRef.current) {
-      if (
-        (inputRef.current && inputText[currentEditBallRef.current.id.toString()].length < 1) ||
-        (inputRef.current && inputText[currentEditBallRef.current.id.toString()].length > 5)
-      ) {
-        inputRef.current.classList.add("shake");
-        setTimeout(() => inputRef.current?.classList.remove("shake"), 400); // 0.4초 후 제거
-        return;
-      }
+      // if (
+      //   (inputRef.current && inputText[currentEditBallRef.current.id.toString()].length < 1) ||
+      //   (inputRef.current && inputText[currentEditBallRef.current.id.toString()].length > 5)
+      // ) {
+      //   inputRef.current.classList.add("shake");
+      //   setTimeout(() => inputRef.current?.classList.remove("shake"), 400); // 0.4초 후 제거
+      //   return;
+      // }
 
       const id = currentEditBallRef.current.id.toString();
       setInputText((prev) => ({
@@ -160,11 +181,14 @@ const DoVote = () => {
     }
   };
 
+  const handleCancel = () => {
+    candidatesRef.current.pop();
+    currentEditBallRef.current = null;
+    setInputVisible(false);
+  };
+
   return (
-    <section
-      ref={containerRef}
-      style={{ width: "800px", height: "600px", border: "5px solid black", position: "relative" }}
-    >
+    <StyledSection ref={containerRef}>
       {inputVisible && currentEditBallRef.current && (
         <Wrapper $positionx={inputPosition.x} $positiony={inputPosition.y}>
           <InputWrapper>
@@ -180,37 +204,24 @@ const DoVote = () => {
               autoFocus
             />
             <DoneButton onClick={handleBlur}>완료</DoneButton>
+            <DoneButton onClick={handleCancel}>취소</DoneButton>
           </InputWrapper>
-          {inputText[currentEditBallRef.current.id.toString()].length > 5 && (
+          {/* {inputText[currentEditBallRef.current.id.toString()].length > 5 && (
             <p style={{ fontSize: "10px", color: "red" }}>5글자 이하여야 합니다.</p>
-          )}
+          )} */}
         </Wrapper>
       )}
       {candidatesRef.current.map((ball) => (
-        <div
+        <Candidates
           key={ball.id}
-          style={{
-            position: "absolute",
-            left: ball.position.x - 50,
-            top: ball.position.y - 10,
-            width: "100px",
-            textAlign: "center",
-            fontSize: "16px",
-            pointerEvents: "none",
-            display: currentEditBallRef.current?.id === ball.id ? "none" : "block",
-            maxHeight: "50px", // 👈 높이 제한
-            overflow: "auto", // 👈 넘칠 경우 스크롤 추가
-            wordWrap: "break-word", // 긴 단어가 있으면 줄바꿈
-            whiteSpace: "pre-wrap", // 개행 유지 + 자동 줄바꿈
-            background: "rgba(255, 255, 255, 0.8)", // 가독성을 위해 반투명 배경 추가
-            padding: "5px",
-            borderRadius: "5px",
-          }}
+          $ballx={ball.position.x}
+          $bally={ball.position.y}
+          $display={currentEditBallRef.current?.id === ball.id}
         >
           {inputText[ball.id.toString()]}
-        </div>
+        </Candidates>
       ))}
-    </section>
+    </StyledSection>
   );
 };
 
@@ -223,6 +234,13 @@ const shake = keyframes`
   60% { transform: rotate(-5deg); }
   80% { transform: rotate(5deg); }
   100% { transform: rotate(0deg); }
+`;
+
+const StyledSection = styled.section`
+  width: 800px;
+  height: 600px;
+  border: 5px solid black;
+  position: relative;
 `;
 
 const Wrapper = styled.div.attrs<{ $positionx: number; $positiony: number }>(({ $positionx, $positiony }) => ({
@@ -267,4 +285,25 @@ const DoneButton = styled.button`
   transition: all 0.2s ease;
   &:hover {
   }
+`;
+
+const Candidates = styled.div.attrs<{ $ballx: number; $bally: number; $display: boolean }>(({ $ballx, $bally }) => ({
+  style: {
+    left: `${$ballx - 50}px`,
+    top: `${$bally - 10}px`,
+  },
+}))`
+  position: absolute;
+  width: 100px;
+  text-align: center;
+  font-size: 16px;
+  display: ${({ $display }) => ($display ? "none" : "block")};
+  pointer-events: none;
+  /* max-height: 50px; // 👈 높이 제한
+  overflow: auto; // 👈 넘칠 경우 스크롤 추가
+  word-wrap: break-word; // 긴 단어가 있으면 줄바꿈
+  white-space: pre-wrap; // 개행 유지 + 자동 줄바꿈 */
+  background: rgba(255, 255, 255, 0.8); // 가독성을 위해 반투명 배경 추가
+  padding: 5px;
+  border-radius: 5px;
 `;
