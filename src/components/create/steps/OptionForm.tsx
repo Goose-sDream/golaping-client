@@ -13,13 +13,9 @@ import { Vote } from "@/types/voteTypes";
 const OptionForm = () => {
   const { control, setValue } = useFormContext<Vote>();
   const [timeOpen, setTimeOpen] = useState(Array(2).fill(false));
-  // const limitList = ["제한", "무제한"];
-  // const [limited, setLimited] = useState(limitList[0]);
   const [{ limitList, limited }, setLimited] = useRecoilState(limitState);
   const timeRef = useRef<(HTMLDivElement | null)[]>([]);
   const userVoteLimit = Array.from({ length: 5 }, (_, i) => i + 1);
-
-  console.log("limited =>", limited);
 
   useEffect(() => {
     if (timeRef && timeRef.current) {

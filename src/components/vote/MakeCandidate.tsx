@@ -1,9 +1,13 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Engine, Render, Mouse, World, Bodies, MouseConstraint, Runner, Events, Body } from "matter-js";
+import { useRecoilState } from "recoil";
 import styled, { keyframes } from "styled-components";
+import { limitState } from "@/atoms/createAtom";
 import { LIGHTGRAY } from "@/styles/color";
 
 const MakeCandidate = () => {
+  const [{ limited }] = useRecoilState(limitState);
+
   const containerRef = useRef<HTMLDivElement | null>(null);
   const engineRef = useRef(Engine.create());
   const world = engineRef.current.world;
@@ -38,10 +42,22 @@ const MakeCandidate = () => {
     renderRef.current = render;
 
     const walls = [
-      Bodies.rectangle(400, 0, 800, 50, { isStatic: true, collisionFilter: { category: 0x0008 } }),
-      Bodies.rectangle(400, 600, 800, 50, { isStatic: true, collisionFilter: { category: 0x0008 } }),
-      Bodies.rectangle(0, 300, 50, 600, { isStatic: true, collisionFilter: { category: 0x0008 } }),
-      Bodies.rectangle(800, 300, 50, 600, { isStatic: true, collisionFilter: { category: 0x0008 } }),
+      Bodies.rectangle(400, 0, 800, 50, {
+        isStatic: true,
+        ...(limited === "무제한" && { collisionFilter: { category: 0x0008 } }),
+      }),
+      Bodies.rectangle(400, 600, 800, 50, {
+        isStatic: true,
+        ...(limited === "무제한" && { collisionFilter: { category: 0x0008 } }),
+      }),
+      Bodies.rectangle(0, 300, 50, 600, {
+        isStatic: true,
+        ...(limited === "무제한" && { collisionFilter: { category: 0x0008 } }),
+      }),
+      Bodies.rectangle(800, 300, 50, 600, {
+        isStatic: true,
+        ...(limited === "무제한" && { collisionFilter: { category: 0x0008 } }),
+      }),
     ];
     World.add(world, walls);
 
@@ -134,10 +150,16 @@ const MakeCandidate = () => {
       restitution: 0.8,
       frictionAir: 0.02,
       render: { fillStyle: LIGHTGRAY },
-      collisionFilter: {
-        category: 0x0002, // ✅ 사용자 정의 카테고리 설정 (마우스 선택 방지)
-        mask: 0x0002 | 0x0004 | 0x0008, // ✅ 다른 물체들과는 충돌 가능
-      },
+      ...(limited === "무제한" && {
+        collisionFilter: {
+          category: 0x0002, // ✅ 사용자 정의 카테고리 설정 (마우스 선택 방지)
+          mask: 0x0002 | 0x0004 | 0x0008,
+        },
+      }), // ✅ 다른 물체들과는 충돌 가능 } })
+      // collisionFilter: {
+      //   category: 0x0002, // ✅ 사용자 정의 카테고리 설정 (마우스 선택 방지)
+      //   mask: 0x0002 | 0x0004 | 0x0008, // ✅ 다른 물체들과는 충돌 가능
+      // },
     });
 
     World.add(world, newBall);
