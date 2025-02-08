@@ -5,6 +5,7 @@ import TimePicker from "./TimePicker";
 import Input from "@/components/common/Input";
 import Radio from "@/components/common/Radio";
 import Select from "@/components/common/Select";
+import { YELLOW } from "@/styles/color";
 import { Vote } from "@/types/voteTypes";
 
 const OptionForm = () => {
@@ -148,6 +149,41 @@ const OptionForm = () => {
             />
           )}
         />
+        <div
+          style={{
+            display: "flex",
+            gap: "15px",
+            alignItems: "center",
+            height: "100px",
+            maxWidth: "300px",
+            marginTop: "10px",
+            padding: "10px",
+          }}
+        >
+          <div
+            style={{
+              width: "30px",
+              height: "30px",
+              borderRadius: "100%",
+              backgroundColor: `${YELLOW}`,
+            }}
+          ></div>
+          {limited == "무제한" ? (
+            <p style={{ fontSize: "15px", width: "85%" }}>
+              무제한을 고르면,
+              <br /> 원하는 만큼 투표할 수 있어요. <br />
+              중복가능, 다중가능
+            </p>
+          ) : (
+            <p style={{ fontSize: "15px", width: "85%" }}>
+              제한을 고르면,
+              <br />
+              정한 횟수만큼만 투표할 수 있어요.
+              <br />
+              중복불가, 다중가능
+            </p>
+          )}
+        </div>
       </LimitWrapper>
     </VoteDiv>
   );
