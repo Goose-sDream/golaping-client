@@ -1,8 +1,8 @@
-import { FieldValues, UseFormRegister } from "react-hook-form";
-import { Input } from "@/components/common";
+import { UseFormRegister } from "react-hook-form";
+import { VoteFormData } from "./EnterVote";
 
 interface LogoWithInputProps {
-  register: UseFormRegister<FieldValues>;
+  register: UseFormRegister<VoteFormData>;
 }
 
 const LogoWithInput = ({ register }: LogoWithInputProps) => {
@@ -52,7 +52,19 @@ const LogoWithInput = ({ register }: LogoWithInputProps) => {
           strokeLinejoin="round"
         />
         <foreignObject x="140" y="60" width="268" height="120">
-          <Input placeholder="닉네임" {...register("nickname")} style={{ border: "none", background: "none" }} />
+          <input
+            type="text"
+            {...register("nickname")}
+            placeholder="닉네임을 입력하세요"
+            style={{
+              textAlign: "center",
+              fontSize: 20,
+              width: "100%",
+              height: "100%",
+              border: "none",
+              outline: "none",
+            }}
+          />
         </foreignObject>
       </g>
       <defs>

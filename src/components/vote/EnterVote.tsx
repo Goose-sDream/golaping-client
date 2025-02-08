@@ -1,32 +1,85 @@
-import { Dispatch, SetStateAction } from "react";
-import { useForm } from "react-hook-form";
+import { Dispatch, SetStateAction, useEffect } from "react";
+import { FieldValues, useForm } from "react-hook-form";
+import { useParams } from "react-router-dom";
 import styled from "styled-components";
 import { Button } from "../common";
 import LogoWithInput from "./LogoWithInput";
-import useWebsocketUrl from "@/hooks/useWebsocketUrl";
+import { useWebSocket } from "@/contexts/useWebsocket";
+import useCookies from "@/hooks/useCookies";
+import Request from "@/services/requests";
+import { APIResponse } from "@/types/apiTypes";
 
 interface EnterVoteProps {
   setStep: Dispatch<SetStateAction<number>>;
 }
 
-const EnterVote = ({ setStep }: EnterVoteProps) => {
-  const { websocketUrl } = useWebsocketUrl();
-  console.log(websocketUrl);
-  const { register, handleSubmit } = useForm();
+export interface VoteFormData extends FieldValues {
+  nickname: string;
+}
 
-  const onSubmit = async () => {
-    console.log("submit");
-    setStep(2);
+const EnterVote = ({ setStep }: EnterVoteProps) => {
+  const { register, handleSubmit } = useForm<VoteFormData>();
+  const { id } = useParams();
+  const request = Request();
+  const { client, connected, error } = useWebSocket();
+  const { getCookie } = useCookies();
+  const sessionId = getCookie("SESSIONID");
+
+  const onSubmit = async (data: VoteFormData) => {
+    try {
+      const response = await request.post<APIResponse<{ websocketUrl: string; voteEndTime: string }>>(
+        `/api/votes/enter`,
+        {
+          voteUuid: id,
+          nickname: data.nickname,
+        }
+      );
+
+      if (response.isSuccess) {
+        sendWebSocket();
+        setStep(2);
+      }
+    } catch (error) {
+      console.error("Failed to enter vote:", error);
+    }
   };
+
+  const sendWebSocket = () => {
+    if (error) {
+      console.error("WebSocket Error:", error);
+      return;
+    }
+
+    if (!client || !connected) {
+      console.warn("WebSocket not connected");
+      return;
+    }
+
+    try {
+      client.publish({
+        destination: `/app/vote/connect`,
+        body: JSON.stringify({
+          voteUuid: id,
+          sessionId: sessionId,
+        }),
+      });
+    } catch (error) {
+      console.error("Failed to send WebSocket message:", error);
+    }
+  };
+
+  useEffect(() => {
+    if (sessionId) {
+      sendWebSocket();
+    }
+  }, [sessionId, connected]);
 
   return (
     <Wrapper onSubmit={handleSubmit(onSubmit)}>
       <Title>투표 제목</Title>
-
-      <Button type="submit" style={{ position: "absolute", bottom: 20, zIndex: 100 }}>
+      <Button type="submit" style={{ position: "absolute", bottom: 20, zIndex: 100 }} disabled={!connected}>
         투표 입장하기
       </Button>
-
       <LogoWithInput register={register} />
     </Wrapper>
   );
