@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import styled from "styled-components";
+import Description from "./Description";
 import TimePicker from "./TimePicker";
 import Input from "@/components/common/Input";
 import Select from "@/components/common/Select";
@@ -176,33 +177,9 @@ const OptionForm = () => {
             }}
           ></div>
           {limited == "무제한" ? (
-            <p style={{ fontSize: "15px", width: "85%" }}>
-              <span
-                style={{
-                  fontWeight: "bold",
-                }}
-              >
-                무제한
-              </span>
-              을 고르면,
-              <br /> 원하는 만큼 투표할 수 있어요. <br />
-              중복가능, 다중가능
-            </p>
+            <Description limit="무제한" des1="원하는 만큼 투표할 수 있어요." des2=" 중복가능, 다중가능" />
           ) : (
-            <p style={{ fontSize: "15px", width: "85%" }}>
-              <span
-                style={{
-                  fontWeight: "bold",
-                }}
-              >
-                제한
-              </span>
-              을 고르면,
-              <br />
-              정한 횟수만큼만 투표할 수 있어요.
-              <br />
-              중복불가, 다중가능
-            </p>
+            <Description limit="제한" des1="정한 횟수만큼만 투표할 수 있어요." des2=" 중복불가, 다중가능" />
           )}
         </div>
       </LimitWrapper>
