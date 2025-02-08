@@ -90,7 +90,7 @@ const OptionForm = () => {
                         style={{
                           display: "flex",
                           alignItems: "center",
-                          gap: "5px",
+                          gap: "10px",
                           position: "absolute",
                           top: "50%",
                           left: "50%",
@@ -118,10 +118,10 @@ const OptionForm = () => {
         <div
           style={{
             display: "flex",
-            justifyContent: "space-between",
-            width: "70%",
-            alignItems: "center",
-            padding: "5px 10px 15px 10px",
+            gap: "50px",
+            width: "90%",
+            margin: "0 auto",
+            padding: "0 5px",
           }}
         >
           {limitList.map((limit, idx) => (
@@ -155,28 +155,41 @@ const OptionForm = () => {
             gap: "15px",
             alignItems: "center",
             height: "100px",
-            maxWidth: "300px",
-            marginTop: "10px",
+            width: "100%",
             padding: "10px",
           }}
         >
           <div
             style={{
-              width: "20px",
-              height: "20px",
+              width: "25px",
+              height: "25px",
               borderRadius: "100%",
               backgroundColor: `${YELLOW}`,
             }}
           ></div>
           {limited == "무제한" ? (
             <p style={{ fontSize: "15px", width: "85%" }}>
-              무제한을 고르면,
+              <span
+                style={{
+                  fontWeight: "bold",
+                }}
+              >
+                무제한
+              </span>
+              을 고르면,
               <br /> 원하는 만큼 투표할 수 있어요. <br />
               중복가능, 다중가능
             </p>
           ) : (
             <p style={{ fontSize: "15px", width: "85%" }}>
-              제한을 고르면,
+              <span
+                style={{
+                  fontWeight: "bold",
+                }}
+              >
+                제한
+              </span>
+              을 고르면,
               <br />
               정한 횟수만큼만 투표할 수 있어요.
               <br />
@@ -204,10 +217,10 @@ const LimitWrapper = styled.div`
   display: flex;
   flex-direction: column;
   width: 100%;
+  gap: 5px;
 `;
 
 const Label = styled.label`
-  margin-bottom: 8px;
   font-size: 20px;
   font-weight: bold;
   color: black;

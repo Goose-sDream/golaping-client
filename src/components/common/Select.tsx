@@ -26,7 +26,11 @@ const Select = ({ label, options, error, disabled, ...props }: SelectProps) => {
   );
 };
 
-const Wrapper = styled.div``;
+const Wrapper = styled.div`
+  width: 100%;
+  display: flex;
+  justify-content: center;
+`;
 
 const Label = styled.label`
   display: block;
@@ -36,7 +40,7 @@ const Label = styled.label`
 `;
 
 const StyledSelect = styled.select<{ color: string }>`
-  width: 100%;
+  width: 90%;
   padding: 10px;
   border: none;
   border-radius: 4px;
