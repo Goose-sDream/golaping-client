@@ -42,7 +42,7 @@ const StyledInput = styled.input<InputProps>`
   transition: border-color 0.2s;
   background-color: ${LIGHTGRAY};
   opacity: ${({ disabled }) => (disabled ? 0.5 : 1)};
-  text-align: ${({ styleProps }) => styleProps?.textAlign || "center"};
+  text-align: ${({ styleProps }) => styleProps?.textAlign || "left"};
   width: ${({ styleProps }) => styleProps?.width || "300px"};
   pointer-events: ${({ styleProps }) => styleProps?.pointerEvents || "auto"};
 

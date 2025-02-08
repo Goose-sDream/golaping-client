@@ -16,50 +16,37 @@ const ShareVote = ({ randomLink }: ShareVoteProps) => {
   };
 
   return (
-    <RedirectForm>
-      <header>
-        <h2 style={{ whiteSpace: "pre-line", textAlign: "center" }}>
-          투표가 생성되었습니다!{"\n"}투표를 공유해보세요!
-        </h2>
-        <LinkButton type="button" onClick={handleCopy}>
-          <LinkIcon />
-        </LinkButton>
-      </header>
-
-      <main>
-        <LogoWrapper>
-          <GreenLogo />
-        </LogoWrapper>
-      </main>
-    </RedirectForm>
+    <Wrapper>
+      <Title>투표가 생성되었습니다!{"\n"}투표를 공유해보세요!</Title>
+      <LinkButton type="button" onClick={handleCopy}>
+        <LinkIcon />
+      </LinkButton>
+      <GreenLogo />
+    </Wrapper>
   );
 };
 
 export default ShareVote;
 
-const RedirectForm = styled.div`
+const Wrapper = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 100vw;
-  height: 100%;
+  justify-content: center;
   overflow: hidden;
+  height: 100vh;
+  max-width: 400px;
+`;
 
-  header {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    font-size: 24px;
-    min-height: 40%;
-  }
-
-  main {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    height: 60%;
-  }
+const Title = styled.h1`
+  font-size: 32px;
+  font-weight: bold;
+  height: 30vh;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: pre-line;
 `;
 
 const LinkButton = styled.button`
@@ -70,6 +57,7 @@ const LinkButton = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
+  margin-bottom: 20px;
 
   &:hover {
     opacity: 0.8;
@@ -77,13 +65,5 @@ const LinkButton = styled.button`
 
   &:active {
     transform: scale(0.95);
-  }
-`;
-
-const LogoWrapper = styled.div`
-  overflow: hidden;
-
-  svg {
-    object-fit: cover;
   }
 `;

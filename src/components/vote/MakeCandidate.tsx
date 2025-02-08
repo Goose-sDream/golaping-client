@@ -81,6 +81,7 @@ const MakeCandidate = () => {
     });
 
     // ✅ Matter.js의 afterRender를 활용하여 원 위에 텍스트를 지속적으로 업데이트
+    // Matter.js는 본래 물리 객체들만 그리는데, 현재 각 원에 텍스트를 추가하고 싶기에 afterRender로 따로 관리해줘야
     Events.on(render, "afterRender", () => {
       if (!renderRef.current) return;
       const context = renderRef.current.context;
