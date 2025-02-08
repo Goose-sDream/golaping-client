@@ -26,20 +26,20 @@ const Dropdown = ({ label, options, value, onChange, error }: DropdownProps) => 
       <DropdownButton type="button" onClick={toggleDropdown} isOpen={isOpen}>
         {options.find((option) => option.value === value)?.label}
         <ArrowIcon style={{ transform: isOpen ? "rotate(90deg)" : "rotate(-90deg)" }} />
+        {isOpen && (
+          <OptionsList>
+            {options.map((option) => (
+              <OptionItem
+                key={option.value}
+                onClick={() => handleSelect(option.value)}
+                isSelected={option.value === value}
+              >
+                {option.label}
+              </OptionItem>
+            ))}
+          </OptionsList>
+        )}
       </DropdownButton>
-      {isOpen && (
-        <OptionsList>
-          {options.map((option) => (
-            <OptionItem
-              key={option.value}
-              onClick={() => handleSelect(option.value)}
-              isSelected={option.value === value}
-            >
-              {option.label}
-            </OptionItem>
-          ))}
-        </OptionsList>
-      )}
       {error && <ErrorMessage>{error}</ErrorMessage>}
     </Wrapper>
   );
@@ -48,8 +48,9 @@ const Dropdown = ({ label, options, value, onChange, error }: DropdownProps) => 
 const Wrapper = styled.div`
   display: flex;
   flex-direction: column;
-  margin-bottom: 30px;
-  position: relative;
+  justify-content: center;
+
+  min-height: 140px;
 `;
 
 const Label = styled.label`
@@ -71,11 +72,14 @@ const DropdownButton = styled.button<{ isOpen: boolean }>`
   display: flex;
   justify-content: space-between;
   align-items: center;
+  position: relative;
 `;
 
 const OptionsList = styled.ul`
   position: absolute;
-  top: calc(100%);
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
   width: 100%;
   list-style: none;
   padding: 0;

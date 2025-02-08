@@ -11,13 +11,13 @@ const MakeCandidate = () => {
   const candidatesRef = useRef<Body[]>([]);
   const textDataRef = useRef<{ [key: string]: string }>({}); // ✅ 텍스트 데이터를 useRef로 변경
   const inputRef = useRef<HTMLInputElement | null>(null);
-  // const currentEditBallRef = useRef<Body | null>(null); // ✅ 현재 편집 중인 원 관리
+  const mouseConstraintRef = useRef<MouseConstraint | null>(null);
 
   const [inputText, setInputText] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
   const [pendingPosition, setPendingPosition] = useState<{ x: number; y: number } | null>(null);
 
-  const smallRadius = 80;
+  const radius = 80;
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -30,8 +30,6 @@ const MakeCandidate = () => {
       element: containerRef.current,
       engine,
       options: {
-        width: 800,
-        height: 600,
         background: "#fff",
         wireframes: false,
       },
@@ -40,10 +38,10 @@ const MakeCandidate = () => {
     renderRef.current = render;
 
     const walls = [
-      Bodies.rectangle(400, 0, 800, 50, { isStatic: true }),
-      Bodies.rectangle(400, 600, 800, 50, { isStatic: true }),
-      Bodies.rectangle(0, 300, 50, 600, { isStatic: true }),
-      Bodies.rectangle(800, 300, 50, 600, { isStatic: true }),
+      Bodies.rectangle(400, 0, 800, 50, { isStatic: true, collisionFilter: { category: 0x0008 } }),
+      Bodies.rectangle(400, 600, 800, 50, { isStatic: true, collisionFilter: { category: 0x0008 } }),
+      Bodies.rectangle(0, 300, 50, 600, { isStatic: true, collisionFilter: { category: 0x0008 } }),
+      Bodies.rectangle(800, 300, 50, 600, { isStatic: true, collisionFilter: { category: 0x0008 } }),
     ];
     World.add(world, walls);
 
@@ -54,6 +52,7 @@ const MakeCandidate = () => {
     });
 
     World.add(world, mouseConstraint);
+    mouseConstraintRef.current = mouseConstraint;
 
     // ✅ 빈 공간을 클릭하면 모달 표시 + 클릭 위치 저장
     Events.on(mouseConstraint, "mousedown", (event) => {
@@ -61,23 +60,31 @@ const MakeCandidate = () => {
       const clickX = mouse.position.x;
       const clickY = mouse.position.y;
 
-      // ✅ 기존 원과 겹치는지 확인
-      const isOverlapping = candidatesRef.current.some((ball) => {
-        const dx = clickX - ball.position.x;
-        const dy = clickY - ball.position.y;
-        return Math.sqrt(dx * dx + dy * dy) < smallRadius;
-      });
+      // 기존 원과 겹치는지 확인
+      const overlapInfo = candidatesRef.current.reduce<{ isOverLapping: boolean; target: number | null }>(
+        (acc, cur, i) => {
+          const dx = clickX - cur.position.x;
+          const dy = clickY - cur.position.y;
+          if (Math.sqrt(dx * dx + dy * dy) < radius) {
+            acc.isOverLapping = true;
+            acc.target = i;
+          }
+          return acc;
+        },
+        { isOverLapping: false, target: null }
+      );
 
-      if (!isOverlapping) {
+      const { isOverLapping, target } = overlapInfo;
+      if (!isOverLapping || target === null) {
         setPendingPosition({ x: clickX, y: clickY });
         setModalVisible(true);
+      } else {
+        Body.scale(candidatesRef.current[target], 1.075, 1.075);
       }
-    });
 
-    Events.on(mouseConstraint, "mouseup", () => {
-      if (mouseConstraint.constraint.bodyB) {
-        mouseConstraint.constraint.bodyB = null;
-      }
+      // if (mouseConstraintRef.current) {
+      //   mouseConstraintRef.current.constraint.bodyB = null;
+      // }
     });
 
     // ✅ Matter.js의 afterRender를 활용하여 원 위에 텍스트를 지속적으로 업데이트
@@ -112,6 +119,7 @@ const MakeCandidate = () => {
   }, []);
 
   // ✅ 입력한 텍스트를 원과 함께 생성하는 함수
+  // 웹소켓으로 생성할 때마다 요청 보내야 함
   const createBallWithText = () => {
     if (!pendingPosition || inputText.trim() === "" || inputText.length > 5) {
       inputRef.current?.classList.add("shake");
@@ -122,19 +130,28 @@ const MakeCandidate = () => {
     console.log("생성할 위치:", pendingPosition, "입력된 텍스트:", inputText);
 
     const { x, y } = pendingPosition;
-    const newBall = Bodies.circle(x, y, smallRadius, {
+    const newBall = Bodies.circle(x, y, radius, {
       restitution: 0.8,
       frictionAir: 0.02,
       render: { fillStyle: LIGHTGRAY },
+      collisionFilter: {
+        category: 0x0002, // ✅ 사용자 정의 카테고리 설정 (마우스 선택 방지)
+        mask: 0x0002 | 0x0004 | 0x0008, // ✅ 다른 물체들과는 충돌 가능
+      },
     });
 
     World.add(world, newBall);
     candidatesRef.current.push(newBall);
 
-    // ✅ 원의 ID를 키로 텍스트 저장 (useRef 사용)
+    // 원의 ID를 키로 텍스트 저장 (useRef 사용)
     textDataRef.current[newBall.id.toString()] = inputText;
 
-    // ✅ 입력 후 초기화
+    if (mouseConstraintRef.current) {
+      // "현재 마우스 버튼이 눌려있지 않도록" 인식하게 함
+      mouseConstraintRef.current.mouse.button = -1;
+    }
+
+    // 입력 후 초기화
     setInputText("");
     setModalVisible(false);
     setPendingPosition(null);
@@ -144,6 +161,7 @@ const MakeCandidate = () => {
     setModalVisible(false);
   };
 
+  // 모달 띄우기
   const candidateModalRef = useRef<HTMLDivElement | null>(null);
   const modalAnimationRef = useRef<number | null>(null);
 

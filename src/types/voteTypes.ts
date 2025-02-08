@@ -23,5 +23,12 @@ export interface InputStyleProps {
   textAlign?: string;
   pointerEvents?: string;
   padding?: string;
+  flexDirection?: string;
+  fontSize?: string;
+  fontWeight?: string;
+  minHeight?: string;
+
   labelDisplay?: string;
+  labelMarginBottom?: string;
+  labelAlignItems?: string;
 }

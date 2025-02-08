@@ -3,7 +3,6 @@ import { Controller, useFormContext } from "react-hook-form";
 import styled from "styled-components";
 import TimePicker from "./TimePicker";
 import Input from "@/components/common/Input";
-import Radio from "@/components/common/Radio";
 import Select from "@/components/common/Select";
 import { YELLOW } from "@/styles/color";
 import { Vote } from "@/types/voteTypes";
@@ -11,8 +10,8 @@ import { Vote } from "@/types/voteTypes";
 const OptionForm = () => {
   const { control, setValue } = useFormContext<Vote>();
   const [timeOpen, setTimeOpen] = useState(Array(2).fill(false));
-  const limitList = ["무제한", "제한"];
-  const [limited, setLimited] = useState(limitList[1]);
+  const limitList = ["제한", "무제한"];
+  const [limited, setLimited] = useState(limitList[0]);
   const timeRef = useRef<(HTMLDivElement | null)[]>([]);
   const userVoteLimit = Array.from({ length: 5 }, (_, i) => i + 1);
 
@@ -34,13 +33,23 @@ const OptionForm = () => {
     setLimited(e.target.value);
   };
 
-  const inputStyleProps = {
+  const timerInputStyleProps = {
     width: "70px",
     textAlign: "right",
     pointerEvents: "none",
     labelDisplay: "none",
     position: "relative",
-    wrapperMarginBottom: 0,
+  };
+
+  const radioInputStyleProps = {
+    flexDirection: "row",
+    fontSize: "18px",
+    fontWeight: "normal",
+    width: "20px",
+    minHeight: "20px",
+    labelMarginBottom: "0px",
+    labelDisplay: "flex",
+    labelAlignItems: "center",
   };
 
   return (
@@ -81,10 +90,9 @@ const OptionForm = () => {
                       error={error?.message}
                       value={field.value || ""}
                       autoComplete="off"
-                      $styleProps={inputStyleProps}
-                      name="타이머"
+                      $styleProps={timerInputStyleProps}
                     />
-                    <h3 style={{ fontSize: "20px" }}>{idx > 0 ? "분" : "시간"}</h3>
+                    <h3 style={{ fontSize: "20px", minWidth: "40px" }}>{idx > 0 ? "분" : "시간"}</h3>
                     {timeOpen[idx] && (
                       <div
                         style={{
@@ -118,18 +126,18 @@ const OptionForm = () => {
         <div
           style={{
             display: "flex",
-            gap: "50px",
             width: "90%",
-            margin: "0 auto",
-            padding: "0 5px",
+            height: "40px",
           }}
         >
           {limitList.map((limit, idx) => (
-            <Radio
+            <Input<"radio">
               key={idx}
               label={limit}
               value={limit}
-              checked={idx > 0 ? limited === "제한" : limited !== "제한"}
+              type="radio"
+              $styleProps={radioInputStyleProps}
+              checked={idx > 0 ? limited !== "제한" : limited === "제한"}
               onChange={handleRadioChange}
             />
           ))}
@@ -217,7 +225,7 @@ const LimitWrapper = styled.div`
   display: flex;
   flex-direction: column;
   width: 100%;
-  gap: 5px;
+  gap: 10px;
 `;
 
 const Label = styled.label`

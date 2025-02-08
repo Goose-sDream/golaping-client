@@ -3,38 +3,60 @@ import styled from "styled-components";
 import { LIGHTGRAY } from "@/styles/color";
 import { InputStyleProps } from "@/types/voteTypes";
 
-interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
+type BaseInputProps = {
   label?: string;
   error?: string;
   name?: string;
   $styleProps?: InputStyleProps;
-}
+};
 
-const Input = ({ label, error, name, ...props }: InputProps) => (
-  <InputWrapper name={name}>
-    <Label {...props}>{label}</Label>
-    <StyledInput {...props} error={error} />
-    {error && <ErrorMessage>{error}</ErrorMessage>}
-  </InputWrapper>
-);
+type InputProps<T extends string> = BaseInputProps &
+  InputHTMLAttributes<HTMLInputElement> &
+  (T extends "radio"
+    ? { type: "radio"; checked: boolean; value: string; onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void }
+    : { type?: T });
 
-const InputWrapper = styled.div<{ name: string | undefined }>`
+const Input = <T extends string>({ label, error, name, type, ...props }: InputProps<T>) => {
+  console.log("Input $styleProps:", props.$styleProps);
+  return (
+    <InputWrapper name={name} $styleProps={props.$styleProps}>
+      {type === "radio" ? (
+        label && (
+          <>
+            <StyledInput type={type} $styleProps={props.$styleProps} error={error} {...props} />
+            {error && <ErrorMessage>{error}</ErrorMessage>}
+            <Label $styleProps={props.$styleProps}>{label}</Label>
+          </>
+        )
+      ) : (
+        <>
+          <Label $styleProps={props.$styleProps}>{label}</Label>
+          <StyledInput type={type} $styleProps={props.$styleProps} error={error} {...props} />
+          {error && <ErrorMessage>{error}</ErrorMessage>}
+        </>
+      )}
+    </InputWrapper>
+  );
+};
+
+const InputWrapper = styled.div<{ name: string | undefined; $styleProps?: InputStyleProps }>`
+  width: 100%;
   display: flex;
-  flex-direction: column;
+  flex-direction: ${({ $styleProps }) => $styleProps?.flexDirection || "column"};
   justify-content: center;
-  margin-bottom: ${({ name }) => (name === "타이머" ? 0 : "20px")};
-  min-height: 140px;
+  min-height: ${({ $styleProps }) => $styleProps?.minHeight || "140px"};
+  gap: 8px;
 `;
 
-const Label = styled.label<InputProps>`
-  margin-bottom: 8px;
-  font-size: 20px;
-  font-weight: bold;
+const Label = styled.label<{ $styleProps?: InputStyleProps }>`
+  font-size: ${({ $styleProps }) => $styleProps?.fontSize || "20px"};
+  font-weight: ${({ $styleProps }) => $styleProps?.fontWeight || "bold"};
   color: black;
   display: ${({ $styleProps }) => $styleProps?.labelDisplay || "auto"};
+  align-items: ${({ $styleProps }) => $styleProps?.labelAlignItems || "auto"};
 `;
 
-const StyledInput = styled.input<InputProps>`
+const StyledInput = styled.input<{ error?: string; $styleProps?: InputStyleProps }>`
   padding: ${({ $styleProps }) => $styleProps?.padding || "18px"};
   font-size: 20px;
   border: ${({ error }) => (error ? "1px solid red" : `1px solid ${LIGHTGRAY}`)};

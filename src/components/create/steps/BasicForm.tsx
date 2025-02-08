@@ -53,5 +53,5 @@ export default BasicForm;
 const Wrapper = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 15px;
 `;
