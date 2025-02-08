@@ -17,7 +17,6 @@ type InputProps<T extends string> = BaseInputProps &
     : { type?: T });
 
 const Input = <T extends string>({ label, error, name, type, ...props }: InputProps<T>) => {
-  console.log("Input $styleProps:", props.$styleProps);
   return (
     <InputWrapper name={name} $styleProps={props.$styleProps}>
       {type === "radio" ? (

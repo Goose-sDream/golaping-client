@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
+import { useRecoilState } from "recoil";
 import styled from "styled-components";
 import Description from "./Description";
 import TimePicker from "./TimePicker";
+import { limitState } from "@/atoms/createAtom";
 import Input from "@/components/common/Input";
 import Select from "@/components/common/Select";
 import { YELLOW } from "@/styles/color";
@@ -11,10 +13,13 @@ import { Vote } from "@/types/voteTypes";
 const OptionForm = () => {
   const { control, setValue } = useFormContext<Vote>();
   const [timeOpen, setTimeOpen] = useState(Array(2).fill(false));
-  const limitList = ["제한", "무제한"];
-  const [limited, setLimited] = useState(limitList[0]);
+  // const limitList = ["제한", "무제한"];
+  // const [limited, setLimited] = useState(limitList[0]);
+  const [{ limitList, limited }, setLimited] = useRecoilState(limitState);
   const timeRef = useRef<(HTMLDivElement | null)[]>([]);
   const userVoteLimit = Array.from({ length: 5 }, (_, i) => i + 1);
+
+  console.log("limited =>", limited);
 
   useEffect(() => {
     if (timeRef && timeRef.current) {
@@ -31,7 +36,7 @@ const OptionForm = () => {
   }, []);
 
   const handleRadioChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setLimited(e.target.value);
+    setLimited((prev) => ({ ...prev, limited: e.target.value }));
   };
 
   const timerInputStyleProps = {

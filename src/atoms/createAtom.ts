@@ -9,3 +9,13 @@ export const websocketUrlState = atom<string | undefined>({
   key: "websocketUrlState",
   default: "",
 });
+
+const limitList = ["제한", "무제한"];
+
+export const limitState = atom<{ limitList: string[]; limited: string }>({
+  key: "limited",
+  default: {
+    limitList,
+    limited: limitList[0],
+  },
+});
