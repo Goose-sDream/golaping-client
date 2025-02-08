@@ -7,7 +7,7 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   error?: string;
   name?: string;
-  styleProps?: InputStyleProps;
+  $styleProps?: InputStyleProps;
 }
 
 const Input = ({ label, error, name, ...props }: InputProps) => (
@@ -31,20 +31,20 @@ const Label = styled.label<InputProps>`
   font-size: 20px;
   font-weight: bold;
   color: black;
-  display: ${({ styleProps }) => styleProps?.labelDisplay || "auto"};
+  display: ${({ $styleProps }) => $styleProps?.labelDisplay || "auto"};
 `;
 
 const StyledInput = styled.input<InputProps>`
-  padding: ${({ styleProps }) => styleProps?.padding || "18px"};
+  padding: ${({ $styleProps }) => $styleProps?.padding || "18px"};
   font-size: 20px;
   border: ${({ error }) => (error ? "1px solid red" : `1px solid ${LIGHTGRAY}`)};
   border-radius: 12px;
   transition: border-color 0.2s;
   background-color: ${LIGHTGRAY};
   opacity: ${({ disabled }) => (disabled ? 0.5 : 1)};
-  text-align: ${({ styleProps }) => styleProps?.textAlign || "left"};
-  width: ${({ styleProps }) => styleProps?.width || "300px"};
-  pointer-events: ${({ styleProps }) => styleProps?.pointerEvents || "auto"};
+  text-align: ${({ $styleProps }) => $styleProps?.textAlign || "left"};
+  width: ${({ $styleProps }) => $styleProps?.width || "300px"};
+  pointer-events: ${({ $styleProps }) => $styleProps?.pointerEvents || "auto"};
 
   &:focus {
     outline: none;

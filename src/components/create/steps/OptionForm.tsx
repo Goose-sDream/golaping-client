@@ -81,7 +81,7 @@ const OptionForm = () => {
                       error={error?.message}
                       value={field.value || ""}
                       autoComplete="off"
-                      styleProps={inputStyleProps}
+                      $styleProps={inputStyleProps}
                       name="타이머"
                     />
                     <h3 style={{ fontSize: "20px" }}>{idx > 0 ? "분" : "시간"}</h3>
@@ -162,8 +162,8 @@ const OptionForm = () => {
         >
           <div
             style={{
-              width: "30px",
-              height: "30px",
+              width: "20px",
+              height: "20px",
               borderRadius: "100%",
               backgroundColor: `${YELLOW}`,
             }}
