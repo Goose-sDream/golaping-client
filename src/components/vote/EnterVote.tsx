@@ -70,7 +70,7 @@ const EnterVote = ({ setStep }: EnterVoteProps) => {
       console.error("Failed to send WebSocket message:", error);
     }
 
-    client.subscribe("/user/queue/initialResponse", function (message) {
+    client.subscribe("/user/queue/initialResponse", (message: { body: string }) => {
       console.log("Received: ", JSON.parse(message.body));
     });
   };

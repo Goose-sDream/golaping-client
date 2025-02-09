@@ -1,97 +1,69 @@
-import { createContext, useContext, useEffect, useReducer, useRef } from "react";
+import { useEffect, useRef, createContext, useContext } from "react";
 import { Client, IStompSocket } from "@stomp/stompjs";
+import { atom, useRecoilState } from "recoil";
 import SockJS from "sockjs-client";
 import useVoteId from "@/hooks/useVoteId";
+import StorageController from "@/storage/storageController";
 
-interface WebSocketState {
-  client: Client | null;
-  connected: boolean;
-  error: string | null;
-  disconnect: () => void;
-}
+const webSocketState = atom({
+  key: "webSocketState",
+  default: {
+    client: null as Client | null,
+    connected: false,
+    error: null as string | null,
+  },
+});
 
-type WebSocketAction =
-  | { type: "CONNECT"; client: Client }
-  | { type: "DISCONNECT" }
-  | { type: "SET_ERROR"; error: string };
-
-const WebSocketContext = createContext<WebSocketState | null>(null);
-
-const webSocketReducer = (state: WebSocketState, action: WebSocketAction): WebSocketState => {
-  switch (action.type) {
-    case "CONNECT":
-      return { ...state, client: action.client, connected: true, error: null };
-    case "DISCONNECT":
-      return { ...state, client: null, connected: false };
-    case "SET_ERROR":
-      return { ...state, error: action.error };
-    default:
-      return state;
-  }
-};
+const storage = new StorageController("session");
+const WebSocketContext = createContext<any>(null);
 
 export const WebSocketProvider = ({ children }: { children: React.ReactNode }) => {
-  const [state, dispatch] = useReducer(webSocketReducer, {
-    client: null,
-    connected: false,
-    error: null,
-    disconnect: () => {},
-  });
-
+  const [state, setState] = useRecoilState(webSocketState);
   const stompClientRef = useRef<Client | null>(null);
   const { voteId } = useVoteId();
 
   useEffect(() => {
+    const storedConnected = storage.getItem("wsConnected");
+
+    if (storedConnected === "true" && state.connected) {
+      console.log("✅ WebSocket already connected. Skipping reconnection.");
+      return;
+    }
+
     const client = new Client({
       webSocketFactory: () => {
         const wsUrl = `${process.env.API_URL}/ws/votes`;
-        const socket = new SockJS(wsUrl, null, {
-          transports: ["websocket"],
-        }) as IStompSocket;
-
-        socket.onerror = (error) => {
-          console.error("WebSocket Error:", error);
-          dispatch({ type: "SET_ERROR", error: "Connection error occurred. Attempting to reconnect..." });
-        };
-
-        return socket;
+        return new SockJS(wsUrl, null, { transports: ["websocket"] }) as IStompSocket;
       },
-
       reconnectDelay: 100000,
       connectHeaders: {
         voteUuid: String(voteId),
       },
-      debug: (str) => {
-        if (process.env.NODE_ENV === "development") {
-          console.log(str);
-        }
-      },
+      debug: (str) => console.log(str),
       onConnect: () => {
-        console.log("WebSocket connected successfully");
-        dispatch({ type: "CONNECT", client });
+        console.log("✅ WebSocket connected successfully");
+        storage.setItem("wsConnected", "true");
+        setState((prev) => ({ ...prev, client, connected: true, error: null }));
       },
       onStompError: (frame) => {
-        console.error("STOMP Error:", frame);
-        dispatch({ type: "SET_ERROR", error: `STOMP Error: ${frame.headers?.message || "Unknown error"}` });
+        console.error("❌ STOMP Error:", frame);
+        setState((prev) => ({ ...prev, error: `STOMP Error: ${frame.headers?.message || "Unknown error"}` }));
       },
       onWebSocketClose: () => {
-        console.log("WebSocket connection closed. Attempting to reconnect...");
+        console.log("⚠️ WebSocket connection closed.");
+        storage.removeItem("wsConnected");
       },
     });
 
-    try {
-      client.activate();
-      stompClientRef.current = client;
-    } catch (error) {
-      console.error("Failed to activate STOMP client:", error);
-      dispatch({ type: "SET_ERROR", error: "Failed to initialize WebSocket connection" });
-    }
+    client.activate();
+    stompClientRef.current = client;
 
     return () => {
       if (client.active) {
         client.deactivate();
         stompClientRef.current = null;
-        dispatch({ type: "DISCONNECT" });
+        storage.removeItem("wsConnected");
+        setState((prev) => ({ ...prev, client: null, connected: false }));
       }
     };
   }, []);
@@ -100,7 +72,8 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
     if (stompClientRef.current?.active) {
       stompClientRef.current.deactivate();
       stompClientRef.current = null;
-      dispatch({ type: "DISCONNECT" });
+      storage.removeItem("wsConnected");
+      setState((prev) => ({ ...prev, client: null, connected: false }));
     }
   };
 
@@ -109,14 +82,6 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
 
 export const useWebSocket = () => {
   const context = useContext(WebSocketContext);
-  if (!context) {
-    throw new Error("useWebSocket must be used within a WebSocketProvider");
-  }
-
-  return {
-    client: context.client,
-    connected: context.connected,
-    error: context.error,
-    disconnect: context.disconnect,
-  };
+  if (!context) throw new Error("useWebSocket must be used within a WebSocketProvider");
+  return context;
 };
