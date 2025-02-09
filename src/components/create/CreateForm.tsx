@@ -5,7 +5,6 @@ import styled from "styled-components";
 import { v4 as uuid } from "uuid";
 import { BasicForm, LandingForm, OptionForm, ShareVote } from "./steps";
 import { Button, Stepper } from "@/components/common";
-import useVoteId from "@/hooks/useVoteId";
 import Request from "@/services/requests";
 import { APIResponse } from "@/types/apiTypes";
 
@@ -17,7 +16,6 @@ export const CreateForm = () => {
   const [step, setStep] = useState<number>(1);
   const [randomLink, setRandomLink] = useState<string>("");
   const request = Request();
-  const { setVoteId } = useVoteId();
 
   const createVote = async (data: FieldValues) => {
     const timeLimit = data.hour * 60 + data.minute;
@@ -33,7 +31,6 @@ export const CreateForm = () => {
     console.log(response);
 
     if (response.isSuccess) {
-      setVoteId(response.result.voteUuid);
       setStep(step + 1);
     } else {
       console.error("Vote creation failed:", response.message);

@@ -1,7 +1,6 @@
 import { createContext, useContext } from "react";
 import { Client } from "@stomp/stompjs";
-import useVoteId from "@/hooks/useVoteId";
-import { useWebSocket } from "@/hooks/useWebsocket";
+import useWebSocket from "@/hooks/useWebsocket";
 
 interface WebSocketContextType {
   client: Client | null;
@@ -13,8 +12,7 @@ interface WebSocketContextType {
 const WebSocketContext = createContext<WebSocketContextType | null>(null);
 
 export const WebSocketProvider = ({ children }: { children: React.ReactNode }) => {
-  const { voteId } = useVoteId();
-  const webSocket = useWebSocket(voteId);
+  const webSocket = useWebSocket();
 
   return <WebSocketContext.Provider value={webSocket}>{children}</WebSocketContext.Provider>;
 };

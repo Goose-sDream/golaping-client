@@ -1,11 +1,10 @@
-import { Dispatch, SetStateAction, useEffect } from "react";
+import { Dispatch, SetStateAction } from "react";
 import { FieldValues, useForm } from "react-hook-form";
+import { useParams } from "react-router-dom";
 import styled from "styled-components";
 import { Button } from "../common";
 import LogoWithInput from "./LogoWithInput";
-import useCookies from "@/hooks/useCookies";
-import useVoteId from "@/hooks/useVoteId";
-import { useWebSocket } from "@/hooks/useWebsocket";
+import useWebSocket from "@/hooks/useWebsocket";
 import Request from "@/services/requests";
 import { APIResponse } from "@/types/apiTypes";
 
@@ -15,18 +14,16 @@ interface EnterVoteProps {
 
 const EnterVote = ({ setStep }: EnterVoteProps) => {
   const { register, handleSubmit } = useForm();
-  const { voteId } = useVoteId();
+  const { id } = useParams();
   const request = Request();
-  const { client, connected, error } = useWebSocket(voteId);
-  const { getCookie } = useCookies();
-  const sessionId = getCookie("SESSIONID");
+  const { client, connected, error } = useWebSocket(id!);
 
   const onSubmit = async (data: FieldValues) => {
     try {
       const response = await request.post<APIResponse<{ websocketUrl: string; voteEndTime: string }>>(
         `/api/votes/enter`,
         {
-          voteUuid: voteId,
+          voteUuid: id,
           nickname: data.nickname,
         }
       );
@@ -46,34 +43,19 @@ const EnterVote = ({ setStep }: EnterVoteProps) => {
       return;
     }
 
-    if (!client || !connected) {
-      console.warn("WebSocket not connected");
-      return;
-    }
-
     try {
-      client.publish({
-        destination: `/app/vote/connect`,
-        body: JSON.stringify({
-          voteUuid: voteId,
-          sessionId: sessionId,
-        }),
+      client!.publish({
+        destination: `/app/vote/${id}/connect`,
       });
       setStep(2);
     } catch (error) {
       console.error("Failed to send WebSocket message:", error);
     }
 
-    client.subscribe("/user/queue/initialResponse", (message: { body: string }) => {
+    client!.subscribe("/user/queue/initialResponse", (message: { body: string }) => {
       console.log("Received: ", JSON.parse(message.body));
     });
   };
-
-  useEffect(() => {
-    if (sessionId) {
-      sendWebSocket();
-    }
-  }, []);
 
   return (
     <Wrapper onSubmit={handleSubmit(onSubmit)}>

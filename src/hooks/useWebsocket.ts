@@ -7,14 +7,14 @@ import StorageController from "@/storage/storageController";
 
 const storage = new StorageController("session");
 
-export const useWebSocket = (voteId: string) => {
+const useWebSocket = (voteId?: string) => {
   const [state, setState] = useRecoilState(webSocketState);
   const stompClientRef = useRef<Client | null>(null);
 
   const isConnected = storage.getItem("wsConnected") === "true";
+
   useEffect(() => {
     if (isConnected) {
-      setState((prev) => ({ ...prev, connected: true }));
       console.log("Already connected, skipping initialization");
       return;
     }
@@ -32,11 +32,11 @@ export const useWebSocket = (voteId: string) => {
         return socket;
       },
       reconnectDelay: 100000,
-      connectHeaders: { voteUuid: voteId },
+      connectHeaders: { voteUuid: voteId! },
       debug: (str) => process.env.NODE_ENV === "development" && console.log(str),
       onConnect: () => {
         console.log("WebSocket connected successfully");
-        setState({ client, connected: true, error: null });
+        setState({ client: client, connected: true, error: null });
         storage.setItem("wsConnected", "true");
       },
       onStompError: (frame) => {
@@ -76,3 +76,5 @@ export const useWebSocket = (voteId: string) => {
 
   return { client: state.client, connected: state.connected, error: state.error, disconnect };
 };
+
+export default useWebSocket;
