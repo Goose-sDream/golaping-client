@@ -6,7 +6,10 @@ import { v4 as uuid } from "uuid";
 import { BasicForm, LandingForm, OptionForm, ShareVote } from "./steps";
 import { Button, Stepper } from "@/components/common";
 import Request from "@/services/requests";
+import StorageController from "@/storage/storageController";
 import { APIResponse } from "@/types/apiTypes";
+
+const storage = new StorageController("session");
 
 export const CreateForm = () => {
   const methods = useForm({
@@ -32,6 +35,8 @@ export const CreateForm = () => {
 
     if (response.isSuccess) {
       setStep(step + 1);
+      storage.setItem("nickname", data.nickname);
+      storage.setItem("voteUuid", response.result.voteUuid);
     } else {
       console.error("Vote creation failed:", response.message);
     }
