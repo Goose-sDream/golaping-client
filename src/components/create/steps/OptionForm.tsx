@@ -80,7 +80,7 @@ const OptionForm = () => {
                   }}
                 >
                   <div
-                    style={{ display: "flex", alignItems: "center", gap: "10px", position: "relative" }}
+                    style={{ display: "flex", alignItems: "center", gap: "5px", position: "relative" }}
                     onClick={() => setTimeOpen((prev) => prev.map((p, i) => (i === idx ? true : p)))}
                     ref={(el) => {
                       timeRef.current[idx] = el;

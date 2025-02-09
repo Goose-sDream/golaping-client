@@ -61,7 +61,7 @@ const SelectContainer = styled.div`
 
 const StyledSelect = styled.select<{ color: string }>`
   width: 100%;
-  padding: 10px 40px 10px 10px;
+  padding: 10px 40px 10px 20px;
   border: none;
   border-radius: 4px;
   appearance: none;

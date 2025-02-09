@@ -1,19 +1,19 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Engine, Render, Mouse, World, Bodies, MouseConstraint, Runner, Events, Body } from "matter-js";
-import { useRecoilState } from "recoil";
+import { useRecoilValue } from "recoil";
 import styled, { keyframes } from "styled-components";
 import { limitState } from "@/atoms/createAtom";
 import { LIGHTGRAY } from "@/styles/color";
 
 const MakeCandidate = () => {
-  const [{ limited }] = useRecoilState(limitState);
+  const { limited } = useRecoilValue(limitState);
 
   const containerRef = useRef<HTMLDivElement | null>(null);
   const engineRef = useRef(Engine.create());
   const world = engineRef.current.world;
   const renderRef = useRef<Render | null>(null);
   const candidatesRef = useRef<Body[]>([]);
-  const textDataRef = useRef<{ [key: string]: string }>({}); // ✅ 텍스트 데이터를 useRef로 변경
+  const textDataRef = useRef<{ [key: string]: string }>({});
   const inputRef = useRef<HTMLInputElement | null>(null);
   const mouseConstraintRef = useRef<MouseConstraint | null>(null);
 
@@ -97,10 +97,6 @@ const MakeCandidate = () => {
       } else {
         Body.scale(candidatesRef.current[target], 1.075, 1.075);
       }
-
-      // if (mouseConstraintRef.current) {
-      //   mouseConstraintRef.current.constraint.bodyB = null;
-      // }
     });
 
     // ✅ Matter.js의 afterRender를 활용하여 원 위에 텍스트를 지속적으로 업데이트
@@ -152,14 +148,10 @@ const MakeCandidate = () => {
       render: { fillStyle: LIGHTGRAY },
       ...(limited === "무제한" && {
         collisionFilter: {
-          category: 0x0002, // ✅ 사용자 정의 카테고리 설정 (마우스 선택 방지)
-          mask: 0x0002 | 0x0004 | 0x0008,
+          category: 0x0002, // 사용자 정의 원 카테고리 설정
+          mask: 0x0002 | 0x0008, // 다른 물체들(벽)과 충돌 가능
         },
-      }), // ✅ 다른 물체들과는 충돌 가능 } })
-      // collisionFilter: {
-      //   category: 0x0002, // ✅ 사용자 정의 카테고리 설정 (마우스 선택 방지)
-      //   mask: 0x0002 | 0x0004 | 0x0008, // ✅ 다른 물체들과는 충돌 가능
-      // },
+      }),
     });
 
     World.add(world, newBall);
@@ -207,7 +199,6 @@ const MakeCandidate = () => {
 
   return (
     <StyledSection ref={containerRef}>
-      {/* ✅ 모달 UI */}
       {modalVisible && (
         <ModalWrapper ref={candidateModalRef}>
           <ModalContent>
