@@ -1,8 +1,4 @@
 const useCookies = () => {
-  const setCookie = (key: string, value: string) => {
-    document.cookie = `${key}=${value}; max-age=10000; path=/; SameSite=Lax`;
-  };
-
   const getCookie = (key: string) => {
     return document.cookie
       .split(";")
@@ -10,7 +6,7 @@ const useCookies = () => {
       ?.split("=")[1];
   };
 
-  return { setCookie, getCookie };
+  return { getCookie };
 };
 
 export default useCookies;
