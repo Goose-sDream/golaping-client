@@ -1,11 +1,12 @@
 import { Dispatch, SetStateAction, useEffect } from "react";
 import { FieldValues, useForm } from "react-hook-form";
-import { useParams } from "react-router-dom";
 import styled from "styled-components";
 import { Button } from "../common";
 import LogoWithInput from "./LogoWithInput";
 import { useWebSocket } from "@/contexts/useWebsocket";
 import useCookies from "@/hooks/useCookies";
+import useVoteId from "@/hooks/useVoteId";
+import useWebsocketUrl from "@/hooks/useWebsocketUrl";
 import Request from "@/services/requests";
 import { APIResponse } from "@/types/apiTypes";
 
@@ -18,26 +19,27 @@ export interface VoteFormData extends FieldValues {
 }
 
 const EnterVote = ({ setStep }: EnterVoteProps) => {
-  const { register, handleSubmit } = useForm<VoteFormData>();
-  const { id } = useParams();
+  const { websocketUrl } = useWebsocketUrl();
+  console.log(websocketUrl);
+  const { register, handleSubmit } = useForm();
+  const { voteId } = useVoteId();
   const request = Request();
   const { client, connected, error } = useWebSocket();
   const { getCookie } = useCookies();
   const sessionId = getCookie("SESSIONID");
 
-  const onSubmit = async (data: VoteFormData) => {
+  const onSubmit = async (data: FieldValues) => {
     try {
       const response = await request.post<APIResponse<{ websocketUrl: string; voteEndTime: string }>>(
         `/api/votes/enter`,
         {
-          voteUuid: id,
+          voteUuid: voteId,
           nickname: data.nickname,
         }
       );
 
       if (response.isSuccess) {
         sendWebSocket();
-        setStep(2);
       }
     } catch (error) {
       console.error("Failed to enter vote:", error);
@@ -59,13 +61,18 @@ const EnterVote = ({ setStep }: EnterVoteProps) => {
       client.publish({
         destination: `/app/vote/connect`,
         body: JSON.stringify({
-          voteUuid: id,
+          voteUuid: voteId,
           sessionId: sessionId,
         }),
       });
+      setStep(2);
     } catch (error) {
       console.error("Failed to send WebSocket message:", error);
     }
+
+    client.subscribe("/user/queue/initialResponse", function (message) {
+      console.log("Received: ", JSON.parse(message.body));
+    });
   };
 
   useEffect(() => {

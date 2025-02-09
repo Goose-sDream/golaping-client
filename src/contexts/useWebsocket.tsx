@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useReducer, useRef } from "react";
 import { Client, IStompSocket } from "@stomp/stompjs";
-import { useParams } from "react-router-dom";
 import SockJS from "sockjs-client";
+import useVoteId from "@/hooks/useVoteId";
 
 interface WebSocketState {
   client: Client | null;
@@ -39,7 +39,7 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
   });
 
   const stompClientRef = useRef<Client | null>(null);
-  const { id } = useParams();
+  const { voteId } = useVoteId();
 
   useEffect(() => {
     const client = new Client({
@@ -59,7 +59,7 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
 
       reconnectDelay: 100000,
       connectHeaders: {
-        voteUuid: String(id),
+        voteUuid: String(voteId),
       },
       debug: (str) => {
         if (process.env.NODE_ENV === "development") {

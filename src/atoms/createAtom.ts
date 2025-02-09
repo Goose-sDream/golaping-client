@@ -1,7 +1,7 @@
 import { atom } from "recoil";
 
-export const sessionIdState = atom<string | null>({
-  key: "sessionIdState",
+export const voteIdState = atom<string | null>({
+  key: "voteIdState",
   default: null,
 });
 

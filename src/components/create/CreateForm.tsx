@@ -5,6 +5,7 @@ import styled from "styled-components";
 import { v4 as uuid } from "uuid";
 import { BasicForm, LandingForm, OptionForm, ShareVote } from "./steps";
 import { Button, Stepper } from "@/components/common";
+import useVoteId from "@/hooks/useVoteId";
 import useWebsocketUrl from "@/hooks/useWebsocketUrl";
 import Request from "@/services/requests";
 import { APIResponse } from "@/types/apiTypes";
@@ -18,11 +19,12 @@ export const CreateForm = () => {
   const [randomLink, setRandomLink] = useState<string>("");
   const request = Request();
   const { setWebsocketUrl } = useWebsocketUrl();
+  const { setVoteId } = useVoteId();
 
   const createVote = async (data: FieldValues) => {
     const timeLimit = data.hour * 60 + data.minute;
     const link = `${window.location.origin}${generateLink()}`;
-    const response = await request.post<APIResponse<{ websocketUrl: string; sessionId: string }>>("/api/votes", {
+    const response = await request.post<APIResponse<{ websocketUrl: string; voteUuid: string }>>("/api/votes", {
       title: data.title,
       nickname: data.nickname,
       type: data.type,
@@ -33,8 +35,9 @@ export const CreateForm = () => {
     console.log(response);
 
     if (response.isSuccess) {
-      const { websocketUrl } = response.result;
+      const { websocketUrl, voteUuid } = response.result;
       setWebsocketUrl(websocketUrl);
+      setVoteId(voteUuid);
       setStep(step + 1);
     } else {
       console.error("Vote creation failed:", response.message);
