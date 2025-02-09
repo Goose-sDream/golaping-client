@@ -13,10 +13,6 @@ interface EnterVoteProps {
   setStep: Dispatch<SetStateAction<number>>;
 }
 
-export interface VoteFormData extends FieldValues {
-  nickname: string;
-}
-
 const EnterVote = ({ setStep }: EnterVoteProps) => {
   const { register, handleSubmit } = useForm();
   const { voteId } = useVoteId();
@@ -40,6 +36,7 @@ const EnterVote = ({ setStep }: EnterVoteProps) => {
       }
     } catch (error) {
       console.error("Failed to enter vote:", error);
+      alert("투표 입장에 실패했습니다.");
     }
   };
 
@@ -76,7 +73,7 @@ const EnterVote = ({ setStep }: EnterVoteProps) => {
     if (sessionId) {
       sendWebSocket();
     }
-  }, [sessionId, connected]);
+  }, []);
 
   return (
     <Wrapper onSubmit={handleSubmit(onSubmit)}>

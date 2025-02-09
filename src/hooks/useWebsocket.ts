@@ -11,8 +11,10 @@ export const useWebSocket = (voteId: string) => {
   const [state, setState] = useRecoilState(webSocketState);
   const stompClientRef = useRef<Client | null>(null);
 
+  const isConnected = storage.getItem("wsConnected") === "true";
   useEffect(() => {
-    if (storage.getItem("wsConnected") === "true") {
+    if (isConnected) {
+      setState((prev) => ({ ...prev, connected: true }));
       console.log("Already connected, skipping initialization");
       return;
     }
