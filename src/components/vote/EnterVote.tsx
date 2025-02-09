@@ -1,22 +1,26 @@
-import { Dispatch, SetStateAction } from "react";
+import { Dispatch, SetStateAction, useEffect } from "react";
 import { FieldValues, useForm } from "react-hook-form";
 import { useParams } from "react-router-dom";
 import styled from "styled-components";
 import { Button } from "../common";
 import LogoWithInput from "./LogoWithInput";
-import useWebSocket from "@/hooks/useWebsocket";
+import { useWebSocket } from "@/contexts/WebSocketContext";
 import Request from "@/services/requests";
+import StorageController from "@/storage/storageController";
 import { APIResponse } from "@/types/apiTypes";
 
 interface EnterVoteProps {
   setStep: Dispatch<SetStateAction<number>>;
 }
 
+const storage = new StorageController("session");
+
 const EnterVote = ({ setStep }: EnterVoteProps) => {
   const { register, handleSubmit } = useForm();
   const { id } = useParams();
+  const nickname = storage.getItem("nickname");
   const request = Request();
-  const { client, connected, error } = useWebSocket(id!);
+  const { client, connected, error } = useWebSocket();
 
   const onSubmit = async (data: FieldValues) => {
     try {
@@ -29,7 +33,8 @@ const EnterVote = ({ setStep }: EnterVoteProps) => {
       );
 
       if (response.isSuccess) {
-        sendWebSocket();
+        storage.setItem("nickname", data.nickname);
+        subscribeToMessages();
       }
     } catch (error) {
       console.error("Failed to enter vote:", error);
@@ -37,25 +42,34 @@ const EnterVote = ({ setStep }: EnterVoteProps) => {
     }
   };
 
-  const sendWebSocket = () => {
-    if (error) {
-      console.error("WebSocket Error:", error);
+  const subscribeToMessages = () => {
+    if (!client || error) {
+      console.error("WebSocket not ready:", error || "Client not initialized");
       return;
     }
 
     try {
-      client!.publish({
+      client.publish({
         destination: `/app/vote/${id}/connect`,
+      });
+      client.subscribe("/user/queue/initialResponse", (message: { body: string }) => {
+        console.log("Received: ", JSON.parse(message.body));
       });
       setStep(2);
     } catch (error) {
-      console.error("Failed to send WebSocket message:", error);
+      console.error("Failed to subscribe to messages:", error);
     }
-
-    client!.subscribe("/user/queue/initialResponse", (message: { body: string }) => {
-      console.log("Received: ", JSON.parse(message.body));
-    });
   };
+
+  useEffect(() => {
+    console.log("Connected:", connected, "Client:", client);
+
+    if (!connected || !client) return; // connected가 true이면서 client가 존재할 때만 실행
+
+    if (nickname) {
+      subscribeToMessages();
+    }
+  }, [connected, client]);
 
   return (
     <Wrapper onSubmit={handleSubmit(onSubmit)}>

@@ -7,6 +7,7 @@ const VoteForm = () => {
 
   const steps: { [key: number]: JSX.Element } = {
     1: <EnterVote setStep={setStep} />,
+    2: <div>Step 2</div>,
   };
   return <Wrapper>{steps[step]}</Wrapper>;
 };
