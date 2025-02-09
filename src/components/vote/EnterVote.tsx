@@ -3,9 +3,9 @@ import { FieldValues, useForm } from "react-hook-form";
 import styled from "styled-components";
 import { Button } from "../common";
 import LogoWithInput from "./LogoWithInput";
-import { useWebSocket } from "@/contexts/useWebsocket";
 import useCookies from "@/hooks/useCookies";
 import useVoteId from "@/hooks/useVoteId";
+import { useWebSocket } from "@/hooks/useWebsocket";
 import useWebsocketUrl from "@/hooks/useWebsocketUrl";
 import Request from "@/services/requests";
 import { APIResponse } from "@/types/apiTypes";
@@ -24,7 +24,7 @@ const EnterVote = ({ setStep }: EnterVoteProps) => {
   const { register, handleSubmit } = useForm();
   const { voteId } = useVoteId();
   const request = Request();
-  const { client, connected, error } = useWebSocket();
+  const { client, connected, error } = useWebSocket(voteId);
   const { getCookie } = useCookies();
   const sessionId = getCookie("SESSIONID");
 

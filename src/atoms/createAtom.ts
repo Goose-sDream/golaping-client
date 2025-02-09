@@ -1,8 +1,8 @@
 import { atom } from "recoil";
 
-export const voteIdState = atom<string | null>({
+export const voteIdState = atom<string>({
   key: "voteIdState",
-  default: null,
+  default: "",
 });
 
 export const websocketUrlState = atom<string | undefined>({

@@ -6,7 +6,7 @@ import CreatePage from "./pages/CreatePage";
 import TestPage from "./pages/TestPage";
 import VotePage from "./pages/VotePage";
 import GlobalStyle from "./styles/GlobalStyle";
-import { WebSocketProvider } from "@/contexts/useWebsocket";
+import { WebSocketProvider } from "@/contexts/WebsocketProvider";
 
 const App: React.FC = () => {
   return (
