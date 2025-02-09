@@ -6,7 +6,6 @@ import { v4 as uuid } from "uuid";
 import { BasicForm, LandingForm, OptionForm, ShareVote } from "./steps";
 import { Button, Stepper } from "@/components/common";
 import useVoteId from "@/hooks/useVoteId";
-import useWebsocketUrl from "@/hooks/useWebsocketUrl";
 import Request from "@/services/requests";
 import { APIResponse } from "@/types/apiTypes";
 
@@ -18,7 +17,6 @@ export const CreateForm = () => {
   const [step, setStep] = useState<number>(1);
   const [randomLink, setRandomLink] = useState<string>("");
   const request = Request();
-  const { setWebsocketUrl } = useWebsocketUrl();
   const { setVoteId } = useVoteId();
 
   const createVote = async (data: FieldValues) => {
@@ -35,9 +33,7 @@ export const CreateForm = () => {
     console.log(response);
 
     if (response.isSuccess) {
-      const { websocketUrl, voteUuid } = response.result;
-      setWebsocketUrl(websocketUrl);
-      setVoteId(voteUuid);
+      setVoteId(response.result.voteUuid);
       setStep(step + 1);
     } else {
       console.error("Vote creation failed:", response.message);

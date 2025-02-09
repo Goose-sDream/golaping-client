@@ -6,7 +6,6 @@ import LogoWithInput from "./LogoWithInput";
 import useCookies from "@/hooks/useCookies";
 import useVoteId from "@/hooks/useVoteId";
 import { useWebSocket } from "@/hooks/useWebsocket";
-import useWebsocketUrl from "@/hooks/useWebsocketUrl";
 import Request from "@/services/requests";
 import { APIResponse } from "@/types/apiTypes";
 
@@ -19,8 +18,6 @@ export interface VoteFormData extends FieldValues {
 }
 
 const EnterVote = ({ setStep }: EnterVoteProps) => {
-  const { websocketUrl } = useWebsocketUrl();
-  console.log(websocketUrl);
   const { register, handleSubmit } = useForm();
   const { voteId } = useVoteId();
   const request = Request();
