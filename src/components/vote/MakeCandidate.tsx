@@ -99,6 +99,25 @@ const MakeCandidate = () => {
       }
     });
 
+    // ✅ 마우스가 벽을 벗어나면 드래그 중지
+    Events.on(mouseConstraint, "mousemove", (event) => {
+      const { mouse } = event.source;
+      const { x, y } = mouse.position;
+
+      // 벽 안쪽 범위 (조정 가능)
+      const minX = 50,
+        maxX = 750;
+      const minY = 50,
+        maxY = 550;
+
+      if (x < minX || x > maxX || y < minY || y > maxY) {
+        if (mouseConstraint.constraint.bodyB) {
+          mouseConstraint.constraint.bodyB = null; // 드래그 해제
+        }
+        mouseConstraint.mouse.button = -1; // 마우스 버튼 해제 상태로 변경
+      }
+    });
+
     // ✅ Matter.js의 afterRender를 활용하여 원 위에 텍스트를 지속적으로 업데이트
     // Matter.js는 본래 물리 객체들만 그리는데, 현재 각 원에 텍스트를 추가하고 싶기에 afterRender로 따로 관리해줘야
     Events.on(render, "afterRender", () => {
