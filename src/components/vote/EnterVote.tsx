@@ -18,23 +18,20 @@ const storage = new StorageController("session");
 const EnterVote = ({ setStep }: EnterVoteProps) => {
   const { register, handleSubmit } = useForm();
   const { id } = useParams();
-  const nickname = storage.getItem("nickname");
   const request = Request();
-  const { client, connected, error } = useWebSocket();
+  const { client, connected, error, connectWebSocket } = useWebSocket();
 
   const onSubmit = async (data: FieldValues) => {
     try {
       const response = await request.post<APIResponse<{ websocketUrl: string; voteEndTime: string }>>(
         `/api/votes/enter`,
-        {
-          voteUuid: id,
-          nickname: data.nickname,
-        }
+        { voteUuid: id, nickname: data.nickname }
       );
 
       if (response.isSuccess) {
-        storage.setItem("nickname", data.nickname);
-        subscribeToMessages();
+        storage.setItem("nickname", data.nickname); // nickname 저장
+        storage.setItem("voteUuid", id!); // voteUuid 저장
+        connectWebSocket(); // 새로고침 없이 웹소켓 재연결 실행
       }
     } catch (error) {
       console.error("Failed to enter vote:", error);
@@ -62,19 +59,15 @@ const EnterVote = ({ setStep }: EnterVoteProps) => {
   };
 
   useEffect(() => {
-    console.log("Connected:", connected, "Client:", client);
-
-    if (!connected || !client) return; // connected가 true이면서 client가 존재할 때만 실행
-
-    if (nickname) {
+    if (connected && client) {
       subscribeToMessages();
     }
-  }, [connected, client]);
+  }, [connected, client]); // connected나 client가 변경될 때 실행
 
   return (
     <Wrapper onSubmit={handleSubmit(onSubmit)}>
       <Title>투표 제목</Title>
-      <Button type="submit" style={{ position: "absolute", bottom: 20, zIndex: 100 }} disabled={!connected}>
+      <Button type="submit" style={{ position: "absolute", bottom: 20, zIndex: 100 }}>
         투표 입장하기
       </Button>
       <LogoWithInput register={register} />

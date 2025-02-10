@@ -8,6 +8,7 @@ interface WebSocketContextType {
   connected: boolean;
   error: string | null;
   disconnect: () => void;
+  connectWebSocket: () => void; // 새로고침 없이 WebSocket 연결하는 함수 추가
 }
 
 const WebSocketContext = createContext<WebSocketContextType | null>(null);
@@ -17,11 +18,16 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
   const [connected, setConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const clientRef = useRef<Client | null>(null);
-  const voteUuid = storage.getItem("voteUuid");
-  const nickname = storage.getItem("nickname");
 
-  useEffect(() => {
-    // 기존 연결이 있으면 닫아주기
+  const initializeWebSocket = () => {
+    const voteUuid = storage.getItem("voteUuid");
+    const nickname = storage.getItem("nickname");
+
+    if (!nickname) {
+      console.log("No nickname found, skipping WebSocket connection.");
+      return; // 닉네임이 없으면 연결하지 않음
+    }
+
     if (clientRef.current?.active) {
       clientRef.current.deactivate();
       clientRef.current = null;
@@ -32,50 +38,46 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
         const wsUrl = `${process.env.API_URL}/ws/votes`;
         const socket = new SockJS(wsUrl, null, { transports: ["websocket"] }) as IStompSocket;
         (socket as any).withCredentials = true;
-
-        socket.onerror = (error) => {
-          console.error("WebSocket Error:", error);
-          setError("Connection error occurred.");
-        };
-
         return socket;
       },
-      connectHeaders: {
-        voteUuid: voteUuid!,
-        nickname: nickname!,
-      },
-      debug: (str) => console.log(str),
+      connectHeaders: { voteUuid: voteUuid || "", nickname },
       onConnect: () => {
         console.log("WebSocket connected successfully");
         setConnected(true);
         setError(null);
       },
+      onWebSocketClose: () => {
+        console.log("WebSocket closed");
+        setConnected(false);
+      },
       onStompError: (frame) => {
         console.error("STOMP Error:", frame);
         setError(`STOMP Error: ${frame.headers?.message || "Unknown error"}`);
       },
-      onWebSocketClose: () => {
-        console.log("WebSocket connection closed");
-        setConnected(false);
-      },
     });
 
     try {
-      client.activate(); // 연결 시작
+      client.activate();
       clientRef.current = client;
     } catch (error) {
-      console.error("Failed to activate STOMP client:", error);
+      console.error("WebSocket activation failed:", error);
       setError("Failed to initialize WebSocket");
     }
+  };
 
-    // 언마운트될 때 기존 연결 해제 (다음 마운트 시 새로 연결)
+  useEffect(() => {
+    initializeWebSocket();
     return () => {
       if (clientRef.current?.active) {
         clientRef.current.deactivate();
         clientRef.current = null;
       }
     };
-  }, []); // 마운트될 때 실행
+  }, []); // ✅ 처음 마운트될 때 한 번만 실행
+
+  const connectWebSocket = () => {
+    initializeWebSocket(); // ✅ 수동으로 WebSocket을 연결할 수 있도록 추가
+  };
 
   const disconnect = () => {
     if (clientRef.current?.active) {
@@ -86,14 +88,11 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
     }
   };
 
-  const value = {
-    client: clientRef.current,
-    connected,
-    error,
-    disconnect,
-  };
-
-  return <WebSocketContext.Provider value={value}>{children}</WebSocketContext.Provider>;
+  return (
+    <WebSocketContext.Provider value={{ client: clientRef.current, connected, error, disconnect, connectWebSocket }}>
+      {children}
+    </WebSocketContext.Provider>
+  );
 };
 
 export const useWebSocket = () => {
