@@ -1,4 +1,5 @@
 import VoteForm from "@/components/vote/VoteForm";
+import { WebSocketProvider } from "@/contexts/WebSocketContext";
 
 const VotePage = () => {
   return (
@@ -12,7 +13,9 @@ const VotePage = () => {
         alignItems: "center",
       }}
     >
-      <VoteForm />
+      <WebSocketProvider>
+        <VoteForm />
+      </WebSocketProvider>
     </div>
   );
 };
