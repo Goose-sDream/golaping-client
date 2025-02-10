@@ -7,6 +7,7 @@ type BaseInputProps = {
   label?: string;
   error?: string;
   name?: string;
+  ref?: any;
   $styleProps?: InputStyleProps;
 };
 
@@ -16,13 +17,13 @@ type InputProps<T extends string> = BaseInputProps &
     ? { type: "radio"; checked: boolean; value: string; onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void }
     : { type?: T });
 
-const Input = <T extends string>({ label, error, name, type, ...props }: InputProps<T>) => {
+const Input = <T extends string>({ label, error, name, type, ref, ...props }: InputProps<T>) => {
   return (
     <InputWrapper name={name} $styleProps={props.$styleProps}>
       {type === "radio" ? (
         label && (
           <>
-            <StyledInput type={type} $styleProps={props.$styleProps} error={error} {...props} />
+            <StyledInput ref={ref} type={type} $styleProps={props.$styleProps} error={error} {...props} />
             {error && <ErrorMessage>{error}</ErrorMessage>}
             <Label $styleProps={props.$styleProps}>{label}</Label>
           </>

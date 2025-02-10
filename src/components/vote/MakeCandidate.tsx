@@ -17,9 +17,10 @@ const MakeCandidate = () => {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const mouseConstraintRef = useRef<MouseConstraint | null>(null);
 
-  const [inputText, setInputText] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
+  const isAnimating = useRef(false);
   const [pendingPosition, setPendingPosition] = useState<{ x: number; y: number } | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const radius = 80;
 
@@ -151,8 +152,13 @@ const MakeCandidate = () => {
 
   // ✅ 입력한 텍스트를 원과 함께 생성하는 함수
   // 웹소켓으로 생성할 때마다 요청 보내야 함
-  const createBallWithText = () => {
-    if (!pendingPosition || inputText.trim() === "" || inputText.length > 5) {
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!pendingPosition || !inputRef.current) return;
+    const inputText = inputRef.current.value.trim();
+    if (inputText.trim() === "" || inputText.length > 5) {
+      setError("텍스트는 1~5자여야 합니다.");
       inputRef.current?.classList.add("shake");
       setTimeout(() => inputRef.current?.classList.remove("shake"), 400); // 0.4초 후 제거
       return;
@@ -185,18 +191,48 @@ const MakeCandidate = () => {
     }
 
     // 입력 후 초기화
-    setInputText("");
     setModalVisible(false);
     setPendingPosition(null);
   };
 
-  const closeCandidateModal = () => {
-    setModalVisible(false);
-  };
-
-  // 모달 띄우기
+  // 모달
   const candidateModalRef = useRef<HTMLDivElement | null>(null);
   const modalAnimationRef = useRef<number | null>(null);
+
+  const closeCandidateModal = () => {
+    if (!candidateModalRef.current || isAnimating.current) return;
+
+    isAnimating.current = true;
+    let opacity = 1;
+
+    const fadeOut = () => {
+      if (!candidateModalRef.current) return;
+      opacity -= 0.05;
+      candidateModalRef.current.style.opacity = `${opacity}`;
+      candidateModalRef.current.style.transform = `translate(-50%, ${-30 + opacity * 20}%)`;
+
+      if (opacity > 0) {
+        requestAnimationFrame(fadeOut);
+      } else {
+        isAnimating.current = false;
+        setModalVisible(false);
+        setError(null);
+      }
+    };
+
+    requestAnimationFrame(fadeOut);
+  };
+
+  const handleBlur = () => {
+    if (!inputRef.current) return;
+    const text = inputRef.current.value.trim();
+
+    if (text.length < 1 || text.length > 5) {
+      setError("투표 후보는 1 ~ 5자여야 합니다.");
+    } else {
+      setError(null);
+    }
+  };
 
   const requestModalAnimation = () => {
     if (modalAnimationRef.current) {
@@ -222,22 +258,16 @@ const MakeCandidate = () => {
         <ModalWrapper ref={candidateModalRef}>
           <ModalContent>
             <h3>텍스트 입력</h3>
-            <StyledInput
-              autoFocus
-              ref={inputRef}
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
-              placeholder="텍스트를 입력하세요"
-            />
-            {inputText.trim().length < 1 ? (
-              <p style={{ fontSize: "10px", color: "red" }}>최소 1글자 이상이어야 합니다.</p>
-            ) : inputText.trim().length > 5 ? (
-              <p style={{ fontSize: "10px", color: "red" }}>5글자 이하여야 합니다.</p>
-            ) : null}
-            <ButtonContainer>
-              <Button onClick={createBallWithText}>확인</Button>
-              <Button onClick={closeCandidateModal}>취소</Button>
-            </ButtonContainer>
+            <StyledForm onSubmit={handleSubmit}>
+              <StyledInput ref={inputRef} onBlur={handleBlur} autoFocus placeholder="텍스트를 입력하세요" />
+              {error && <ErrorMessage>{error}</ErrorMessage>}
+              <ButtonContainer>
+                <Button type="submit">확인</Button>
+                <Button type="button" onClick={closeCandidateModal}>
+                  취소
+                </Button>
+              </ButtonContainer>
+            </StyledForm>
           </ModalContent>
         </ModalWrapper>
       )}
@@ -285,6 +315,12 @@ const ModalContent = styled.div`
   gap: 8px;
 `;
 
+const StyledForm = styled.form`
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+`;
+
 const StyledInput = styled.input`
   width: 200px;
   height: 30px;
@@ -298,6 +334,7 @@ const StyledInput = styled.input`
 `;
 
 const ButtonContainer = styled.div`
+  justify-content: center;
   display: flex;
   gap: 10px;
 `;
@@ -314,4 +351,9 @@ const Button = styled.button`
   &:hover {
     background-color: #0056b3;
   }
+`;
+const ErrorMessage = styled.p`
+  font-size: 10px;
+  color: red;
+  margin-top: 5px;
 `;
