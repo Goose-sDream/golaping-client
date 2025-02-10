@@ -2,8 +2,8 @@ import { Dispatch, SetStateAction, useEffect } from "react";
 import { FieldValues, useForm } from "react-hook-form";
 import { useParams } from "react-router-dom";
 import styled from "styled-components";
-import { Button } from "../common";
 import LogoWithInput from "./LogoWithInput";
+import { Button } from "@/components/common";
 import { useWebSocket } from "@/contexts/WebSocketContext";
 import Request from "@/services/requests";
 import StorageController from "@/storage/storageController";
@@ -31,6 +31,7 @@ const EnterVote = ({ setStep }: EnterVoteProps) => {
       if (response.isSuccess) {
         storage.setItem("nickname", data.nickname); // nickname 저장
         storage.setItem("voteUuid", id!); // voteUuid 저장
+        storage.setItem("voteEndTime", response.result.voteEndTime); // 투표 종료 시간 저장
         connectWebSocket(); // 새로고침 없이 웹소켓 재연결 실행
       }
     } catch (error) {
@@ -47,7 +48,7 @@ const EnterVote = ({ setStep }: EnterVoteProps) => {
 
     try {
       client.publish({
-        destination: `/app/vote/${id}/connect`,
+        destination: `/app/vote/connect`,
       });
       client.subscribe("/user/queue/initialResponse", (message: { body: string }) => {
         console.log("Received: ", JSON.parse(message.body));

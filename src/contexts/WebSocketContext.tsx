@@ -40,7 +40,8 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
         (socket as any).withCredentials = true;
         return socket;
       },
-      connectHeaders: { voteUuid: voteUuid || "", nickname },
+      connectHeaders: { voteUuid: voteUuid!, nickname },
+      debug: (msg) => console.log(msg),
       onConnect: () => {
         console.log("WebSocket connected successfully");
         setConnected(true);
