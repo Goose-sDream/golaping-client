@@ -12,14 +12,13 @@ const MakeCandidate = () => {
   const engineRef = useRef(Engine.create());
   const world = engineRef.current.world;
   const renderRef = useRef<Render | null>(null);
-  const candidatesRef = useRef<Body[]>([]);
-  const textDataRef = useRef<{ [key: string]: string }>({});
+  const candidatesRef = useRef<{ count: number; ball: Body; text: string }[]>([]);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const mouseConstraintRef = useRef<MouseConstraint | null>(null);
 
+  const [pendingPosition, setPendingPosition] = useState<{ x: number; y: number } | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const isAnimating = useRef(false);
-  const [pendingPosition, setPendingPosition] = useState<{ x: number; y: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const radius = 80;
@@ -78,25 +77,33 @@ const MakeCandidate = () => {
       const clickY = mouse.position.y;
 
       // 기존 원과 겹치는지 확인
-      const overlapInfo = candidatesRef.current.reduce<{ isOverLapping: boolean; target: number | null }>(
+      const overlapInfo = candidatesRef.current.reduce<{ isOverLapping: boolean; targetId: number | null }>(
         (acc, cur, i) => {
-          const dx = clickX - cur.position.x;
-          const dy = clickY - cur.position.y;
+          const dx = clickX - cur.ball.position.x;
+          const dy = clickY - cur.ball.position.y;
           if (Math.sqrt(dx * dx + dy * dy) < radius) {
             acc.isOverLapping = true;
-            acc.target = i;
+            acc.targetId = i;
           }
           return acc;
         },
-        { isOverLapping: false, target: null }
+        { isOverLapping: false, targetId: null }
       );
 
-      const { isOverLapping, target } = overlapInfo;
-      if (!isOverLapping || target === null) {
+      const { isOverLapping, targetId } = overlapInfo;
+      if (!isOverLapping || targetId === null) {
         setPendingPosition({ x: clickX, y: clickY });
         setModalVisible(true);
       } else {
-        Body.scale(candidatesRef.current[target], 1.075, 1.075);
+        const targetBall = candidatesRef.current[targetId];
+        const targetRadius = targetBall.ball.circleRadius;
+        if (targetRadius && targetRadius < 200) {
+          // 얼마로 할지 정해야함
+          Body.scale(candidatesRef.current[targetId].ball, 1.075, 1.075);
+        }
+
+        targetBall.count++;
+        console.log("candidatesRef.current =>", candidatesRef.current);
       }
     });
 
@@ -130,10 +137,11 @@ const MakeCandidate = () => {
       context.textAlign = "center";
       context.textBaseline = "middle";
 
-      candidatesRef.current.forEach((ball) => {
-        const text = textDataRef.current[ball.id.toString()] || "";
+      candidatesRef.current.forEach((candidate) => {
+        const text = candidate.text || "";
+        const count = candidate.count.toString();
         if (text) {
-          context.fillText(text, ball.position.x, ball.position.y);
+          context.fillText(`${text} [ ${count} ]`, candidate.ball.position.x, candidate.ball.position.y);
         }
       });
     });
@@ -158,9 +166,8 @@ const MakeCandidate = () => {
     if (!pendingPosition || !inputRef.current) return;
     const inputText = inputRef.current.value.trim();
     if (inputText.trim() === "" || inputText.length > 5) {
-      setError("텍스트는 1~5자여야 합니다.");
       inputRef.current?.classList.add("shake");
-      setTimeout(() => inputRef.current?.classList.remove("shake"), 400); // 0.4초 후 제거
+      setTimeout(() => inputRef.current?.classList.remove("shake"), 400);
       return;
     }
 
@@ -180,10 +187,8 @@ const MakeCandidate = () => {
     });
 
     World.add(world, newBall);
-    candidatesRef.current.push(newBall);
-
-    // 원의 ID를 키로 텍스트 저장 (useRef 사용)
-    textDataRef.current[newBall.id.toString()] = inputText;
+    const newBallObj = { count: 0, ball: newBall, text: inputText };
+    candidatesRef.current.push(newBallObj);
 
     if (mouseConstraintRef.current) {
       // "현재 마우스 버튼이 눌려있지 않도록" 인식하게 함
@@ -207,12 +212,15 @@ const MakeCandidate = () => {
 
     const fadeOut = () => {
       if (!candidateModalRef.current) return;
+      if (modalAnimationRef.current) {
+        cancelAnimationFrame(modalAnimationRef.current);
+      }
       opacity -= 0.05;
       candidateModalRef.current.style.opacity = `${opacity}`;
       candidateModalRef.current.style.transform = `translate(-50%, ${-30 + opacity * 20}%)`;
 
       if (opacity > 0) {
-        requestAnimationFrame(fadeOut);
+        modalAnimationRef.current = requestAnimationFrame(fadeOut);
       } else {
         isAnimating.current = false;
         setModalVisible(false);
@@ -220,25 +228,14 @@ const MakeCandidate = () => {
       }
     };
 
-    requestAnimationFrame(fadeOut);
-  };
-
-  const handleBlur = () => {
-    if (!inputRef.current) return;
-    const text = inputRef.current.value.trim();
-
-    if (text.length < 1 || text.length > 5) {
-      setError("투표 후보는 1 ~ 5자여야 합니다.");
-    } else {
-      setError(null);
-    }
+    modalAnimationRef.current = requestAnimationFrame(fadeOut);
   };
 
   const requestModalAnimation = () => {
     if (modalAnimationRef.current) {
       cancelAnimationFrame(modalAnimationRef.current);
     }
-    requestAnimationFrame(() => {
+    modalAnimationRef.current = requestAnimationFrame(() => {
       if (!candidateModalRef.current) return;
       if (modalVisible) {
         candidateModalRef.current.style.transform = "translate(-50%, -80%)";
@@ -259,7 +256,7 @@ const MakeCandidate = () => {
           <ModalContent>
             <h3>텍스트 입력</h3>
             <StyledForm onSubmit={handleSubmit}>
-              <StyledInput ref={inputRef} onBlur={handleBlur} autoFocus placeholder="텍스트를 입력하세요" />
+              <StyledInput ref={inputRef} autoFocus placeholder="텍스트를 입력하세요" />
               {error && <ErrorMessage>{error}</ErrorMessage>}
               <ButtonContainer>
                 <Button type="submit">확인</Button>
