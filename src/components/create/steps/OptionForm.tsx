@@ -9,12 +9,13 @@ import { YELLOW } from "@/styles/color";
 import { Vote } from "@/types/voteTypes";
 
 const OptionForm = () => {
-  const { control, setValue } = useFormContext<Vote>();
+  const { control, setValue, watch } = useFormContext<Vote>();
   const [timeOpen, setTimeOpen] = useState(Array(2).fill(false));
   const limitList = ["무제한", "제한"];
   const [limited, setLimited] = useState(limitList[1]);
   const timeRef = useRef<(HTMLDivElement | null)[]>([]);
   const userVoteLimit = Array.from({ length: 5 }, (_, i) => i + 1);
+  const [hasError, setHasError] = useState<string>("");
 
   useEffect(() => {
     if (timeRef && timeRef.current) {
@@ -41,11 +42,12 @@ const OptionForm = () => {
     labelDisplay: "none",
     position: "relative",
     wrapperMarginBottom: 0,
+    minHeight: "80px",
   };
 
   return (
     <VoteDiv>
-      <div style={{ display: "flex", flexDirection: "column" }}>
+      <div style={{ display: "flex", flexDirection: "column", marginBottom: 30 }}>
         <Label>타이머</Label>
         <div style={{ display: "flex", justifyContent: "space-around", alignItems: "center" }}>
           {timeOpen.map((_, idx) => (
@@ -60,6 +62,17 @@ const OptionForm = () => {
                   value: idx > 0 ? 59 : 23,
                   message: `${idx > 0 ? "최대 59분까지" : "최대 24시간까지"}`,
                 },
+                validate: () => {
+                  const hour = watch("hour");
+                  const minute = watch("minute");
+
+                  if (hour === 0 && minute === 0) {
+                    setHasError("최소 1분 이상 설정해주세요.");
+                    return " ";
+                  }
+
+                  return true;
+                },
               }}
               render={({ field, fieldState: { error } }) => (
                 <div
@@ -69,7 +82,7 @@ const OptionForm = () => {
                   }}
                 >
                   <div
-                    style={{ display: "flex", alignItems: "center", gap: "10px", position: "relative" }}
+                    style={{ display: "flex", alignItems: "center", gap: "10px", position: "relative", marginTop: 30 }}
                     onClick={() => setTimeOpen((prev) => prev.map((p, i) => (i === idx ? true : p)))}
                     ref={(el) => {
                       timeRef.current[idx] = el;
@@ -79,7 +92,7 @@ const OptionForm = () => {
                       placeholder="00"
                       {...field}
                       error={error?.message}
-                      value={field.value || ""}
+                      value={field.value || 0}
                       autoComplete="off"
                       styleProps={inputStyleProps}
                       name="타이머"
@@ -111,6 +124,7 @@ const OptionForm = () => {
             />
           ))}
         </div>
+        <ErrorMessage>{hasError}</ErrorMessage>
       </div>
 
       <LimitWrapper>
@@ -211,4 +225,11 @@ const Label = styled.label`
   font-size: 20px;
   font-weight: bold;
   color: black;
+`;
+
+const ErrorMessage = styled.p`
+  font-size: 16px;
+  color: red;
+  text-align: center;
+  height: 20px;
 `;

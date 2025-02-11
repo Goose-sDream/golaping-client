@@ -24,4 +24,5 @@ export interface InputStyleProps {
   pointerEvents?: string;
   padding?: string;
   labelDisplay?: string;
+  minHeight?: string;
 }
