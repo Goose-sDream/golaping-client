@@ -15,8 +15,9 @@ export const CreateForm = () => {
   const methods = useForm({
     mode: "onBlur",
   });
+  const { handleSubmit, trigger } = methods;
   const navigate = useNavigate();
-  const [step, setStep] = useState<number>(1);
+  const [step, setStep] = useState<number>(3);
   const [randomLink, setRandomLink] = useState<string>("");
   const request = Request();
 
@@ -58,6 +59,14 @@ export const CreateForm = () => {
     navigate(randomLink);
   };
 
+  const handleNextStep = async (fields?: string[]) => {
+    const isValid = fields ? await trigger(fields) : true;
+
+    if (isValid) {
+      setStep(step + 1);
+    }
+  };
+
   const steps: { [key: number]: JSX.Element } = {
     1: <LandingForm />,
     2: <BasicForm />,
@@ -72,21 +81,24 @@ export const CreateForm = () => {
         {steps[step]}
         <ButtonContainer>
           {step === 1 && (
-            <Button type="button" onClick={() => setStep(step + 1)}>
+            <Button type="button" onClick={() => handleNextStep()}>
               투표 만들기
             </Button>
           )}
           {step === 2 && (
-            <Button type="button" onClick={() => setStep(step + 1)}>
+            <Button type="button" onClick={() => handleNextStep(["title", "nickname"])}>
               다음
             </Button>
           )}
           {step === 3 && (
             <Button
               type="button"
-              onClick={methods.handleSubmit((data) => {
-                createVote(data as FieldValues);
-              })}
+              onClick={async () => {
+                const isValid = await trigger(["hour", "minute"]);
+                if (isValid) {
+                  handleSubmit((data) => createVote(data as FieldValues))();
+                }
+              }}
             >
               생성하기
             </Button>
