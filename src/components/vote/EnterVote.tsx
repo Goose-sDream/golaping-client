@@ -23,15 +23,17 @@ const EnterVote = ({ setStep }: EnterVoteProps) => {
 
   const onSubmit = async (data: FieldValues) => {
     try {
-      const response = await request.post<APIResponse<{ websocketUrl: string; voteEndTime: string }>>(
-        `/api/votes/enter`,
-        { voteUuid: id, nickname: data.nickname }
-      );
+      const response = await request.post<APIResponse<{ voteIdx: number; voteEndTime: string }>>(`/api/votes/enter`, {
+        voteUuid: id,
+        nickname: data.nickname,
+      });
 
       if (response.isSuccess) {
-        storage.setItem("nickname", data.nickname); // nickname 저장
-        storage.setItem("voteUuid", id!); // voteUuid 저장
-        storage.setItem("voteEndTime", response.result.voteEndTime); // 투표 종료 시간 저장
+        const { voteIdx, voteEndTime } = response.result;
+        storage.setItem("nickname", data.nickname);
+        storage.setItem("voteUuid", id!);
+        storage.setItem("voteEndTime", voteEndTime);
+        storage.setItem("voteIdx", String(voteIdx));
         connectWebSocket(); // 새로고침 없이 웹소켓 재연결 실행
       }
     } catch (error) {

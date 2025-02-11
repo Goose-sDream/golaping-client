@@ -20,31 +20,29 @@ export const CreateForm = () => {
   const [randomLink, setRandomLink] = useState<string>("");
   const request = Request();
 
-  const calculateVoteEndTime = (timeLimit: number) => {
-    const now = new Date();
-    now.setMinutes(now.getMinutes() + timeLimit); // 현재 시간에 timeLimit(분) 추가
-    return now.toISOString(); // "2025-02-10T14:24:16.295Z" 형식으로 변환
-  };
-
   const createVote = async (data: FieldValues) => {
     const timeLimit = data.hour * 60 + data.minute;
     const link = `${window.location.origin}${generateLink()}`;
-    const response = await request.post<APIResponse<{ websocketUrl: string; voteUuid: string }>>("/api/votes", {
-      title: data.title,
-      nickname: data.nickname,
-      type: data.type,
-      userVoteLimit: data.userVoteLimit,
-      timeLimit,
-      link,
-    });
+    const response = await request.post<APIResponse<{ voteUuid: string; voteEndTime: string; voteIdx: number }>>(
+      "/api/votes",
+      {
+        title: data.title,
+        nickname: data.nickname,
+        type: data.type,
+        userVoteLimit: data.userVoteLimit,
+        timeLimit,
+        link,
+      }
+    );
     console.log(response);
 
-    const voteEndTime = calculateVoteEndTime(timeLimit);
     if (response.isSuccess) {
+      const { voteUuid, voteEndTime, voteIdx } = response.result;
       setStep(step + 1);
       storage.setItem("nickname", data.nickname);
-      storage.setItem("voteUuid", response.result.voteUuid);
+      storage.setItem("voteUuid", voteUuid);
       storage.setItem("voteEndTime", voteEndTime);
+      storage.setItem("voteIdx", String(voteIdx));
     } else {
       console.error("Vote creation failed:", response.message);
     }
