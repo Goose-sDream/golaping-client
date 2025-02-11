@@ -17,7 +17,7 @@ export const CreateForm = () => {
   });
   const { handleSubmit, trigger } = methods;
   const navigate = useNavigate();
-  const [step, setStep] = useState<number>(3);
+  const [step, setStep] = useState<number>(1);
   const [randomLink, setRandomLink] = useState<string>("");
   const request = Request();
 
