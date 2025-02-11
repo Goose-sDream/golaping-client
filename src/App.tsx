@@ -6,7 +6,6 @@ import CreatePage from "./pages/CreatePage";
 import TestPage from "./pages/TestPage";
 import VotePage from "./pages/VotePage";
 import GlobalStyle from "./styles/GlobalStyle";
-import { WebSocketProvider } from "@/contexts/useWebsocket";
 
 const App: React.FC = () => {
   return (
@@ -14,15 +13,13 @@ const App: React.FC = () => {
       <div id="modal"></div>
       <Modal />
       <GlobalStyle />
-      <WebSocketProvider>
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<CreatePage />}></Route>
-            <Route path="/votes/:id" element={<VotePage />}></Route>
-            <Route path="/test" element={<TestPage />}></Route>
-          </Routes>
-        </BrowserRouter>
-      </WebSocketProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<CreatePage />}></Route>
+          <Route path="/votes/:id" element={<VotePage />}></Route>
+          <Route path="/test" element={<TestPage />}></Route>
+        </Routes>
+      </BrowserRouter>
     </RecoilRoot>
   );
 };

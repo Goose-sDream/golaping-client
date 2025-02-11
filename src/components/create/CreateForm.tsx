@@ -5,9 +5,11 @@ import styled from "styled-components";
 import { v4 as uuid } from "uuid";
 import { BasicForm, LandingForm, OptionForm, ShareVote } from "./steps";
 import { Button, Stepper } from "@/components/common";
-import useWebsocketUrl from "@/hooks/useWebsocketUrl";
 import Request from "@/services/requests";
+import StorageController from "@/storage/storageController";
 import { APIResponse } from "@/types/apiTypes";
+
+const storage = new StorageController("session");
 
 export const CreateForm = () => {
   const methods = useForm({
@@ -17,25 +19,30 @@ export const CreateForm = () => {
   const [step, setStep] = useState<number>(1);
   const [randomLink, setRandomLink] = useState<string>("");
   const request = Request();
-  const { setWebsocketUrl } = useWebsocketUrl();
 
   const createVote = async (data: FieldValues) => {
     const timeLimit = data.hour * 60 + data.minute;
     const link = `${window.location.origin}${generateLink()}`;
-    const response = await request.post<APIResponse<{ websocketUrl: string; sessionId: string }>>("/api/votes", {
-      title: data.title,
-      nickname: data.nickname,
-      type: data.type,
-      userVoteLimit: data.userVoteLimit,
-      timeLimit,
-      link,
-    });
+    const response = await request.post<APIResponse<{ voteUuid: string; voteEndTime: string; voteIdx: number }>>(
+      "/api/votes",
+      {
+        title: data.title,
+        nickname: data.nickname,
+        type: data.type,
+        userVoteLimit: data.userVoteLimit,
+        timeLimit,
+        link,
+      }
+    );
     console.log(response);
 
     if (response.isSuccess) {
-      const { websocketUrl } = response.result;
-      setWebsocketUrl(websocketUrl);
+      const { voteUuid, voteEndTime, voteIdx } = response.result;
       setStep(step + 1);
+      storage.setItem("nickname", data.nickname);
+      storage.setItem("voteUuid", voteUuid);
+      storage.setItem("voteEndTime", voteEndTime);
+      storage.setItem("voteIdx", String(voteIdx));
     } else {
       console.error("Vote creation failed:", response.message);
     }

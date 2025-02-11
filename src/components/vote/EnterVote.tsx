@@ -2,82 +2,75 @@ import { Dispatch, SetStateAction, useEffect } from "react";
 import { FieldValues, useForm } from "react-hook-form";
 import { useParams } from "react-router-dom";
 import styled from "styled-components";
-import { Button } from "../common";
 import LogoWithInput from "./LogoWithInput";
-import { useWebSocket } from "@/contexts/useWebsocket";
-import useCookies from "@/hooks/useCookies";
+import { Button } from "@/components/common";
+import { useWebSocket } from "@/contexts/WebSocketContext";
 import Request from "@/services/requests";
+import StorageController from "@/storage/storageController";
 import { APIResponse } from "@/types/apiTypes";
 
 interface EnterVoteProps {
   setStep: Dispatch<SetStateAction<number>>;
 }
 
-export interface VoteFormData extends FieldValues {
-  nickname: string;
-}
+const storage = new StorageController("session");
 
 const EnterVote = ({ setStep }: EnterVoteProps) => {
-  const { register, handleSubmit } = useForm<VoteFormData>();
+  const { register, handleSubmit } = useForm();
   const { id } = useParams();
   const request = Request();
-  const { client, connected, error } = useWebSocket();
-  const { getCookie } = useCookies();
-  const sessionId = getCookie("SESSIONID");
+  const { client, connected, error, connectWebSocket } = useWebSocket();
 
-  const onSubmit = async (data: VoteFormData) => {
+  const onSubmit = async (data: FieldValues) => {
     try {
-      const response = await request.post<APIResponse<{ websocketUrl: string; voteEndTime: string }>>(
-        `/api/votes/enter`,
-        {
-          voteUuid: id,
-          nickname: data.nickname,
-        }
-      );
+      const response = await request.post<APIResponse<{ voteIdx: number; voteEndTime: string }>>(`/api/votes/enter`, {
+        voteUuid: id,
+        nickname: data.nickname,
+      });
 
       if (response.isSuccess) {
-        sendWebSocket();
-        setStep(2);
+        const { voteIdx, voteEndTime } = response.result;
+        storage.setItem("nickname", data.nickname);
+        storage.setItem("voteUuid", id!);
+        storage.setItem("voteEndTime", voteEndTime);
+        storage.setItem("voteIdx", String(voteIdx));
+        connectWebSocket(); // 새로고침 없이 웹소켓 재연결 실행
       }
     } catch (error) {
       console.error("Failed to enter vote:", error);
+      alert("투표 입장에 실패했습니다.");
     }
   };
 
-  const sendWebSocket = () => {
-    if (error) {
-      console.error("WebSocket Error:", error);
-      return;
-    }
-
-    if (!client || !connected) {
-      console.warn("WebSocket not connected");
+  const subscribeToMessages = () => {
+    if (!client || error) {
+      console.error("WebSocket not ready:", error || "Client not initialized");
       return;
     }
 
     try {
       client.publish({
         destination: `/app/vote/connect`,
-        body: JSON.stringify({
-          voteUuid: id,
-          sessionId: sessionId,
-        }),
       });
+      client.subscribe("/user/queue/initialResponse", (message: { body: string }) => {
+        console.log("Received: ", JSON.parse(message.body));
+      });
+      setStep(2);
     } catch (error) {
-      console.error("Failed to send WebSocket message:", error);
+      console.error("Failed to subscribe to messages:", error);
     }
   };
 
   useEffect(() => {
-    if (sessionId) {
-      sendWebSocket();
+    if (connected && client) {
+      subscribeToMessages();
     }
-  }, [sessionId, connected]);
+  }, [connected, client]); // connected나 client가 변경될 때 실행
 
   return (
     <Wrapper onSubmit={handleSubmit(onSubmit)}>
       <Title>투표 제목</Title>
-      <Button type="submit" style={{ position: "absolute", bottom: 20, zIndex: 100 }} disabled={!connected}>
+      <Button type="submit" style={{ position: "absolute", bottom: 20, zIndex: 100 }}>
         투표 입장하기
       </Button>
       <LogoWithInput register={register} />
