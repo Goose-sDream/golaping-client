@@ -11,19 +11,19 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 }
 
 const Input = ({ label, error, name, ...props }: InputProps) => (
-  <InputWrapper name={name}>
+  <InputWrapper name={name} {...props}>
     <Label {...props}>{label}</Label>
     <StyledInput {...props} error={error} />
     {error && <ErrorMessage>{error}</ErrorMessage>}
   </InputWrapper>
 );
 
-const InputWrapper = styled.div<{ name: string | undefined }>`
+const InputWrapper = styled.div<{ name?: string | undefined } & InputProps>`
   display: flex;
   flex-direction: column;
   justify-content: center;
   margin-bottom: ${({ name }) => (name === "타이머" ? 0 : "20px")};
-  min-height: 140px;
+  min-height: ${({ styleProps }) => styleProps?.minHeight || "140px"};
 `;
 
 const Label = styled.label<InputProps>`
