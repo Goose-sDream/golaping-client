@@ -1,4 +1,4 @@
-const SHRINKTHRESHOLD = 0.35;
+const SHRINKTHRESHOLD = 0.8;
 const BASERADIUS = 80; // 초기 크기
 const MAXRADIUS = 200; // 최대 크기
 const MINRADIUS = 30;
