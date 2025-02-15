@@ -3,6 +3,15 @@ import { Engine, Render, Mouse, World, Bodies, MouseConstraint, Runner, Events, 
 import { useRecoilValue } from "recoil";
 import styled, { keyframes } from "styled-components";
 import { limitState } from "@/atoms/createAtom";
+import {
+  BASEGROWTHRATE,
+  BASERADIUS,
+  MAXRADIUS,
+  MINRADIUS,
+  SHRINKFACTOR,
+  SHRINKTERM,
+  SHRINKTHRESHOLD,
+} from "@/constants/vote";
 import { LIGHTGRAY } from "@/styles/color";
 
 const MakeCandidate = () => {
@@ -25,14 +34,6 @@ const MakeCandidate = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const isAnimating = useRef(false);
   const [error, setError] = useState<string | null>(null);
-
-  const shrinkThreshold = 0.35;
-  const baseRadius = 80; // 초기 크기
-  const maxRadius = 200; // 최대 크기
-  const minRadius = 30;
-  const baseGrowthRate = 1.5;
-  const shrinkFactor = 0.9;
-  const shrinkTerm = 5000;
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -92,7 +93,7 @@ const MakeCandidate = () => {
         (acc, cur, i) => {
           const dx = clickX - cur.ball.position.x;
           const dy = clickY - cur.ball.position.y;
-          if (Math.sqrt(dx * dx + dy * dy) < baseRadius) {
+          if (Math.sqrt(dx * dx + dy * dy) < BASERADIUS) {
             acc.isOverLapping = true;
             acc.targetId = i;
           }
@@ -169,16 +170,16 @@ const MakeCandidate = () => {
   const updateBallsize = () => {
     let totalCircleArea = 0;
     candidatesRef.current.forEach((candidate) => {
-      let growthRate = baseGrowthRate; // 투표 수당 증가량
+      let growthRate = BASEGROWTHRATE; // 투표 수당 증가량
       // 축소 횟수에 따라 성장률 점진적 감소
-      growthRate *= Math.pow(shrinkFactor, usedPercentageRef.current.count);
+      growthRate *= Math.pow(SHRINKFACTOR, usedPercentageRef.current.count);
 
       const r = candidate.ball.circleRadius || 0;
       // 투표 수에 비례한 반지름
-      const newRadius = Math.min(baseRadius + candidate.count * growthRate, maxRadius);
+      const newRadius = Math.min(BASERADIUS + candidate.count * growthRate, MAXRADIUS);
 
       if (candidate.ball.circleRadius !== newRadius) {
-        const scaleFactor = newRadius / (candidate.ball.circleRadius || baseRadius);
+        const scaleFactor = newRadius / (candidate.ball.circleRadius || BASERADIUS);
         Body.scale(candidate.ball, scaleFactor, scaleFactor);
       }
       totalCircleArea += r * r * Math.PI;
@@ -202,23 +203,22 @@ const MakeCandidate = () => {
 
     usedPercentageRef.current.percentage = computedTotalCircleArea / canvasArea;
 
-    console.log("사용된 면적 비율=>", usedPercentageRef.current.percentage.toFixed(2));
+    // console.log("사용된 면적 비율=>", usedPercentageRef.current.percentage.toFixed(2));
   };
 
   const updateZoom = () => {
     const now = Date.now();
 
-    if (now - usedPercentageRef.current.time < shrinkTerm) return;
+    if (now - usedPercentageRef.current.time < SHRINKTERM) return;
 
-    if (usedPercentageRef.current.percentage > shrinkThreshold) {
-      console.log("🔍 면적 비율 초과! 축소 실행");
+    if (usedPercentageRef.current.percentage > SHRINKTHRESHOLD) {
+      // console.log("🔍 면적 비율 초과! 축소 실행");
 
       candidatesRef.current.forEach((candidate) => {
-        if (candidate.ball.circleRadius && candidate.ball.circleRadius > minRadius) {
-          Body.scale(candidate.ball, shrinkFactor, shrinkFactor);
+        if (candidate.ball.circleRadius && candidate.ball.circleRadius > MINRADIUS) {
+          Body.scale(candidate.ball, SHRINKFACTOR, SHRINKFACTOR);
         }
       });
-      // ✅ updateUsedPercentage를 다시 실행하여 면적 비율을 업데이트
       updateUsedPercentage();
 
       usedPercentageRef.current.count += 1;
@@ -239,10 +239,10 @@ const MakeCandidate = () => {
       return;
     }
 
-    console.log("생성할 위치:", pendingPosition, "입력된 텍스트:", inputText);
+    // console.log("생성할 위치:", pendingPosition, "입력된 텍스트:", inputText);
 
     const { x, y } = pendingPosition;
-    const newBall = Bodies.circle(x, y, baseRadius, {
+    const newBall = Bodies.circle(x, y, BASERADIUS, {
       restitution: 0.8,
       frictionAir: 0.02,
       render: { fillStyle: LIGHTGRAY },
