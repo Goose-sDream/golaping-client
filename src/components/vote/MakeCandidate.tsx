@@ -15,13 +15,24 @@ const MakeCandidate = () => {
   const candidatesRef = useRef<{ count: number; ball: Body; text: string }[]>([]);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const mouseConstraintRef = useRef<MouseConstraint | null>(null);
+  const usedPercentageRef = useRef<{ percentage: number; time: number; count: number }>({
+    percentage: 0,
+    time: 0,
+    count: 0,
+  });
 
   const [pendingPosition, setPendingPosition] = useState<{ x: number; y: number } | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const isAnimating = useRef(false);
   const [error, setError] = useState<string | null>(null);
 
-  const radius = 80;
+  const shrinkThreshold = 0.35;
+  const baseRadius = 80; // 초기 크기
+  const maxRadius = 200; // 최대 크기
+  const minRadius = 30;
+  const baseGrowthRate = 1.5;
+  const shrinkFactor = 0.9;
+  const shrinkTerm = 5000;
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -81,7 +92,7 @@ const MakeCandidate = () => {
         (acc, cur, i) => {
           const dx = clickX - cur.ball.position.x;
           const dy = clickY - cur.ball.position.y;
-          if (Math.sqrt(dx * dx + dy * dy) < radius) {
+          if (Math.sqrt(dx * dx + dy * dy) < baseRadius) {
             acc.isOverLapping = true;
             acc.targetId = i;
           }
@@ -95,14 +106,11 @@ const MakeCandidate = () => {
         setPendingPosition({ x: clickX, y: clickY });
         setModalVisible(true);
       } else {
+        // 원 클릭하면
         const targetBall = candidatesRef.current[targetId];
-        const targetRadius = targetBall.ball.circleRadius;
-        if (targetRadius && targetRadius < 200) {
-          // 얼마로 할지 정해야함
-          Body.scale(candidatesRef.current[targetId].ball, 1.075, 1.075);
-        }
-
         targetBall.count++;
+        updateBallsize();
+        updateZoom();
         console.log("candidatesRef.current =>", candidatesRef.current);
       }
     });
@@ -158,6 +166,66 @@ const MakeCandidate = () => {
     };
   }, []);
 
+  const updateBallsize = () => {
+    let totalCircleArea = 0;
+    candidatesRef.current.forEach((candidate) => {
+      let growthRate = baseGrowthRate; // 투표 수당 증가량
+      // 축소 횟수에 따라 성장률 점진적 감소
+      growthRate *= Math.pow(shrinkFactor, usedPercentageRef.current.count);
+
+      const r = candidate.ball.circleRadius || 0;
+      // 투표 수에 비례한 반지름
+      const newRadius = Math.min(baseRadius + candidate.count * growthRate, maxRadius);
+
+      if (candidate.ball.circleRadius !== newRadius) {
+        const scaleFactor = newRadius / (candidate.ball.circleRadius || baseRadius);
+        Body.scale(candidate.ball, scaleFactor, scaleFactor);
+      }
+      totalCircleArea += r * r * Math.PI;
+    });
+    updateUsedPercentage(totalCircleArea);
+  };
+
+  const updateUsedPercentage = (totalCircleArea?: number) => {
+    if (!renderRef.current) return;
+    const render = renderRef.current;
+    const canvasWidth = render.options.width || 0;
+    const canvasHeight = render.options.height || 0;
+    const canvasArea = canvasWidth * canvasHeight;
+
+    const computedTotalCircleArea =
+      totalCircleArea ??
+      candidatesRef.current.reduce((acc, cur) => {
+        const r = cur.ball.circleRadius || 0;
+        return acc + Math.PI * r * r;
+      }, 0);
+
+    usedPercentageRef.current.percentage = computedTotalCircleArea / canvasArea;
+
+    console.log("사용된 면적 비율=>", usedPercentageRef.current.percentage.toFixed(2));
+  };
+
+  const updateZoom = () => {
+    const now = Date.now();
+
+    if (now - usedPercentageRef.current.time < shrinkTerm) return;
+
+    if (usedPercentageRef.current.percentage > shrinkThreshold) {
+      console.log("🔍 면적 비율 초과! 축소 실행");
+
+      candidatesRef.current.forEach((candidate) => {
+        if (candidate.ball.circleRadius && candidate.ball.circleRadius > minRadius) {
+          Body.scale(candidate.ball, shrinkFactor, shrinkFactor);
+        }
+      });
+      // ✅ updateUsedPercentage를 다시 실행하여 면적 비율을 업데이트
+      updateUsedPercentage();
+
+      usedPercentageRef.current.count += 1;
+      usedPercentageRef.current.time = now;
+    }
+  };
+
   // ✅ 입력한 텍스트를 원과 함께 생성하는 함수
   // 웹소켓으로 생성할 때마다 요청 보내야 함
   const handleSubmit = (e: React.FormEvent) => {
@@ -174,7 +242,7 @@ const MakeCandidate = () => {
     console.log("생성할 위치:", pendingPosition, "입력된 텍스트:", inputText);
 
     const { x, y } = pendingPosition;
-    const newBall = Bodies.circle(x, y, radius, {
+    const newBall = Bodies.circle(x, y, baseRadius, {
       restitution: 0.8,
       frictionAir: 0.02,
       render: { fillStyle: LIGHTGRAY },
@@ -198,6 +266,8 @@ const MakeCandidate = () => {
     // 입력 후 초기화
     setModalVisible(false);
     setPendingPosition(null);
+    updateUsedPercentage();
+    updateZoom();
   };
 
   // 모달
