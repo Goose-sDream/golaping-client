@@ -12,7 +12,10 @@ import {
   SHRINKTERM,
   SHRINKTHRESHOLD,
 } from "@/constants/vote";
-import { LIGHTGRAY } from "@/styles/color";
+import { borderMap, optionColorMap, optionColors } from "@/styles/color";
+
+type TargetBall = { count: number; ball: Body; text: string };
+type UsedPercentage = { percentage: number; time: number; count: number };
 
 const MakeCandidate = () => {
   const { limited } = useRecoilValue(limitState);
@@ -21,20 +24,23 @@ const MakeCandidate = () => {
   const engineRef = useRef(Engine.create());
   const world = engineRef.current.world;
   const renderRef = useRef<Render | null>(null);
-  const candidatesRef = useRef<{ count: number; ball: Body; text: string }[]>([]);
+  const candidatesRef = useRef<TargetBall[]>([]);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const mouseConstraintRef = useRef<MouseConstraint | null>(null);
-  const usedPercentageRef = useRef<{ percentage: number; time: number; count: number }>({
+  const usedPercentageRef = useRef<UsedPercentage>({
     percentage: 0,
     time: 0,
     count: 0,
   });
+  const usedColorRef = useRef<string[]>([]);
+  const selectedOptionRef = useRef<Body[]>([]);
 
   const [pendingPosition, setPendingPosition] = useState<{ x: number; y: number } | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const isAnimating = useRef(false);
   const [error, setError] = useState<string | null>(null);
 
+  console.log("limited =>", limited);
   useEffect(() => {
     if (!containerRef.current) return;
 
@@ -109,7 +115,9 @@ const MakeCandidate = () => {
       } else {
         // 원 클릭하면
         const targetBall = candidatesRef.current[targetId];
-        targetBall.count++;
+        updateCount(targetBall);
+        chooseBorderColor(targetBall.ball);
+        updateBallBorder(targetBall.ball);
         updateBallsize();
         updateZoom();
         console.log("candidatesRef.current =>", candidatesRef.current);
@@ -167,13 +175,24 @@ const MakeCandidate = () => {
     };
   }, []);
 
+  const updateCount = (targetBall: TargetBall) => {
+    if (limited === "제한") {
+      if (selectedOptionRef.current.includes(targetBall.ball)) {
+        targetBall.count--;
+      } else {
+        targetBall.count++;
+      }
+    } else {
+      targetBall.count++;
+    }
+  };
+
   const updateBallsize = () => {
     let totalCircleArea = 0;
     candidatesRef.current.forEach((candidate) => {
       let growthRate = BASEGROWTHRATE; // 투표 수당 증가량
       // 축소 횟수에 따라 성장률 점진적 감소
-      // growthRate *= Math.pow(SHRINKFACTOR, usedPercentageRef.current.count);
-      growthRate *= SHRINKFACTOR;
+      growthRate *= Math.pow(SHRINKFACTOR, usedPercentageRef.current.count);
 
       const r = candidate.ball.circleRadius || 0;
       // 투표 수에 비례한 반지름
@@ -183,9 +202,23 @@ const MakeCandidate = () => {
         const scaleFactor = newRadius / (candidate.ball.circleRadius || BASERADIUS);
         Body.scale(candidate.ball, scaleFactor, scaleFactor);
       }
+
       totalCircleArea += r * r * Math.PI;
     });
     updateUsedPercentage(totalCircleArea);
+  };
+
+  const updateBallBorder = (targetBall: Body) => {
+    if (!selectedOptionRef.current.some((ball) => ball.id === targetBall.id)) {
+      selectedOptionRef.current.push(targetBall);
+      targetBall.render.lineWidth = 8;
+      targetBall.render.strokeStyle = chooseBorderColor(targetBall) || "black";
+    } else {
+      if (limited === "제한") {
+        targetBall.render.lineWidth = 0; // 선택 해제 시 테두리 제거
+        selectedOptionRef.current = selectedOptionRef.current.filter((option) => option.id !== targetBall.id);
+      }
+    }
   };
 
   const updateUsedPercentage = (totalCircleArea?: number) => {
@@ -204,32 +237,55 @@ const MakeCandidate = () => {
 
     usedPercentageRef.current.percentage = computedTotalCircleArea / canvasArea;
 
-    console.log("사용된 면적 비율=>", usedPercentageRef.current.percentage.toFixed(2));
+    // console.log("사용된 면적 비율=>", usedPercentageRef.current.percentage.toFixed(2));
   };
 
   const updateZoom = () => {
     const now = Date.now();
-
     if (now - usedPercentageRef.current.time < SHRINKTERM) return;
-
     if (usedPercentageRef.current.percentage > SHRINKTHRESHOLD) {
-      // console.log("🔍 면적 비율 초과! 축소 실행");
-
+      // console.log("면적 비율 초과! 축소 실행");
       candidatesRef.current.forEach((candidate) => {
         if (candidate.ball.circleRadius && candidate.ball.circleRadius > MINRADIUS) {
           Body.scale(candidate.ball, SHRINKFACTOR, SHRINKFACTOR);
         }
       });
       updateUsedPercentage();
-
       usedPercentageRef.current.count += 1;
       usedPercentageRef.current.time = now;
     }
   };
 
+  const chooseColor = () => {
+    if (!usedColorRef.current) return;
+    // 모든 색이 사용된 경우, 더 이상 선택할 색이 없음
+    if (usedColorRef.current.length >= optionColors.length) {
+      usedColorRef.current = [];
+    }
+    let randomIdx;
+    do {
+      randomIdx = Math.floor(Math.random() * optionColors.length);
+    } while (usedColorRef.current.includes(optionColors[randomIdx]));
+
+    usedColorRef.current.push(optionColors[randomIdx]);
+    return optionColors[randomIdx];
+  };
+
+  const chooseBorderColor = (targetBall: Body) => {
+    const targetColor = targetBall.render.fillStyle;
+    if (!targetColor) return;
+    for (const [key, value] of optionColorMap) {
+      if (value.includes(targetColor)) {
+        return borderMap.get(key);
+      }
+    }
+  };
+
+  // console.log("usedColorRef =>", usedColorRef.current);
+
   // ✅ 입력한 텍스트를 원과 함께 생성하는 함수
   // 웹소켓으로 생성할 때마다 요청 보내야 함
-  const handleSubmit = (e: React.FormEvent) => {
+  const makeNewOption = (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!pendingPosition || !inputRef.current) return;
@@ -246,8 +302,9 @@ const MakeCandidate = () => {
     const newBall = Bodies.circle(x, y, BASERADIUS, {
       restitution: 0.8,
       frictionAir: 0.02,
-      render: { fillStyle: LIGHTGRAY },
+      render: { fillStyle: chooseColor() },
       ...(limited === "무제한" && {
+        // 움직일 수 없게
         collisionFilter: {
           category: 0x0002, // 사용자 정의 원 카테고리 설정
           mask: 0x0002 | 0x0008, // 다른 물체들(벽)과 충돌 가능
@@ -326,7 +383,7 @@ const MakeCandidate = () => {
         <ModalWrapper ref={candidateModalRef}>
           <ModalContent>
             <h3>텍스트 입력</h3>
-            <StyledForm onSubmit={handleSubmit}>
+            <StyledForm onSubmit={makeNewOption}>
               <StyledInput ref={inputRef} autoFocus placeholder="텍스트를 입력하세요" />
               {error && <ErrorMessage>{error}</ErrorMessage>}
               <ButtonContainer>
