@@ -40,7 +40,6 @@ const MakeCandidate = () => {
   const isAnimating = useRef(false);
   const [error, setError] = useState<string | null>(null);
 
-  console.log("limited =>", limited);
   useEffect(() => {
     if (!containerRef.current) return;
 
@@ -179,6 +178,7 @@ const MakeCandidate = () => {
     if (limited === "제한") {
       if (selectedOptionRef.current.includes(targetBall.ball)) {
         targetBall.count--;
+        usedPercentageRef.current.count--;
       } else {
         targetBall.count++;
       }
@@ -237,7 +237,7 @@ const MakeCandidate = () => {
 
     usedPercentageRef.current.percentage = computedTotalCircleArea / canvasArea;
 
-    // console.log("사용된 면적 비율=>", usedPercentageRef.current.percentage.toFixed(2));
+    console.log("사용된 면적 비율=>", usedPercentageRef.current.percentage.toFixed(2));
   };
 
   const updateZoom = () => {

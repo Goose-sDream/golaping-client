@@ -23,6 +23,4 @@ const optionColorMap = new Map([
 
 const optionColors = [...optionColorMap.values()].flat();
 
-// console.log("optionColors =>", optionColors);
-
 export { PURPLE, GREEN, YELLOW, LIGHTGRAY, borderMap, optionColors, optionColorMap };
