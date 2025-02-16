@@ -172,7 +172,8 @@ const MakeCandidate = () => {
     candidatesRef.current.forEach((candidate) => {
       let growthRate = BASEGROWTHRATE; // 투표 수당 증가량
       // 축소 횟수에 따라 성장률 점진적 감소
-      growthRate *= Math.pow(SHRINKFACTOR, usedPercentageRef.current.count);
+      // growthRate *= Math.pow(SHRINKFACTOR, usedPercentageRef.current.count);
+      growthRate *= SHRINKFACTOR;
 
       const r = candidate.ball.circleRadius || 0;
       // 투표 수에 비례한 반지름
@@ -203,7 +204,7 @@ const MakeCandidate = () => {
 
     usedPercentageRef.current.percentage = computedTotalCircleArea / canvasArea;
 
-    // console.log("사용된 면적 비율=>", usedPercentageRef.current.percentage.toFixed(2));
+    console.log("사용된 면적 비율=>", usedPercentageRef.current.percentage.toFixed(2));
   };
 
   const updateZoom = () => {
