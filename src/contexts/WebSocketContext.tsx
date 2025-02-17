@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { Client } from "@stomp/stompjs";
 import StorageController from "@/storage/storageController";
+import { isVoteExpired } from "@/utils/sessionUtils";
 
 interface WebSocketContextType {
   client: Client | null;
@@ -19,8 +20,11 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
   const clientRef = useRef<Client | null>(null);
 
   const initializeWebSocket = () => {
+    if (isVoteExpired()) {
+      console.log("Vote has expired, skipping WebSocket connection.");
+      return;
+    }
     const voteUuid = storage.getItem("voteUuid");
-    const voteEndTime = storage.getItem("voteEndTime");
 
     if (!voteUuid) {
       console.log("No voteUuid found, skipping WebSocket connection.");
@@ -31,10 +35,6 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
       clientRef.current.deactivate();
       clientRef.current = null;
     }
-
-    const date = new Date(voteEndTime!);
-
-    document.cookie = `voteUuid=${encodeURIComponent(voteUuid!)}; path=/; expires=${date.toUTCString()}; SameSite=None; Secure;`;
 
     const client = new Client({
       brokerURL: `wss://${process.env.API_URL}/ws/votes`,
