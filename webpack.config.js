@@ -1,10 +1,10 @@
+const fs = require("fs");
 const path = require("path");
-
 const { CleanWebpackPlugin } = require("clean-webpack-plugin");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
+const dotenv = require("dotenv");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const webpack = require("webpack");
-const dotenv = require("dotenv");
 
 dotenv.config();
 
@@ -29,6 +29,13 @@ module.exports = (webpackEnv) => {
       host: "localhost",
       port: 3300,
       historyApiFallback: true,
+      server: {
+        type: "https",
+        options: {
+          key: "./key.pem",
+          cert: "./cert.pem",
+        },
+      },
     },
   };
 
