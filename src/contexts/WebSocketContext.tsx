@@ -37,8 +37,7 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
     document.cookie = `voteUuid=${encodeURIComponent(voteUuid!)}; path=/; expires=${date.toUTCString()}; SameSite=None; Secure;`;
 
     const client = new Client({
-      brokerURL: `ws://${process.env.API_URL}/ws/votes`,
-
+      brokerURL: `wss://${process.env.API_URL}/ws/votes`,
       debug: (msg) => console.log(msg),
       reconnectDelay: 500000,
       onConnect: () => {
