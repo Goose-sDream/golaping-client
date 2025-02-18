@@ -177,8 +177,8 @@ const MakeCandidate = () => {
   const updateCount = (targetBall: TargetBall) => {
     if (limited === "제한") {
       if (selectedOptionRef.current.includes(targetBall.ball)) {
-        targetBall.count--;
-        usedPercentageRef.current.count--;
+        targetBall.count = Math.max(targetBall.count - 1, 0);
+        usedPercentageRef.current.count = Math.max(usedPercentageRef.current.count - 1, 0);
       } else {
         targetBall.count++;
       }
@@ -190,9 +190,12 @@ const MakeCandidate = () => {
   const updateBallsize = () => {
     let totalCircleArea = 0;
     candidatesRef.current.forEach((candidate) => {
+      console.log("candidate.count =>", candidate.count);
+      console.log("usedPercentageRef.current.count =>", usedPercentageRef.current.count);
       let growthRate = BASEGROWTHRATE; // 투표 수당 증가량
       // 축소 횟수에 따라 성장률 점진적 감소
       growthRate *= Math.pow(SHRINKFACTOR, usedPercentageRef.current.count);
+      console.log("growthRate =>", growthRate);
 
       const r = candidate.ball.circleRadius || 0;
       // 투표 수에 비례한 반지름
