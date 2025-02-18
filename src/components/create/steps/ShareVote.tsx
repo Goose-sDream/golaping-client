@@ -35,7 +35,6 @@ const Wrapper = styled.div`
   justify-content: center;
   overflow: hidden;
   height: 100vh;
-  max-width: 400px;
 `;
 
 const Title = styled.h1`

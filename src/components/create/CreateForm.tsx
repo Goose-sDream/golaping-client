@@ -5,37 +5,45 @@ import styled from "styled-components";
 import { v4 as uuid } from "uuid";
 import { BasicForm, LandingForm, OptionForm, ShareVote } from "./steps";
 import { Button, Stepper } from "@/components/common";
-import useWebsocketUrl from "@/hooks/useWebsocketUrl";
 import Request from "@/services/requests";
+import StorageController from "@/storage/storageController";
 import { APIResponse } from "@/types/apiTypes";
+
+const storage = new StorageController("session");
 
 export const CreateForm = () => {
   const methods = useForm({
     mode: "onBlur",
   });
+  const { handleSubmit, trigger } = methods;
   const navigate = useNavigate();
   const [step, setStep] = useState<number>(1);
   const [randomLink, setRandomLink] = useState<string>("");
   const request = Request();
-  const { setWebsocketUrl } = useWebsocketUrl();
 
   const createVote = async (data: FieldValues) => {
     const timeLimit = data.hour * 60 + data.minute;
     const link = `${window.location.origin}${generateLink()}`;
-    const response = await request.post<APIResponse<{ websocketUrl: string; sessionId: string }>>("/api/votes", {
-      title: data.title,
-      nickname: data.nickname,
-      type: data.type,
-      userVoteLimit: data.userVoteLimit,
-      timeLimit,
-      link,
-    });
+    const response = await request.post<APIResponse<{ voteUuid: string; voteEndTime: string; voteIdx: number }>>(
+      "/api/votes",
+      {
+        title: data.title,
+        nickname: data.nickname,
+        type: data.type,
+        userVoteLimit: data.userVoteLimit,
+        timeLimit,
+        link,
+      }
+    );
     console.log(response);
 
     if (response.isSuccess) {
-      const { websocketUrl } = response.result;
-      setWebsocketUrl(websocketUrl);
+      const { voteUuid, voteEndTime, voteIdx } = response.result;
       setStep(step + 1);
+      storage.setItem("nickname", data.nickname);
+      storage.setItem("voteUuid", voteUuid);
+      storage.setItem("voteEndTime", voteEndTime);
+      storage.setItem("voteIdx", String(voteIdx));
     } else {
       console.error("Vote creation failed:", response.message);
     }
@@ -49,6 +57,14 @@ export const CreateForm = () => {
 
   const handleNavigate = () => {
     navigate(randomLink);
+  };
+
+  const handleNextStep = async (fields?: string[]) => {
+    const isValid = fields ? await trigger(fields) : true;
+
+    if (isValid) {
+      setStep(step + 1);
+    }
   };
 
   const steps: { [key: number]: JSX.Element } = {
@@ -65,21 +81,24 @@ export const CreateForm = () => {
         {steps[step]}
         <ButtonContainer>
           {step === 1 && (
-            <Button type="button" onClick={() => setStep(step + 1)}>
+            <Button type="button" onClick={() => handleNextStep()}>
               투표 만들기
             </Button>
           )}
           {step === 2 && (
-            <Button type="button" onClick={() => setStep(step + 1)}>
+            <Button type="button" onClick={() => handleNextStep(["title", "nickname"])}>
               다음
             </Button>
           )}
           {step === 3 && (
             <Button
               type="button"
-              onClick={methods.handleSubmit((data) => {
-                createVote(data as FieldValues);
-              })}
+              onClick={async () => {
+                const isValid = await trigger(["hour", "minute"]);
+                if (isValid) {
+                  handleSubmit((data) => createVote(data as FieldValues))();
+                }
+              }}
             >
               생성하기
             </Button>

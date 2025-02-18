@@ -11,11 +11,12 @@ import { YELLOW } from "@/styles/color";
 import { Vote } from "@/types/voteTypes";
 
 const OptionForm = () => {
-  const { control, setValue } = useFormContext<Vote>();
+  const { control, setValue, watch } = useFormContext<Vote>();
   const [timeOpen, setTimeOpen] = useState(Array(2).fill(false));
   const [{ limitList, limited }, setLimited] = useRecoilState(limitState);
   const timeRef = useRef<(HTMLDivElement | null)[]>([]);
   const userVoteLimit = Array.from({ length: 5 }, (_, i) => i + 1);
+  const [hasError, setHasError] = useState<string>("");
 
   useEffect(() => {
     if (timeRef && timeRef.current) {
@@ -56,7 +57,7 @@ const OptionForm = () => {
 
   return (
     <VoteDiv>
-      <div style={{ display: "flex", flexDirection: "column" }}>
+      <div style={{ display: "flex", flexDirection: "column", marginBottom: 30 }}>
         <Label>타이머</Label>
         <div style={{ display: "flex", justifyContent: "space-around", alignItems: "center" }}>
           {timeOpen.map((_, idx) => (
@@ -70,6 +71,17 @@ const OptionForm = () => {
                 max: {
                   value: idx > 0 ? 59 : 23,
                   message: `${idx > 0 ? "최대 59분까지" : "최대 24시간까지"}`,
+                },
+                validate: () => {
+                  const hour = watch("hour");
+                  const minute = watch("minute");
+
+                  if (hour === 0 && minute === 0) {
+                    setHasError("최소 1분 이상 설정해주세요.");
+                    return " ";
+                  }
+
+                  return true;
                 },
               }}
               render={({ field, fieldState: { error } }) => (
@@ -90,7 +102,7 @@ const OptionForm = () => {
                       placeholder="00"
                       {...field}
                       error={error?.message}
-                      value={field.value || ""}
+                      value={field.value || 0}
                       autoComplete="off"
                       $styleProps={timerInputStyleProps}
                     />
@@ -121,6 +133,7 @@ const OptionForm = () => {
             />
           ))}
         </div>
+        <ErrorMessage>{hasError}</ErrorMessage>
       </div>
 
       <LimitWrapper>
@@ -210,4 +223,11 @@ const Label = styled.label`
   font-size: 20px;
   font-weight: bold;
   color: black;
+`;
+
+const ErrorMessage = styled.p`
+  font-size: 16px;
+  color: red;
+  text-align: center;
+  height: 20px;
 `;

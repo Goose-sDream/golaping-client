@@ -1,8 +1,7 @@
-import { UseFormRegister } from "react-hook-form";
-import { VoteFormData } from "./EnterVote";
+import { FieldValues, UseFormRegister } from "react-hook-form";
 
 interface LogoWithInputProps {
-  register: UseFormRegister<VoteFormData>;
+  register: UseFormRegister<FieldValues>;
 }
 
 const LogoWithInput = ({ register }: LogoWithInputProps) => {
