@@ -120,7 +120,7 @@ const VoteResults = () => {
           navigate("/");
         }}
       >
-        투표 입장하기
+        투표 만들러 가기
       </Button>
       <GreenLogo />
     </Container>
