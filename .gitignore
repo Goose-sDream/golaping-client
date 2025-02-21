@@ -11,3 +11,5 @@
 # https
 cert.pem
 key.pem
+localhost.pem
+localhost-key.pem

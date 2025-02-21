@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
+import { useRecoilState } from "recoil";
 import styled from "styled-components";
+import Description from "./Description";
 import TimePicker from "./TimePicker";
+import { limitState } from "@/atoms/createAtom";
 import Input from "@/components/common/Input";
-import Radio from "@/components/common/Radio";
 import Select from "@/components/common/Select";
 import { YELLOW } from "@/styles/color";
 import { Vote } from "@/types/voteTypes";
@@ -11,8 +13,7 @@ import { Vote } from "@/types/voteTypes";
 const OptionForm = () => {
   const { control, setValue, watch } = useFormContext<Vote>();
   const [timeOpen, setTimeOpen] = useState(Array(2).fill(false));
-  const limitList = ["무제한", "제한"];
-  const [limited, setLimited] = useState(limitList[1]);
+  const [{ limitList, limited }, setLimited] = useRecoilState(limitState);
   const timeRef = useRef<(HTMLDivElement | null)[]>([]);
   const userVoteLimit = Array.from({ length: 5 }, (_, i) => i + 1);
   const [hasError, setHasError] = useState<string>("");
@@ -32,17 +33,26 @@ const OptionForm = () => {
   }, []);
 
   const handleRadioChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setLimited(e.target.value);
+    setLimited((prev) => ({ ...prev, limited: e.target.value }));
   };
 
-  const inputStyleProps = {
+  const timerInputStyleProps = {
     width: "70px",
     textAlign: "right",
     pointerEvents: "none",
     labelDisplay: "none",
     position: "relative",
-    wrapperMarginBottom: 0,
-    minHeight: "80px",
+  };
+
+  const radioInputStyleProps = {
+    flexDirection: "row",
+    fontSize: "18px",
+    fontWeight: "normal",
+    width: "20px",
+    minHeight: "20px",
+    labelMarginBottom: "0px",
+    labelDisplay: "flex",
+    labelAlignItems: "center",
   };
 
   return (
@@ -82,7 +92,7 @@ const OptionForm = () => {
                   }}
                 >
                   <div
-                    style={{ display: "flex", alignItems: "center", gap: "10px", position: "relative", marginTop: 30 }}
+                    style={{ display: "flex", alignItems: "center", gap: "5px", position: "relative" }}
                     onClick={() => setTimeOpen((prev) => prev.map((p, i) => (i === idx ? true : p)))}
                     ref={(el) => {
                       timeRef.current[idx] = el;
@@ -94,16 +104,15 @@ const OptionForm = () => {
                       error={error?.message}
                       value={field.value || 0}
                       autoComplete="off"
-                      styleProps={inputStyleProps}
-                      name="타이머"
+                      $styleProps={timerInputStyleProps}
                     />
-                    <h3 style={{ fontSize: "20px" }}>{idx > 0 ? "분" : "시간"}</h3>
+                    <h3 style={{ fontSize: "20px", minWidth: "40px" }}>{idx > 0 ? "분" : "시간"}</h3>
                     {timeOpen[idx] && (
                       <div
                         style={{
                           display: "flex",
                           alignItems: "center",
-                          gap: "5px",
+                          gap: "10px",
                           position: "absolute",
                           top: "50%",
                           left: "50%",
@@ -132,18 +141,18 @@ const OptionForm = () => {
         <div
           style={{
             display: "flex",
-            justifyContent: "space-between",
-            width: "70%",
-            alignItems: "center",
-            padding: "5px 10px 15px 10px",
+            width: "90%",
+            height: "40px",
           }}
         >
           {limitList.map((limit, idx) => (
-            <Radio
+            <Input<"radio">
               key={idx}
               label={limit}
               value={limit}
-              checked={idx > 0 ? limited === "제한" : limited !== "제한"}
+              type="radio"
+              $styleProps={radioInputStyleProps}
+              checked={idx > 0 ? limited !== "제한" : limited === "제한"}
               onChange={handleRadioChange}
             />
           ))}
@@ -169,33 +178,22 @@ const OptionForm = () => {
             gap: "15px",
             alignItems: "center",
             height: "100px",
-            maxWidth: "300px",
-            marginTop: "10px",
+            width: "100%",
             padding: "10px",
           }}
         >
           <div
             style={{
-              width: "30px",
-              height: "30px",
+              width: "25px",
+              height: "25px",
               borderRadius: "100%",
               backgroundColor: `${YELLOW}`,
             }}
           ></div>
           {limited == "무제한" ? (
-            <p style={{ fontSize: "15px", width: "85%" }}>
-              무제한을 고르면,
-              <br /> 원하는 만큼 투표할 수 있어요. <br />
-              중복가능, 다중가능
-            </p>
+            <Description limit="무제한" des1="원하는 만큼 투표할 수 있어요." des2=" 중복가능, 다중가능" />
           ) : (
-            <p style={{ fontSize: "15px", width: "85%" }}>
-              제한을 고르면,
-              <br />
-              정한 횟수만큼만 투표할 수 있어요.
-              <br />
-              중복불가, 다중가능
-            </p>
+            <Description limit="제한" des1="정한 횟수만큼만 투표할 수 있어요." des2=" 중복불가, 다중가능" />
           )}
         </div>
       </LimitWrapper>
@@ -218,10 +216,10 @@ const LimitWrapper = styled.div`
   display: flex;
   flex-direction: column;
   width: 100%;
+  gap: 10px;
 `;
 
 const Label = styled.label`
-  margin-bottom: 8px;
   font-size: 20px;
   font-weight: bold;
   color: black;

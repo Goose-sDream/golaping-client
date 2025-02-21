@@ -30,8 +30,8 @@ module.exports = (webpackEnv) => {
       server: {
         type: "https",
         options: {
-          key: "./key.pem",
-          cert: "./cert.pem",
+          key: "./localhost+1-key.pem",
+          cert: "./localhost+1.pem",
         },
       },
     },

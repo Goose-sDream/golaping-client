@@ -1,5 +1,6 @@
 import { ButtonHTMLAttributes } from "react";
 import styled from "styled-components";
+import { LIGHTGRAY } from "@/styles/color";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   size?: "small" | "large";
@@ -26,6 +27,10 @@ const StyledButton = styled.button<{ size: string }>`
     background-color 0.2s,
     color 0.2s;
   padding: ${({ size }) => (size === "small" ? "6px 12px" : "10px 60px")};
+  &:hover {
+    background-color: ${LIGHTGRAY};
+    color: black;
+  }
 `;
 
 export default Button;
