@@ -1,7 +1,7 @@
 import axios, { AxiosResponse, InternalAxiosRequestConfig } from "axios";
 
 const instance = axios.create({
-  baseURL: process.env.API_URL,
+  baseURL: `https://${process.env.API_URL}`,
   withCredentials: true,
 });
 

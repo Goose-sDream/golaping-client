@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useRef, useState } from "react";
-import { Client, IStompSocket } from "@stomp/stompjs";
-import SockJS from "sockjs-client";
+import { Client } from "@stomp/stompjs";
 import StorageController from "@/storage/storageController";
+import { isVoteExpired } from "@/utils/sessionUtils";
 
 interface WebSocketContextType {
   client: Client | null;
@@ -20,12 +20,15 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
   const clientRef = useRef<Client | null>(null);
 
   const initializeWebSocket = () => {
+    if (isVoteExpired()) {
+      console.log("Vote has expired, skipping WebSocket connection.");
+      return;
+    }
     const voteUuid = storage.getItem("voteUuid");
-    const nickname = storage.getItem("nickname");
 
-    if (!nickname) {
-      console.log("No nickname found, skipping WebSocket connection.");
-      return; // 닉네임이 없으면 연결하지 않음
+    if (!voteUuid) {
+      console.log("No voteUuid found, skipping WebSocket connection.");
+      return;
     }
 
     if (clientRef.current?.active) {
@@ -34,14 +37,9 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
     }
 
     const client = new Client({
-      webSocketFactory: () => {
-        const wsUrl = `${process.env.API_URL}/ws/votes`;
-        const socket = new SockJS(wsUrl, null, { transports: ["websocket"] }) as IStompSocket;
-        (socket as any).withCredentials = true;
-        return socket;
-      },
-      connectHeaders: { voteUuid: voteUuid!, nickname },
+      brokerURL: `wss://${process.env.API_URL}/ws/votes`,
       debug: (msg) => console.log(msg),
+      reconnectDelay: 500000,
       onConnect: () => {
         console.log("WebSocket connected successfully");
         setConnected(true);
@@ -56,6 +54,8 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
         setError(`STOMP Error: ${frame.headers?.message || "Unknown error"}`);
       },
     });
+
+    console.log("activating client", client);
 
     try {
       client.activate();
@@ -74,10 +74,10 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
         clientRef.current = null;
       }
     };
-  }, []); // ✅ 처음 마운트될 때 한 번만 실행
+  }, []); // 처음 마운트될 때 한 번만 실행
 
   const connectWebSocket = () => {
-    initializeWebSocket(); // ✅ 수동으로 WebSocket을 연결할 수 있도록 추가
+    initializeWebSocket(); // 수동으로 WebSocket을 연결할 수 있도록 추가
   };
 
   const disconnect = () => {
