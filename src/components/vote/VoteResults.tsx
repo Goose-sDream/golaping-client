@@ -1,46 +1,49 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
+import { Button } from "../common";
+import GreenLogo from "@/assets/GreenLogo.svg";
 import Request from "@/services/requests";
 import StorageController from "@/storage/storageController";
 import { APIResponse } from "@/types/apiTypes";
 
 const sampleVoteResult = {
-  title: "가장 좋아하는 프로그래밍 언어는?",
+  title: "오늘 뭐 먹지?",
   voteResult: [
     {
       ranking: 1,
       optionId: 101,
-      optionName: "JavaScript",
+      optionName: "치킨",
       voteCount: 120,
-      voteColor: "#F7DF1E", // 노랑색 (JavaScript 대표 색상)
+      voteColor: "#F7DF1E",
     },
     {
       ranking: 2,
       optionId: 102,
-      optionName: "Python",
+      optionName: "떡볶이",
       voteCount: 95,
-      voteColor: "#3572A5", // 파랑색 (Python 대표 색상)
+      voteColor: "#3572A5",
     },
     {
       ranking: 3,
       optionId: 103,
-      optionName: "TypeScript",
+      optionName: "초밥",
       voteCount: 80,
-      voteColor: "#3178C6", // 연한 파랑 (TypeScript 색상)
+      voteColor: "#3178C6",
     },
     {
       ranking: 4,
       optionId: 104,
-      optionName: "Go",
+      optionName: "피자",
       voteCount: 60,
-      voteColor: "#00ADD8", // 하늘색 (Go 대표 색상)
+      voteColor: "#00ADD8",
     },
     {
       ranking: 5,
       optionId: 105,
-      optionName: "Rust",
+      optionName: "돈까스",
       voteCount: 40,
-      voteColor: "#DEA584", // 주황빛 브라운 (Rust 색상)
+      voteColor: "#DEA584",
     },
   ],
 };
@@ -63,7 +66,7 @@ const VoteResults = () => {
   const [voteData, setVoteData] = useState<VoteResult[]>([]);
   const [maxVotes, setMaxVotes] = useState(1);
   const voteIdx = storage.getItem("voteIdx");
-
+  const navigate = useNavigate();
   const request = Request();
 
   const getResultFromAPI = async () => {
@@ -93,7 +96,7 @@ const VoteResults = () => {
       document.querySelectorAll(".bar").forEach((el) => {
         (el as HTMLElement).style.width = el.getAttribute("data-width") || "0%";
       });
-    }, 200); // 0.2초 후 애니메이션 시작
+    }, 200);
   }, [voteData]);
 
   return (
@@ -102,13 +105,24 @@ const VoteResults = () => {
       {voteData.map((vote) => (
         <VoteItem key={vote.optionId}>
           <VoteText>
-            {vote.optionName} - {vote.voteCount}
+            {vote.ranking}. {vote.optionName} {vote.voteCount}표
           </VoteText>
           <BarContainer>
             <Bar className="bar" data-width={`${(vote.voteCount / maxVotes) * 100}%`} color={vote.voteColor} />
           </BarContainer>
         </VoteItem>
       ))}
+      <Button
+        type="button"
+        style={{ position: "absolute", bottom: 20, zIndex: 100 }}
+        onClick={() => {
+          storage.clear();
+          navigate("/");
+        }}
+      >
+        투표 입장하기
+      </Button>
+      <GreenLogo />
     </Container>
   );
 };
@@ -118,19 +132,26 @@ export default VoteResults;
 const Container = styled.div`
   width: 100%;
   margin: 0 auto;
-  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 `;
 
-const Title = styled.h3`
+const Title = styled.h1`
+  font-size: 32px;
+  font-weight: bold;
+  height: 20vh;
   text-align: center;
-  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 `;
 
 const VoteItem = styled.div`
   display: flex;
-  align-items: center;
-  gap: 15px;
-  margin-bottom: 10px;
+  width: 100%;
+  margin-bottom: 20px;
+  padding: 0 20px;
 `;
 
 const VoteText = styled.span`
@@ -141,8 +162,8 @@ const VoteText = styled.span`
 
 const BarContainer = styled.div`
   flex: 2;
-  height: 20px;
-  border-radius: 10px;
+  height: 25px;
+  border-radius: 18px;
   overflow: hidden;
 `;
 
