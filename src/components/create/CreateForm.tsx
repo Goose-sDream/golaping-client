@@ -40,7 +40,6 @@ export const CreateForm = () => {
     if (response.isSuccess) {
       const { voteUuid, voteEndTime, voteIdx } = response.result;
       setStep(step + 1);
-      storage.setItem("nickname", data.nickname);
       storage.setItem("voteUuid", voteUuid);
       storage.setItem("voteEndTime", voteEndTime);
       storage.setItem("voteIdx", String(voteIdx));

@@ -30,7 +30,6 @@ const EnterVote = ({ setStep }: EnterVoteProps) => {
 
       if (response.isSuccess) {
         const { voteIdx, voteEndTime } = response.result;
-        storage.setItem("nickname", data.nickname);
         storage.setItem("voteUuid", id!);
         storage.setItem("voteEndTime", voteEndTime);
         storage.setItem("voteIdx", String(voteIdx));
