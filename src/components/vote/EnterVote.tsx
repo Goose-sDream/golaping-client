@@ -1,4 +1,4 @@
-import { Dispatch, SetStateAction, useEffect } from "react";
+// import { Dispatch, SetStateAction, useEffect } from "react";
 import { FieldValues, useForm } from "react-hook-form";
 import { useParams } from "react-router-dom";
 import styled from "styled-components";
@@ -9,17 +9,17 @@ import Request from "@/services/requests";
 import StorageController from "@/storage/storageController";
 import { APIResponse } from "@/types/apiTypes";
 
-interface EnterVoteProps {
-  setStep: Dispatch<SetStateAction<number>>;
-}
+// interface EnterVoteProps {
+//   setStep: Dispatch<SetStateAction<number>>;
+// }
 
 const storage = new StorageController("session");
 
-const EnterVote = ({ setStep }: EnterVoteProps) => {
+const EnterVote = () => {
   const { register, handleSubmit } = useForm();
   const { id } = useParams();
   const request = Request();
-  const { client, connected, error, connectWebSocket } = useWebSocket();
+  const { connectWebSocket } = useWebSocket();
 
   const onSubmit = async (data: FieldValues) => {
     try {
@@ -41,30 +41,30 @@ const EnterVote = ({ setStep }: EnterVoteProps) => {
     }
   };
 
-  const subscribeToMessages = () => {
-    if (!client || error) {
-      console.error("WebSocket not ready:", error || "Client not initialized");
-      return;
-    }
+  // const subscribeToMessages = () => {
+  //   if (!client || error) {
+  //     console.error("WebSocket not ready:", error || "Client not initialized");
+  //     return;
+  //   }
 
-    try {
-      client.publish({
-        destination: `/app/vote/connect`,
-      });
-      client.subscribe("/user/queue/initialResponse", (message: { body: string }) => {
-        console.log("Received: ", JSON.parse(message.body));
-      });
-      setStep(2);
-    } catch (error) {
-      console.error("Failed to subscribe to messages:", error);
-    }
-  };
+  //   try {
+  //     client.publish({
+  //       destination: `/app/vote/connect`,
+  //     });
+  //     client.subscribe("/user/queue/initialResponse", (message: { body: string }) => {
+  //       console.log("Received: ", JSON.parse(message.body));
+  //     });
+  //     setStep(2);
+  //   } catch (error) {
+  //     console.error("Failed to subscribe to messages:", error);
+  //   }
+  // };
 
-  useEffect(() => {
-    if (connected && client) {
-      subscribeToMessages();
-    }
-  }, [connected, client]); // connected나 client가 변경될 때 실행
+  // useEffect(() => {
+  //   if (connected && client) {
+  //     subscribeToMessages();
+  //   }
+  // }, [connected, client]); // connected나 client가 변경될 때 실행
 
   return (
     <Wrapper onSubmit={handleSubmit(onSubmit)}>

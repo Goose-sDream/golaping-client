@@ -4,17 +4,29 @@ import StorageController from "@/storage/storageController";
 import { isVoteExpired } from "@/utils/sessionUtils";
 
 interface WebSocketContextType {
+  step: number;
+  setStep: any;
+  prevVotes: PrevVotes[];
   client: Client | null;
   connected: boolean;
   error: string | null;
   disconnect: () => void;
   connectWebSocket: () => void; // 새로고침 없이 WebSocket 연결하는 함수 추가
 }
+type PrevVotes = {
+  optionId: number;
+  optionName: string;
+  voteCount: number;
+  voteColor: string;
+  isVotedByUser: boolean;
+};
 
 const WebSocketContext = createContext<WebSocketContextType | null>(null);
 const storage = new StorageController("session");
 
 export const WebSocketProvider = ({ children }: { children: React.ReactNode }) => {
+  const [step, setStep] = useState(0);
+  const [prevVotes, setPrevVotes] = useState<PrevVotes[]>([]);
   const [connected, setConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const clientRef = useRef<Client | null>(null);
@@ -22,12 +34,14 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
   const initializeWebSocket = () => {
     if (isVoteExpired()) {
       console.log("Vote has expired, skipping WebSocket connection.");
+      setStep(1);
       return;
     }
-    const voteUuid = storage.getItem("voteUuid");
 
+    const voteUuid = storage.getItem("voteUuid");
     if (!voteUuid) {
       console.log("No voteUuid found, skipping WebSocket connection.");
+      setStep(1);
       return;
     }
 
@@ -39,9 +53,11 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
     const client = new Client({
       brokerURL: `wss://${process.env.API_URL}/ws/votes`,
       debug: (msg) => console.log(msg),
-      reconnectDelay: 500000,
+      reconnectDelay: 500000000,
       onConnect: () => {
         console.log("WebSocket connected successfully");
+        subscribeWebsocket(client);
+        setStep(2);
         setConnected(true);
         setError(null);
       },
@@ -66,9 +82,22 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
     }
   };
 
+  const subscribeWebsocket = (client: Client) => {
+    client.publish({
+      destination: `/app/vote/connect`,
+    });
+    client.subscribe("/user/queue/initialResponse", (message: { body: string }) => {
+      console.log("Received: 프로바이더 내부에서 ", JSON.parse(message.body));
+      const received = JSON.parse(message.body).previousVotes;
+      console.log("received =>", received);
+      setPrevVotes([...received]);
+    });
+  };
+
   useEffect(() => {
     initializeWebSocket();
     return () => {
+      console.log("끝??");
       if (clientRef.current?.active) {
         clientRef.current.deactivate();
         clientRef.current = null;
@@ -90,7 +119,9 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
   };
 
   return (
-    <WebSocketContext.Provider value={{ client: clientRef.current, connected, error, disconnect, connectWebSocket }}>
+    <WebSocketContext.Provider
+      value={{ step, setStep, prevVotes, client: clientRef.current, connected, error, disconnect, connectWebSocket }}
+    >
       {children}
     </WebSocketContext.Provider>
   );
