@@ -57,6 +57,13 @@ const MakeCandidate = () => {
   }, [connected]);
 
   useEffect(() => {
+    console.log("prevVotes =>", prevVotes);
+    if (prevVotes.length > 0) {
+      renderPrevBalls();
+    }
+  }, [prevVotes]);
+
+  useEffect(() => {
     if (!containerRef.current) return;
 
     const engine = engineRef.current;
@@ -93,10 +100,6 @@ const MakeCandidate = () => {
     ];
     World.add(world, walls);
 
-    if (prevVotes.length > 0) {
-      renderPrevBalls();
-    }
-
     renderRef.current = render;
     const mouse = Mouse.create(render.canvas);
     const mouseConstraint = MouseConstraint.create(engine, {
@@ -107,7 +110,6 @@ const MakeCandidate = () => {
     World.add(world, mouseConstraint);
     mouseConstraintRef.current = mouseConstraint;
 
-    console.log("candidatesRef =>", candidatesRef.current);
     // ✅ 빈 공간을 클릭하면 모달 표시 + 클릭 위치 저장
     Events.on(mouseConstraint, "mousedown", (event) => {
       const { mouse } = event.source;
@@ -140,7 +142,6 @@ const MakeCandidate = () => {
         updateBallBorder(targetBall.ball);
         updateBallsize();
         updateZoom();
-        // console.log("candidatesRef.current =>", candidatesRef.current);
       }
     });
 
@@ -191,9 +192,9 @@ const MakeCandidate = () => {
       Engine.clear(engine);
       render.canvas.remove();
     };
-  }, [prevVotes]);
+  }, []);
 
-  const makeNewBall = (newBallObj: NewBall, ballId?: number) => {
+  const makeNewBall = (newBallObj: NewBall, ballId: number) => {
     console.log("생성");
     const {
       coordinates: { x, y },
@@ -248,6 +249,7 @@ const MakeCandidate = () => {
         );
       }
     });
+    console.log("candidatesRef =>", candidatesRef.current);
   };
 
   const renderPrevBalls = () => {
