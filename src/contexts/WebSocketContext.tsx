@@ -7,6 +7,7 @@ interface WebSocketContextType {
   step: number;
   setStep: any;
   prevVotes: PrevVotes[];
+  voteUuid: string | null;
   client: Client | null;
   connected: boolean;
   error: string | null;
@@ -29,6 +30,7 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
   const [prevVotes, setPrevVotes] = useState<PrevVotes[]>([]);
   const [connected, setConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [voteUuid, setVoteUuid] = useState<string | null>(null);
   const clientRef = useRef<Client | null>(null);
 
   const initializeWebSocket = () => {
@@ -38,12 +40,14 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
       return;
     }
 
-    const voteUuid = storage.getItem("voteUuid");
-    if (!voteUuid) {
+    const storedVoteUuid = storage.getItem("voteUuid");
+    if (!storedVoteUuid) {
       console.log("No voteUuid found, skipping WebSocket connection.");
       setStep(1);
       return;
     }
+
+    setVoteUuid(storedVoteUuid); // Set voteUuid state
 
     if (clientRef.current?.active) {
       clientRef.current.deactivate();
@@ -120,7 +124,17 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
 
   return (
     <WebSocketContext.Provider
-      value={{ step, setStep, prevVotes, client: clientRef.current, connected, error, disconnect, connectWebSocket }}
+      value={{
+        step,
+        setStep,
+        prevVotes,
+        voteUuid,
+        client: clientRef.current,
+        connected,
+        error,
+        disconnect,
+        connectWebSocket,
+      }}
     >
       {children}
     </WebSocketContext.Provider>

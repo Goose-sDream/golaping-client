@@ -20,13 +20,12 @@ type NewBall = { coordinates: { x: number; y: number }; count: number; color: st
 type UsedPercentage = { percentage: number; time: number; count: number };
 
 type OptionObj = {
-  optionId: number;
   optionText: string;
   optionColor: string;
 };
 
 const MakeCandidate = () => {
-  const { client, prevVotes, connected, connectWebSocket } = useWebSocket();
+  const { client, prevVotes, voteUuid, connected, connectWebSocket } = useWebSocket();
   const { limited } = useRecoilValue(limitState);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const engineRef = useRef(Engine.create());
@@ -54,6 +53,7 @@ const MakeCandidate = () => {
       console.log("재연결");
       connectWebSocket();
     }
+    subscribeNewOption();
   }, [connected]);
 
   useEffect(() => {
@@ -193,7 +193,8 @@ const MakeCandidate = () => {
     };
   }, [prevVotes]);
 
-  const makeNewBall = (newBallObj: NewBall) => {
+  const makeNewBall = (newBallObj: NewBall, ballId?: number) => {
+    console.log("생성");
     const {
       coordinates: { x, y },
       count,
@@ -212,6 +213,8 @@ const MakeCandidate = () => {
         },
       }),
     });
+    if (ballId) newBall.id = ballId;
+    console.log("newBall =>", newBall);
     World.add(world, newBall);
 
     candidatesRef.current.push({ count, ball: newBall, text: text });
@@ -233,12 +236,16 @@ const MakeCandidate = () => {
     console.log("prevVotes =>", prevVotes);
     prevVotes.forEach((prev) => {
       if (!candidatesRef.current.some((candidate) => candidate.ball.id === prev.optionId)) {
-        makeNewBall({
-          coordinates: getRandomCoordinates(),
-          count: prev.voteCount,
-          color: prev.voteColor,
-          text: prev.optionName,
-        });
+        console.log("어디보자");
+        makeNewBall(
+          {
+            coordinates: getRandomCoordinates(),
+            count: prev.voteCount,
+            color: prev.voteColor,
+            text: prev.optionName,
+          },
+          prev.optionId
+        );
       }
     });
   };
@@ -263,18 +270,11 @@ const MakeCandidate = () => {
     }
     // console.log("생성할 위치:", pendingPosition, "입력된 텍스트:", inputText);
     const randomColor = chooseColor();
-    const newBall = makeNewBall({
-      coordinates: pendingPosition,
-      color: randomColor,
-      count: 0,
-      text: inputText,
-    });
     const newOptionObj = {
-      optionId: newBall.id,
       optionText: inputText,
-      optionColor: chooseColor(),
+      optionColor: randomColor,
     };
-    console.log("newOptionObj.id =>", newOptionObj.optionId);
+    // console.log("newOptionObj =>", newOptionObj);
     sendNewOption(newOptionObj);
     if (mouseConstraintRef.current) {
       // "현재 마우스 버튼이 눌려있지 않도록" 인식하게 함
@@ -299,6 +299,30 @@ const MakeCandidate = () => {
       });
     } catch (error) {
       console.error("Failed to send a new message:", error);
+    }
+  };
+
+  const subscribeNewOption = () => {
+    if (!client?.connected) {
+      console.log("websocket is not connected");
+      return;
+    }
+    try {
+      if (voteUuid) {
+        client.subscribe(`/topic/vote/${voteUuid}/addOption`, (message: { body: string }) => {
+          console.log("Received: 추가한 뒤 응답", JSON.parse(message.body));
+          const { optionId, optionName, voteColor } = JSON.parse(message.body);
+          const newBall = {
+            coordinates: pendingPosition ?? getRandomCoordinates(),
+            color: voteColor,
+            count: 0,
+            text: optionName,
+          };
+          makeNewBall(newBall, optionId);
+        });
+      }
+    } catch (error) {
+      console.error("Failed to subscribe a new message:", error);
     }
   };
 
