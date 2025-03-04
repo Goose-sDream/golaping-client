@@ -202,7 +202,6 @@ const MakeCandidate = () => {
     return () => {
       Render.stop(render);
       Runner.stop(runner);
-      World.clear(world, false);
       Engine.clear(engine);
       render.canvas.remove();
     };
