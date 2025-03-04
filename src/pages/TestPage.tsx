@@ -1,6 +1,3 @@
-// import DoVote from "@/components/vote/DoVote";
-// import { useSetRecoilState } from "recoil";
-// import { modalState } from "@/atoms/voteAtom";
 import MakeCandidate from "@/components/vote/MakeCandidate";
 
 const TestPage = () => {
@@ -26,8 +23,6 @@ const TestPage = () => {
         alignItems: "center",
       }}
     >
-      {/* <DoVote /> */}
-      {/* <button onClick={openModal}>모달</button> */}
       <MakeCandidate />
     </div>
   );

@@ -12,14 +12,26 @@ import {
   SHRINKTERM,
   SHRINKTHRESHOLD,
 } from "@/constants/vote";
+import { useWebSocket } from "@/contexts/WebSocketContext";
 import { borderMap, optionColorMap, optionColors } from "@/styles/color";
 
 type TargetBall = { count: number; ball: Body; text: string };
+type NewBall = { coordinates: { x: number; y: number }; count: number; color: string; text: string };
 type UsedPercentage = { percentage: number; time: number; count: number };
+type Voted = {
+  isCreator?: boolean;
+  totalVoteCount?: number;
+  changedOption: { optionId: string; optionName: string; voteCount: number; voteColor: string; isVotedByUser: boolean };
+};
+
+type OptionObj = {
+  optionText: string;
+  optionColor: string;
+};
 
 const MakeCandidate = () => {
+  const { client, prevVotes, voteUuid, connected, connectWebSocket } = useWebSocket();
   const { limited } = useRecoilValue(limitState);
-
   const containerRef = useRef<HTMLDivElement | null>(null);
   const engineRef = useRef(Engine.create());
   const world = engineRef.current.world;
@@ -41,6 +53,29 @@ const MakeCandidate = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    console.log("connected =>", connected);
+    console.log("client.connected =>", client?.connected);
+    if (!connected) {
+      console.log("재연결");
+      connectWebSocket();
+    }
+    subscribeNewOption();
+    subscribeCount();
+    subscribeError();
+  }, [connected]);
+
+  useEffect(() => {
+    console.log("prevVotes =>", prevVotes);
+    if (prevVotes.length > 0) {
+      renderPrevBalls();
+    }
+  }, [prevVotes]);
+
+  // useEffect(() => {
+  //   subscribeCount();
+  // }, [connected]);
+
+  useEffect(() => {
     if (!containerRef.current) return;
 
     const engine = engineRef.current;
@@ -56,8 +91,7 @@ const MakeCandidate = () => {
       },
     });
 
-    renderRef.current = render;
-
+    // 벽 세우기
     const walls = [
       Bodies.rectangle(400, 0, 800, 50, {
         isStatic: true,
@@ -78,6 +112,11 @@ const MakeCandidate = () => {
     ];
     World.add(world, walls);
 
+    if (prevVotes.length > 0) {
+      renderPrevBalls();
+    }
+
+    renderRef.current = render;
     const mouse = Mouse.create(render.canvas);
     const mouseConstraint = MouseConstraint.create(engine, {
       mouse,
@@ -114,12 +153,9 @@ const MakeCandidate = () => {
       } else {
         // 원 클릭하면
         const targetBall = candidatesRef.current[targetId];
-        updateCount(targetBall);
-        chooseBorderColor(targetBall.ball);
-        updateBallBorder(targetBall.ball);
-        updateBallsize();
-        updateZoom();
-        console.log("candidatesRef.current =>", candidatesRef.current);
+        // updateCount(targetBall);
+        publishVoteCount(targetBall);
+        subscribeCount();
       }
     });
 
@@ -127,13 +163,11 @@ const MakeCandidate = () => {
     Events.on(mouseConstraint, "mousemove", (event) => {
       const { mouse } = event.source;
       const { x, y } = mouse.position;
-
       // 벽 안쪽 범위 (조정 가능)
       const minX = 50,
         maxX = 750;
       const minY = 50,
         maxY = 550;
-
       if (x < minX || x > maxX || y < minY || y > maxY) {
         if (mouseConstraint.constraint.bodyB) {
           mouseConstraint.constraint.bodyB = null; // 드래그 해제
@@ -172,43 +206,260 @@ const MakeCandidate = () => {
       Engine.clear(engine);
       render.canvas.remove();
     };
-  }, []);
+  }, [client]);
 
-  const updateCount = (targetBall: TargetBall) => {
-    if (limited === "제한") {
-      if (selectedOptionRef.current.includes(targetBall.ball)) {
-        targetBall.count--;
-        usedPercentageRef.current.count--;
-      } else {
-        targetBall.count++;
+  const makeNewBall = (newBallObj: NewBall, ballId: number) => {
+    console.log("생성");
+    const {
+      coordinates: { x, y },
+      count,
+      color,
+      text,
+    } = newBallObj;
+    const newBall = Bodies.circle(x, y, BASERADIUS, {
+      restitution: 0.8,
+      frictionAir: 0.02,
+      render: { fillStyle: color },
+      ...(limited === "무제한" && {
+        // 움직일 수 없게
+        collisionFilter: {
+          category: 0x0002, // 사용자 정의 원 카테고리 설정
+          mask: 0x0002 | 0x0008, // 다른 물체들(벽)과 충돌 가능
+        },
+      }),
+    });
+    if (ballId) newBall.id = ballId;
+    // console.log("newBall =>", newBall);
+    World.add(world, newBall);
+
+    candidatesRef.current.push({ count, ball: newBall, text: text });
+    return newBall;
+  };
+
+  // prevBalls
+  const getRandomCoordinates = () => {
+    if (!containerRef.current) return { x: 0, y: 0 };
+    const boxWidth = containerRef.current.clientWidth;
+    const boxTop = containerRef.current.clientHeight;
+    const x = Math.floor(Math.random() * boxWidth);
+    const y = Math.floor(Math.random() * boxTop);
+    return { x, y };
+  };
+
+  const organizeBalls = () => {
+    if (!candidatesRef.current) return;
+    console.log("prevVotes =>", prevVotes);
+    prevVotes.forEach((prev) => {
+      if (!candidatesRef.current.some((candidate) => candidate.ball.id === prev.optionId)) {
+        console.log("어디보자");
+        makeNewBall(
+          {
+            coordinates: getRandomCoordinates(),
+            count: prev.voteCount,
+            color: prev.voteColor,
+            text: prev.optionName,
+          },
+          prev.optionId
+        );
       }
-    } else {
-      targetBall.count++;
+    });
+    console.log("candidatesRef =>", candidatesRef.current);
+  };
+
+  const renderPrevBalls = () => {
+    organizeBalls();
+    updateBallsize();
+    updateUsedPercentage();
+    updateZoom();
+  };
+
+  const renderCountedBalls = (targetBall: TargetBall, voteCount: number, isVotedByUser: boolean) => {
+    const { ball } = targetBall;
+    updateCount(ball, voteCount);
+    // chooseBorderColor(ball);
+    updateBallsize();
+    updateZoom();
+    if (isVotedByUser) updateBallBorder(ball);
+  };
+
+  // ✅ newBall + send
+  // 웹소켓으로 생성할 때마다 요청 보내야 함
+  const makeNewOption = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!pendingPosition || !inputRef.current) return;
+    const inputText = inputRef.current.value.trim();
+    if (inputText.trim() === "" || inputText.length > 5) {
+      inputRef.current?.classList.add("shake");
+      setTimeout(() => inputRef.current?.classList.remove("shake"), 400);
+      return;
+    }
+    // console.log("생성할 위치:", pendingPosition, "입력된 텍스트:", inputText);
+    const randomColor = chooseColor();
+    const newOptionObj = {
+      optionText: inputText,
+      optionColor: randomColor,
+    };
+    // console.log("newOptionObj =>", newOptionObj);
+    sendNewOption(newOptionObj);
+    if (mouseConstraintRef.current) {
+      // "현재 마우스 버튼이 눌려있지 않도록" 인식하게 함
+      mouseConstraintRef.current.mouse.button = -1;
+    }
+    // 입력 후 초기화
+    setModalVisible(false);
+    setPendingPosition(null);
+    updateUsedPercentage();
+    updateZoom();
+  };
+
+  const sendNewOption = (optionObj: OptionObj) => {
+    console.log("sendNewOption client.connected =>", client?.connected);
+    if (!client?.connected) {
+      console.log("websocket is not connected");
+      return;
+    }
+    try {
+      client.publish({
+        destination: "/app/vote/addOption",
+        body: JSON.stringify(optionObj),
+      });
+    } catch (error) {
+      console.error("Failed to send a new message:", error);
+    }
+  };
+
+  const publishVoteCount = (targetBall: TargetBall) => {
+    console.log("publishVoteCount client.connected =>", client?.connected);
+    if (!client?.connected) {
+      console.log("websocket is not connected So reconnect");
+      // connectWebSocket();
+      return;
+    }
+    const targetOption = {
+      optionId: targetBall.ball.id,
+    };
+    try {
+      if (voteUuid) {
+        console.log("요청가나");
+        client.publish({
+          destination: "/app/vote",
+          body: JSON.stringify(targetOption),
+        });
+      }
+    } catch (error) {
+      console.error("Failed to subscribe a new message:", error);
+    }
+  };
+
+  const subscribeNewOption = () => {
+    if (!client?.connected) {
+      console.log("websocket is not connected");
+      return;
+    }
+
+    try {
+      if (voteUuid) {
+        client.subscribe(`/topic/vote/${voteUuid}/addOption`, (message: { body: string }) => {
+          console.log("Received: 추가한 뒤 응답", JSON.parse(message.body));
+          const { optionId, optionName, voteColor } = JSON.parse(message.body);
+          const newBall = {
+            coordinates: pendingPosition ?? getRandomCoordinates(),
+            color: voteColor,
+            count: 0,
+            text: optionName,
+          };
+          makeNewBall(newBall, optionId);
+        });
+      }
+    } catch (error) {
+      console.error("Failed to subscribe a new message:", error);
+    }
+  };
+
+  // "제한"일 때, 클릭 취소 시 count-- 함수
+  const updateCount = (ball: Body, voteCount: number) => {
+    candidatesRef.current.map((candidate) => {
+      if (candidate.ball.id === ball.id) {
+        candidate.count = voteCount;
+      }
+    });
+    // if (limited === "제한") {
+    //   if (selectedOptionRef.current.includes(targetBall.ball)) {
+    //     // 이미 포함되어 있으면 빼기
+    //     targetBall.count = Math.max(targetBall.count - 1, 0);
+    //     usedPercentageRef.current.count = Math.max(usedPercentageRef.current.count - 1, 0);
+    //   } else {
+    //     targetBall.count++;
+    //   }
+    // } else {
+    //   targetBall.count++;
+    // }
+  };
+
+  const subscribeError = () => {
+    if (!client?.connected) {
+      console.log("websocket is not connected");
+      return;
+    }
+    client.subscribe(`/user/queue/errors`, (message: { body: string }) => {
+      console.log("message =>", message);
+      console.log("Received: 투표한 뒤 에러", JSON.parse(message.body));
+    });
+  };
+
+  const subscribeCount = () => {
+    if (!client?.connected) {
+      console.log("websocket is not connected");
+      return;
+    }
+    try {
+      if (voteUuid) {
+        client.subscribe(`/topic/vote/${voteUuid}`, (message: { body: string }) => {
+          console.log("message =>", message);
+          console.log("Received: 투표한 뒤 응답", JSON.parse(message.body));
+
+          // const {
+          //   isCreator,
+          //   totalVoteCount,
+          //   changedOption: { optionId, optionName, voteCount, voteColor, isVotedByUser },
+          // } = JSON.parse(message.body) as Voted;
+          const {
+            changedOption: { optionId, voteCount, isVotedByUser },
+          } = JSON.parse(message.body) as Voted;
+          const countedBall = candidatesRef.current.find((candidate) => candidate.ball.id === Number(optionId));
+          console.log("countedBall =>", countedBall);
+          if (countedBall) renderCountedBalls(countedBall, voteCount, isVotedByUser);
+        });
+      }
+    } catch (error) {
+      console.error("Failed to subscribe a voted message:", error);
     }
   };
 
   const updateBallsize = () => {
     let totalCircleArea = 0;
+    // console.log("candidatesRef =>", candidatesRef.current);
     candidatesRef.current.forEach((candidate) => {
+      // console.log("candidate.count =>", candidate.count);
+      // console.log("usedPercentageRef.current.count =>", usedPercentageRef.current.count);
       let growthRate = BASEGROWTHRATE; // 투표 수당 증가량
       // 축소 횟수에 따라 성장률 점진적 감소
       growthRate *= Math.pow(SHRINKFACTOR, usedPercentageRef.current.count);
-
+      // console.log("growthRate =>", growthRate);
       const r = candidate.ball.circleRadius || 0;
       // 투표 수에 비례한 반지름
       const newRadius = Math.min(BASERADIUS + candidate.count * growthRate, MAXRADIUS);
-
       if (candidate.ball.circleRadius !== newRadius) {
         const scaleFactor = newRadius / (candidate.ball.circleRadius || BASERADIUS);
         Body.scale(candidate.ball, scaleFactor, scaleFactor);
       }
-
       totalCircleArea += r * r * Math.PI;
     });
     updateUsedPercentage(totalCircleArea);
   };
 
   const updateBallBorder = (targetBall: Body) => {
+    console.log("눌려?");
     if (!selectedOptionRef.current.some((ball) => ball.id === targetBall.id)) {
       selectedOptionRef.current.push(targetBall);
       targetBall.render.lineWidth = 8;
@@ -227,16 +478,13 @@ const MakeCandidate = () => {
     const canvasWidth = render.options.width || 0;
     const canvasHeight = render.options.height || 0;
     const canvasArea = canvasWidth * canvasHeight;
-
     const computedTotalCircleArea =
       totalCircleArea ??
       candidatesRef.current.reduce((acc, cur) => {
         const r = cur.ball.circleRadius || 0;
         return acc + Math.PI * r * r;
       }, 0);
-
     usedPercentageRef.current.percentage = computedTotalCircleArea / canvasArea;
-
     console.log("사용된 면적 비율=>", usedPercentageRef.current.percentage.toFixed(2));
   };
 
@@ -257,7 +505,7 @@ const MakeCandidate = () => {
   };
 
   const chooseColor = () => {
-    if (!usedColorRef.current) return;
+    if (!usedColorRef.current) return "black";
     // 모든 색이 사용된 경우, 더 이상 선택할 색이 없음
     if (usedColorRef.current.length >= optionColors.length) {
       usedColorRef.current = [];
@@ -274,58 +522,12 @@ const MakeCandidate = () => {
   const chooseBorderColor = (targetBall: Body) => {
     const targetColor = targetBall.render.fillStyle;
     if (!targetColor) return;
+
     for (const [key, value] of optionColorMap) {
       if (value.includes(targetColor)) {
         return borderMap.get(key);
       }
     }
-  };
-
-  // console.log("usedColorRef =>", usedColorRef.current);
-
-  // ✅ 입력한 텍스트를 원과 함께 생성하는 함수
-  // 웹소켓으로 생성할 때마다 요청 보내야 함
-  const makeNewOption = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!pendingPosition || !inputRef.current) return;
-    const inputText = inputRef.current.value.trim();
-    if (inputText.trim() === "" || inputText.length > 5) {
-      inputRef.current?.classList.add("shake");
-      setTimeout(() => inputRef.current?.classList.remove("shake"), 400);
-      return;
-    }
-
-    // console.log("생성할 위치:", pendingPosition, "입력된 텍스트:", inputText);
-
-    const { x, y } = pendingPosition;
-    const newBall = Bodies.circle(x, y, BASERADIUS, {
-      restitution: 0.8,
-      frictionAir: 0.02,
-      render: { fillStyle: chooseColor() },
-      ...(limited === "무제한" && {
-        // 움직일 수 없게
-        collisionFilter: {
-          category: 0x0002, // 사용자 정의 원 카테고리 설정
-          mask: 0x0002 | 0x0008, // 다른 물체들(벽)과 충돌 가능
-        },
-      }),
-    });
-
-    World.add(world, newBall);
-    const newBallObj = { count: 0, ball: newBall, text: inputText };
-    candidatesRef.current.push(newBallObj);
-
-    if (mouseConstraintRef.current) {
-      // "현재 마우스 버튼이 눌려있지 않도록" 인식하게 함
-      mouseConstraintRef.current.mouse.button = -1;
-    }
-
-    // 입력 후 초기화
-    setModalVisible(false);
-    setPendingPosition(null);
-    updateUsedPercentage();
-    updateZoom();
   };
 
   // 모달

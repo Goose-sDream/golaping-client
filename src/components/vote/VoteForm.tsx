@@ -1,18 +1,22 @@
-import { JSX, useEffect, useState } from "react";
+import { JSX, useEffect } from "react";
 import styled from "styled-components";
 import EnterVote from "./EnterVote";
+import MakeCandidate from "./MakeCandidate";
+import { useWebSocket } from "@/contexts/WebSocketContext";
 import { clearSessionOnRefresh } from "@/utils/sessionUtils";
 
 const VoteForm = () => {
-  const [step, setStep] = useState<number>(1);
+  const { step } = useWebSocket();
+  // const [step, setStep] = useState<number>(1);
+  console.log("step =>", step);
 
   useEffect(() => {
     clearSessionOnRefresh();
   }, []);
 
   const steps: { [key: number]: JSX.Element } = {
-    1: <EnterVote setStep={setStep} />,
-    2: <div>Step 2</div>,
+    1: <EnterVote />,
+    2: <MakeCandidate />,
   };
   return <Wrapper>{steps[step]}</Wrapper>;
 };

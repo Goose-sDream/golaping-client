@@ -49,6 +49,7 @@ export const CreateForm = () => {
   };
 
   const generateLink = () => {
+    console.log("제너레이트 어게인???");
     const link = `/votes/${uuid()}`;
     setRandomLink(link);
     return link;

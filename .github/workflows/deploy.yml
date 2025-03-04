@@ -14,6 +14,7 @@ jobs:
       EC2_USERNAME: ${{ secrets.EC2_USERNAME }}
       EC2_KEY: ${{ secrets.EC2_KEY }}
       DOCKER_IMAGE: ${{ secrets.DOCKER_USERNAME }}/golaping-app
+      API_URL: ${{ secrets.API_URL }}
 
     steps:
       - name: Checkout Repository
@@ -31,7 +32,10 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build Project
-        run: pnpm build
+        run: |
+          # 전달된 환경변수를 Webpack 빌드에서 사용할 수 있도록 .env 파일로 설정
+          echo "API_URL=${{ secrets.API_URL }}" > .env
+          pnpm build
 
       - name: Log in to DockerHub
         uses: docker/login-action@v3
@@ -55,6 +59,8 @@ jobs:
             docker stop golaping-app || true
             docker rm golaping-app || true
             docker pull ${{ secrets.DOCKER_USERNAME }}/golaping-app:latest
+             # Docker 컨테이너 실행 시 환경변수 API_URL 전달
+            docker run -d --name golaping-app -p 80:80 -e API_URL=${{ secrets.API_URL }} ${{ secrets.DOCKER_USERNAME }}/golaping-app:latest
             docker run -d --name golaping-app -p 80:80 ${{ secrets.DOCKER_USERNAME }}/golaping-app:latest
             docker container prune -f
             docker image prune -af
