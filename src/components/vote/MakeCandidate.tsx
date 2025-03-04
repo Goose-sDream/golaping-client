@@ -54,12 +54,14 @@ const MakeCandidate = () => {
 
   useEffect(() => {
     console.log("connected =>", connected);
+    console.log("client.connected =>", client?.connected);
     if (!connected) {
       console.log("재연결");
       connectWebSocket();
     }
     subscribeNewOption();
     subscribeCount();
+    subscribeError();
   }, [connected]);
 
   useEffect(() => {
@@ -109,6 +111,10 @@ const MakeCandidate = () => {
       }),
     ];
     World.add(world, walls);
+
+    if (prevVotes.length > 0) {
+      renderPrevBalls();
+    }
 
     renderRef.current = render;
     const mouse = Mouse.create(render.canvas);
@@ -200,7 +206,7 @@ const MakeCandidate = () => {
       Engine.clear(engine);
       render.canvas.remove();
     };
-  }, []);
+  }, [client]);
 
   const makeNewBall = (newBallObj: NewBall, ballId: number) => {
     console.log("생성");
@@ -307,6 +313,7 @@ const MakeCandidate = () => {
   };
 
   const sendNewOption = (optionObj: OptionObj) => {
+    console.log("sendNewOption client.connected =>", client?.connected);
     if (!client?.connected) {
       console.log("websocket is not connected");
       return;
@@ -318,6 +325,29 @@ const MakeCandidate = () => {
       });
     } catch (error) {
       console.error("Failed to send a new message:", error);
+    }
+  };
+
+  const publishVoteCount = (targetBall: TargetBall) => {
+    console.log("publishVoteCount client.connected =>", client?.connected);
+    if (!client?.connected) {
+      console.log("websocket is not connected So reconnect");
+      // connectWebSocket();
+      return;
+    }
+    const targetOption = {
+      optionId: targetBall.ball.id,
+    };
+    try {
+      if (voteUuid) {
+        console.log("요청가나");
+        client.publish({
+          destination: "/app/vote",
+          body: JSON.stringify(targetOption),
+        });
+      }
+    } catch (error) {
+      console.error("Failed to subscribe a new message:", error);
     }
   };
 
@@ -366,24 +396,15 @@ const MakeCandidate = () => {
     // }
   };
 
-  const publishVoteCount = (targetBall: TargetBall) => {
+  const subscribeError = () => {
     if (!client?.connected) {
       console.log("websocket is not connected");
       return;
     }
-    const targetOption = {
-      optionId: targetBall.ball.id,
-    };
-    try {
-      if (voteUuid) {
-        client.publish({
-          destination: "/app/vote",
-          body: JSON.stringify(targetOption),
-        });
-      }
-    } catch (error) {
-      console.error("Failed to subscribe a new message:", error);
-    }
+    client.subscribe(`/user/queue/errors`, (message: { body: string }) => {
+      console.log("message =>", message);
+      console.log("Received: 투표한 뒤 에러", JSON.parse(message.body));
+    });
   };
 
   const subscribeCount = () => {

@@ -64,6 +64,9 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
         setStep(2);
         setConnected(true);
         setError(null);
+        clientRef.current = client;
+        console.log("client.connected =>", client.connected);
+        console.log("프로바이더 내부 clientRef.current =>", clientRef.current.connected);
       },
       onWebSocketClose: () => {
         console.log("WebSocket closed");
@@ -79,7 +82,6 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
 
     try {
       client.activate();
-      clientRef.current = client;
     } catch (error) {
       console.error("WebSocket activation failed:", error);
       setError("Failed to initialize WebSocket");

@@ -160,12 +160,16 @@ const OptionForm = () => {
         <Controller
           name="userVoteLimit"
           control={control}
-          defaultValue={1}
-          rules={{ required: false, min: 1, max: 5 }}
+          defaultValue={0}
+          rules={{ required: false, min: 0, max: 5 }}
           render={({ field, fieldState: { error } }) => (
             <Select
               id="userVoteLimit"
-              options={userVoteLimit.map((num) => ({ value: num, label: `${num}` }))}
+              options={
+                limited === "제한"
+                  ? userVoteLimit.map((num) => ({ value: num, label: `${num}` }))
+                  : [{ value: 0, label: "무제한" }]
+              }
               {...field}
               error={error?.message}
               disabled={limited !== "제한"}
