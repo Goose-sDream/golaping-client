@@ -95,7 +95,7 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
     client.subscribe("/user/queue/initialResponse", (message: { body: string }) => {
       console.log("Received: 프로바이더 내부에서 ", JSON.parse(message.body));
       const received = JSON.parse(message.body).previousVotes;
-      console.log("received =>", received);
+      // console.log("received =>", received);
       setPrevVotes([...received]);
     });
   };

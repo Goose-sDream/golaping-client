@@ -21,7 +21,13 @@ type UsedPercentage = { percentage: number; time: number; count: number };
 type Voted = {
   isCreator?: boolean;
   totalVoteCount?: number;
-  changedOption: { optionId: string; optionName: string; voteCount: number; voteColor: string; isVotedByUser: boolean };
+  changedOption: {
+    optionId: string;
+    optionName: string;
+    voteCount: number;
+    voteColor: string;
+    isVotedByUser?: boolean;
+  };
 };
 
 type OptionObj = {
@@ -272,7 +278,7 @@ const MakeCandidate = () => {
     updateZoom();
   };
 
-  const renderCountedBalls = (targetBall: TargetBall, voteCount: number, isVotedByUser: boolean) => {
+  const renderCountedBalls = (targetBall: TargetBall, voteCount: number, isVotedByUser: boolean | undefined) => {
     const { ball } = targetBall;
     updateCount(ball, voteCount);
     // chooseBorderColor(ball);
@@ -484,7 +490,7 @@ const MakeCandidate = () => {
         return acc + Math.PI * r * r;
       }, 0);
     usedPercentageRef.current.percentage = computedTotalCircleArea / canvasArea;
-    console.log("사용된 면적 비율=>", usedPercentageRef.current.percentage.toFixed(2));
+    // console.log("사용된 면적 비율=>", usedPercentageRef.current.percentage.toFixed(2));
   };
 
   const updateZoom = () => {

@@ -168,7 +168,7 @@ const OptionForm = () => {
               options={
                 limited === "제한"
                   ? userVoteLimit.map((num) => ({ value: num, label: `${num}` }))
-                  : [{ value: 0, label: "무제한" }]
+                  : [{ value: 0, label: "-" }]
               }
               {...field}
               error={error?.message}
