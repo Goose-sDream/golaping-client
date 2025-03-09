@@ -89,10 +89,11 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
   };
 
   const subscribeWebsocket = (client: Client) => {
+    const storedVoteUuid = storage.getItem("voteUuid");
     client.publish({
       destination: `/app/vote/connect`,
     });
-    client.subscribe("/user/queue/initialResponse", (message: { body: string }) => {
+    client.subscribe(`/user/queue/${storedVoteUuid}/initialResponse`, (message: { body: string }) => {
       console.log("Received: 프로바이더 내부에서 ", JSON.parse(message.body));
       const received = JSON.parse(message.body).previousVotes;
       // console.log("received =>", received);

@@ -1,9 +1,11 @@
 import { JSX, useState } from "react";
 import { useForm, FormProvider, FieldValues } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
+import { useRecoilValue } from "recoil";
 import styled from "styled-components";
 import { v4 as uuid } from "uuid";
 import { BasicForm, LandingForm, OptionForm, ShareVote } from "./steps";
+import { limitState } from "@/atoms/createAtom";
 import { Button, Stepper } from "@/components/common";
 import Request from "@/services/requests";
 import StorageController from "@/storage/storageController";
@@ -19,6 +21,7 @@ export const CreateForm = () => {
   const navigate = useNavigate();
   const [step, setStep] = useState<number>(1);
   const [randomLink, setRandomLink] = useState<string>("");
+  const { limited } = useRecoilValue(limitState);
   const request = Request();
 
   const createVote = async (data: FieldValues) => {
@@ -43,6 +46,8 @@ export const CreateForm = () => {
       storage.setItem("voteUuid", voteUuid);
       storage.setItem("voteEndTime", voteEndTime);
       storage.setItem("voteIdx", String(voteIdx));
+      storage.setItem("limited", JSON.stringify(limited));
+      // 새로고침 시에도 "제한"/"무제한" 유지되도록 세션스토리지에 저장함
     } else {
       console.error("Vote creation failed:", response.message);
     }

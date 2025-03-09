@@ -13,6 +13,7 @@ import {
   SHRINKTHRESHOLD,
 } from "@/constants/vote";
 import { useWebSocket } from "@/contexts/WebSocketContext";
+import StorageController from "@/storage/storageController";
 import { borderMap, optionColorMap, optionColors } from "@/styles/color";
 
 type TargetBall = { count: number; ball: Body; text: string };
@@ -36,8 +37,11 @@ type OptionObj = {
 };
 
 const MakeCandidate = () => {
+  const storage = new StorageController("session");
   const { client, prevVotes, voteUuid, connected, connectWebSocket } = useWebSocket();
+  // const limited = storage.getItem("limited");
   const { limited } = useRecoilValue(limitState);
+  console.log("limited =>", limited);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const engineRef = useRef(Engine.create());
   const world = engineRef.current.world;
@@ -51,7 +55,6 @@ const MakeCandidate = () => {
     count: 0,
   });
   const usedColorRef = useRef<string[]>([]);
-  const selectedOptionRef = useRef<Body[]>([]);
 
   const [pendingPosition, setPendingPosition] = useState<{ x: number; y: number } | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
@@ -66,7 +69,7 @@ const MakeCandidate = () => {
       connectWebSocket();
     }
     subscribeNewOption();
-    subscribeCount();
+    subscribeVoted();
     subscribeError();
   }, [connected]);
 
@@ -76,10 +79,6 @@ const MakeCandidate = () => {
       renderPrevBalls();
     }
   }, [prevVotes]);
-
-  // useEffect(() => {
-  //   subscribeCount();
-  // }, [connected]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -161,7 +160,7 @@ const MakeCandidate = () => {
         const targetBall = candidatesRef.current[targetId];
         // updateCount(targetBall);
         publishVoteCount(targetBall);
-        subscribeCount();
+        subscribeVoted();
       }
     });
 
@@ -213,7 +212,7 @@ const MakeCandidate = () => {
     };
   }, [client]);
 
-  const makeNewBall = (newBallObj: NewBall, ballId: number) => {
+  const makeNewBall = (newBallObj: NewBall, ballId: number, Bordered: boolean) => {
     console.log("생성");
     const {
       coordinates: { x, y },
@@ -224,7 +223,11 @@ const MakeCandidate = () => {
     const newBall = Bodies.circle(x, y, BASERADIUS, {
       restitution: 0.8,
       frictionAir: 0.02,
-      render: { fillStyle: color },
+      render: {
+        fillStyle: color,
+        lineWidth: Bordered ? 8 : 0,
+        strokeStyle: Bordered ? chooseBorderColor(color) || "black" : "",
+      },
       ...(limited === "무제한" && {
         // 움직일 수 없게
         collisionFilter: {
@@ -254,9 +257,11 @@ const MakeCandidate = () => {
   const organizeBalls = () => {
     if (!candidatesRef.current) return;
     console.log("prevVotes =>", prevVotes);
+    const selectedBall = storage.getItem(`${voteUuid}`);
+    const parsedBalls = selectedBall ? JSON.parse(selectedBall) : [];
     prevVotes.forEach((prev) => {
       if (!candidatesRef.current.some((candidate) => candidate.ball.id === prev.optionId)) {
-        console.log("어디보자");
+        const alreadyBordered = parsedBalls.some((id: number) => id === prev.optionId);
         makeNewBall(
           {
             coordinates: getRandomCoordinates(),
@@ -264,7 +269,8 @@ const MakeCandidate = () => {
             color: prev.voteColor,
             text: prev.optionName,
           },
-          prev.optionId
+          prev.optionId,
+          alreadyBordered
         );
       }
     });
@@ -278,13 +284,11 @@ const MakeCandidate = () => {
     updateZoom();
   };
 
-  const renderCountedBalls = (targetBall: TargetBall, voteCount: number, isVotedByUser: boolean | undefined) => {
+  const renderCountedBalls = (targetBall: TargetBall, voteCount: number) => {
     const { ball } = targetBall;
     updateCount(ball, voteCount);
-    // chooseBorderColor(ball);
     updateBallsize();
     updateZoom();
-    if (isVotedByUser) updateBallBorder(ball);
   };
 
   // ✅ newBall + send
@@ -304,7 +308,6 @@ const MakeCandidate = () => {
       optionText: inputText,
       optionColor: randomColor,
     };
-    // console.log("newOptionObj =>", newOptionObj);
     sendNewOption(newOptionObj);
     if (mouseConstraintRef.current) {
       // "현재 마우스 버튼이 눌려있지 않도록" 인식하게 함
@@ -337,7 +340,6 @@ const MakeCandidate = () => {
     console.log("publishVoteCount client.connected =>", client?.connected);
     if (!client?.connected) {
       console.log("websocket is not connected So reconnect");
-      // connectWebSocket();
       return;
     }
     const targetOption = {
@@ -345,7 +347,6 @@ const MakeCandidate = () => {
     };
     try {
       if (voteUuid) {
-        console.log("요청가나");
         client.publish({
           destination: "/app/vote",
           body: JSON.stringify(targetOption),
@@ -361,7 +362,6 @@ const MakeCandidate = () => {
       console.log("websocket is not connected");
       return;
     }
-
     try {
       if (voteUuid) {
         client.subscribe(`/topic/vote/${voteUuid}/addOption`, (message: { body: string }) => {
@@ -373,7 +373,7 @@ const MakeCandidate = () => {
             count: 0,
             text: optionName,
           };
-          makeNewBall(newBall, optionId);
+          makeNewBall(newBall, optionId, false);
         });
       }
     } catch (error) {
@@ -381,26 +381,7 @@ const MakeCandidate = () => {
     }
   };
 
-  // "제한"일 때, 클릭 취소 시 count-- 함수
-  const updateCount = (ball: Body, voteCount: number) => {
-    candidatesRef.current.map((candidate) => {
-      if (candidate.ball.id === ball.id) {
-        candidate.count = voteCount;
-      }
-    });
-    // if (limited === "제한") {
-    //   if (selectedOptionRef.current.includes(targetBall.ball)) {
-    //     // 이미 포함되어 있으면 빼기
-    //     targetBall.count = Math.max(targetBall.count - 1, 0);
-    //     usedPercentageRef.current.count = Math.max(usedPercentageRef.current.count - 1, 0);
-    //   } else {
-    //     targetBall.count++;
-    //   }
-    // } else {
-    //   targetBall.count++;
-    // }
-  };
-
+  // 구독
   const subscribeError = () => {
     if (!client?.connected) {
       console.log("websocket is not connected");
@@ -412,33 +393,51 @@ const MakeCandidate = () => {
     });
   };
 
-  const subscribeCount = () => {
+  const subscribeVoted = () => {
     if (!client?.connected) {
       console.log("websocket is not connected");
       return;
     }
     try {
       if (voteUuid) {
+        let countedBall: TargetBall | undefined;
         client.subscribe(`/topic/vote/${voteUuid}`, (message: { body: string }) => {
           console.log("message =>", message);
           console.log("Received: 투표한 뒤 응답", JSON.parse(message.body));
-
           // const {
           //   isCreator,
           //   totalVoteCount,
           //   changedOption: { optionId, optionName, voteCount, voteColor, isVotedByUser },
-          // } = JSON.parse(message.body) as Voted;
+          // } = JSON.parse(message.body) as Voted; // 서진님 참고하세여 서버에서 오는 남은 카운트
           const {
-            changedOption: { optionId, voteCount, isVotedByUser },
+            changedOption: { optionId, voteCount },
           } = JSON.parse(message.body) as Voted;
-          const countedBall = candidatesRef.current.find((candidate) => candidate.ball.id === Number(optionId));
+          countedBall = candidatesRef.current.find((candidate) => candidate.ball.id === Number(optionId));
           console.log("countedBall =>", countedBall);
-          if (countedBall) renderCountedBalls(countedBall, voteCount, isVotedByUser);
+          if (countedBall) renderCountedBalls(countedBall, voteCount);
+        });
+
+        client.subscribe(`/user/queue/vote/${voteUuid}`, (message: { body: string }) => {
+          const {
+            result: {
+              changedOption: { isVotedByUser },
+            },
+          } = JSON.parse(message.body);
+          console.log("Received: 내가 투표한 응답 isVotedByUser=>", isVotedByUser);
+          updateBallBorder(countedBall as TargetBall, isVotedByUser);
         });
       }
     } catch (error) {
       console.error("Failed to subscribe a voted message:", error);
     }
+  };
+
+  const updateCount = (ball: Body, voteCount: number) => {
+    candidatesRef.current.map((candidate) => {
+      if (candidate.ball.id === ball.id) {
+        candidate.count = voteCount;
+      }
+    });
   };
 
   const updateBallsize = () => {
@@ -463,17 +462,40 @@ const MakeCandidate = () => {
     updateUsedPercentage(totalCircleArea);
   };
 
-  const updateBallBorder = (targetBall: Body) => {
-    console.log("눌려?");
-    if (!selectedOptionRef.current.some((ball) => ball.id === targetBall.id)) {
-      selectedOptionRef.current.push(targetBall);
-      targetBall.render.lineWidth = 8;
-      targetBall.render.strokeStyle = chooseBorderColor(targetBall) || "black";
+  // 보더
+  const updateBorder = (ball: Body, isVotedByUser: boolean) => {
+    ball.render.lineWidth = isVotedByUser ? 8 : 0;
+    ball.render.strokeStyle = isVotedByUser ? chooseBorderColor(ball) || "black" : "";
+  };
+
+  const updateBallBorder = (targetBall: TargetBall, isVotedByUser: boolean) => {
+    const { ball } = targetBall;
+    console.log("업데이트 보더");
+    const selectedBall = storage.getItem(`${voteUuid}`);
+    const parsedBalls: number[] = selectedBall ? JSON.parse(selectedBall) : [];
+    // if (limited === "제한") {
+    if (isVotedByUser) {
+      // 투표 시
+      updateBorder(ball, isVotedByUser);
+      parsedBalls.push(ball.id);
+      storage.setItem(`${voteUuid}`, JSON.stringify([...new Set(parsedBalls)]));
     } else {
-      if (limited === "제한") {
-        targetBall.render.lineWidth = 0; // 선택 해제 시 테두리 제거
-        selectedOptionRef.current = selectedOptionRef.current.filter((option) => option.id !== targetBall.id);
+      // 투표 해제 시
+      updateBorder(ball, isVotedByUser);
+      const renewedBalls = parsedBalls.filter((id: number) => id !== ball.id);
+      storage.setItem(`${voteUuid}`, JSON.stringify(renewedBalls));
+    }
+    // } else {
+    // 무제한일 때
+    if (isVotedByUser) {
+      if (!parsedBalls.some((id: number) => id === ball.id)) {
+        // 새로 투표하는 애면
+        ball.render.lineWidth = 8;
+        ball.render.strokeStyle = chooseBorderColor(ball) || "black";
+        parsedBalls.push(ball.id);
+        storage.setItem(`${voteUuid}`, JSON.stringify([...new Set(parsedBalls)]));
       }
+      // }
     }
   };
 
@@ -524,8 +546,8 @@ const MakeCandidate = () => {
     return optionColors[randomIdx];
   };
 
-  const chooseBorderColor = (targetBall: Body) => {
-    const targetColor = targetBall.render.fillStyle;
+  const chooseBorderColor = (targetBallOrColor: Body | string) => {
+    const targetColor = typeof targetBallOrColor === "string" ? targetBallOrColor : targetBallOrColor.render.fillStyle;
     if (!targetColor) return;
 
     for (const [key, value] of optionColorMap) {

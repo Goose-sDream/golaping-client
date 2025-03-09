@@ -7,8 +7,6 @@ import { clearSessionOnRefresh } from "@/utils/sessionUtils";
 
 const VoteForm = () => {
   const { step } = useWebSocket();
-  // const [step, setStep] = useState<number>(1);
-  console.log("step =>", step);
 
   useEffect(() => {
     clearSessionOnRefresh();
