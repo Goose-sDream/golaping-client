@@ -7,6 +7,7 @@ interface WebSocketContextType {
   step: number;
   setStep: any;
   prevVotes: PrevVotes[];
+  voteLimit: number | null;
   voteUuid: string | null;
   client: Client | null;
   connected: boolean;
@@ -28,6 +29,7 @@ const storage = new StorageController("session");
 export const WebSocketProvider = ({ children }: { children: React.ReactNode }) => {
   const [step, setStep] = useState(0);
   const [prevVotes, setPrevVotes] = useState<PrevVotes[]>([]);
+  const [voteLimit, setVoteLimit] = useState<number | null>(null);
   const [connected, setConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [voteUuid, setVoteUuid] = useState<string | null>(null);
@@ -98,6 +100,7 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
       const received = JSON.parse(message.body).previousVotes;
       // console.log("received =>", received);
       setPrevVotes([...received]);
+      setVoteLimit(JSON.parse(message.body).voteLimit);
     });
   };
 
@@ -130,6 +133,7 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
       value={{
         step,
         setStep,
+        voteLimit,
         prevVotes,
         voteUuid,
         client: clientRef.current,

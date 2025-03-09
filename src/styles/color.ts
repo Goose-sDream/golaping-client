@@ -2,6 +2,7 @@ const PURPLE = "#8D64FD";
 const GREEN = "#39D38B";
 const YELLOW = "#FBE84E";
 const LIGHTGRAY = "#EFEFEF";
+const PINK = "#FF4191";
 
 const borderMap = new Map([
   [0, "#F497A9"],
@@ -23,4 +24,4 @@ const optionColorMap = new Map([
 
 const optionColors = [...optionColorMap.values()].flat();
 
-export { PURPLE, GREEN, YELLOW, LIGHTGRAY, borderMap, optionColors, optionColorMap };
+export { PURPLE, GREEN, YELLOW, LIGHTGRAY, PINK, borderMap, optionColors, optionColorMap };
