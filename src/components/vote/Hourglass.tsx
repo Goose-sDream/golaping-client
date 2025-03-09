@@ -4,10 +4,9 @@ import { PINK } from "@/styles/color";
 
 interface HourglassProps {
   voteEndTime: string;
-  onExpire: () => void;
 }
 
-const Hourglass = ({ voteEndTime, onExpire }: HourglassProps) => {
+const Hourglass = ({ voteEndTime }: HourglassProps) => {
   const [remainingTime, setRemainingTime] = useState<string>("");
   useEffect(() => {
     if (!voteEndTime) return;
@@ -23,10 +22,6 @@ const Hourglass = ({ voteEndTime, onExpire }: HourglassProps) => {
       const formattedTime = `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
 
       setRemainingTime(formattedTime);
-
-      if (timeLeft === 0) {
-        onExpire();
-      }
     };
 
     updateRemainingTime();
@@ -58,12 +53,11 @@ const Container = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
-  width: 40px;
 `;
 
 const TimeText = styled.p`
   font-size: 24px;
-  color: ${PINK};
+  color: white;
 `;
 
 const rotate = keyframes`
@@ -88,8 +82,8 @@ const topProgress = keyframes`
 `;
 
 const lineProgress = keyframes`
-  10% { height: 35px; }
-  90% { height: 35px; }
+  10% { height: 25px; }
+  90% { height: 25px; }
   100% { height: 0; }
 `;
 
@@ -101,43 +95,42 @@ const bottomProgress = keyframes`
     transform: scale(1) translateY(0);
   }
   100% {
-    transform: scale(1) translateY(-15px);
+    transform: scale(1) translateY(-5px);
   }
 `;
 
-export const HourglassContainer = styled.div`
-  height: 40px;
-  width: 40px;
-  margin: 80px auto;
+const HourglassContainer = styled.div`
+  height: 30px;
+  width: 30px;
   animation: ${rotate} 60s cubic-bezier(0.7, 0, 0.2, 1) infinite;
 `;
 
-export const Top = styled.div`
+const Top = styled.div`
   position: relative;
 `;
 
-export const TopBg = styled.div`
+const TopBg = styled.div`
   position: absolute;
   z-index: 0;
-  top: -18px;
+  top: -10px;
   width: 100%;
-  height: 20px;
+  height: 15px;
   border-top: 5px solid ${PINK};
 
   &::after {
     content: "";
     position: absolute;
-    bottom: -20px;
-    border-top: 20px solid transparent;
-    border-right: 20px solid transparent;
-    border-left: 20px solid transparent;
+    bottom: -10px;
+    border-top: 15px solid transparent;
+    border-right: 15px solid transparent;
+    border-left: 15px solid transparent;
   }
 `;
 
-export const TopProgress = styled.div`
-  border-top: 20px solid ${PINK};
-  border-right: 20px solid transparent;
-  border-left: 20px solid transparent;
+const TopProgress = styled.div`
+  border-top: 15px solid ${PINK};
+  border-right: 15px solid transparent;
+  border-left: 15px solid transparent;
   height: 0;
   width: 1px;
   transform: scale(1) translateY(0);
@@ -145,25 +138,24 @@ export const TopProgress = styled.div`
   animation: ${topProgress} 60s linear infinite;
 `;
 
-export const Line = styled.div`
+const Line = styled.div`
   position: absolute;
   z-index: 2;
-  top: 20px;
-  left: 20px;
+  top: 15px;
+  left: 15px;
   height: 0;
   width: 0;
   border-left: 1px solid ${PINK};
   animation: ${lineProgress} 60s linear infinite;
 `;
 
-export const Bottom = styled.div`
+const Bottom = styled.div`
   position: relative;
 `;
 
-export const BottomBg = styled.div`
+const BottomBg = styled.div`
   position: absolute;
   z-index: 0;
-  bottom: -5px;
   width: 100%;
   height: 20px;
   border-bottom: 5px solid ${PINK};
@@ -172,20 +164,20 @@ export const BottomBg = styled.div`
     content: "";
     position: absolute;
     z-index: 0;
-    top: -20px;
-    border-bottom: 20px solid transparent;
-    border-right: 20px solid transparent;
-    border-left: 20px solid transparent;
+    top: -5px;
+    border-bottom: 15px solid transparent;
+    border-right: 15px solid transparent;
+    border-left: 15px solid transparent;
   }
 `;
 
-export const BottomProgress = styled.div`
-  border-right: 20px solid transparent;
-  border-bottom: 20px solid ${PINK};
-  border-left: 20px solid transparent;
+const BottomProgress = styled.div`
+  border-right: 15px solid transparent;
+  border-bottom: 15px solid ${PINK};
+  border-left: 15px solid transparent;
   height: 0;
   width: 1px;
-  margin-top: 15px;
+  margin-top: 10px;
   transform: scale(0) translateY(0);
   transform-origin: 50% 100%;
   animation: ${bottomProgress} 60s linear infinite;
