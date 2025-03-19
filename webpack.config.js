@@ -82,7 +82,7 @@ module.exports = (webpackEnv) => {
 
     new CleanWebpackPlugin(),
     new webpack.DefinePlugin({
-      "process.env": JSON.stringify(process.env),
+      "process.env.API_URL": JSON.stringify(process.env),
     }),
   ];
 
