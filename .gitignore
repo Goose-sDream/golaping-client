@@ -7,3 +7,10 @@
 
 .DS_Store
 .eslintcache
+
+# https
+cert.pem
+key.pem
+localhost+1.pem
+localhost+1-key.pem
+

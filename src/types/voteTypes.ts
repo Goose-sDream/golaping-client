@@ -12,8 +12,9 @@ export type ModalState = {
   elementId: string;
   isOpen: boolean;
   type: string;
-  title: "";
-  content: "";
+  title: any;
+  content: any;
+
   onFunc?: (() => void) | undefined; // 모달이 열리기 전에 선행될 함수
   offFunc?: (() => void) | undefined; // 모달 닫을 때 선행될 함수
 };
@@ -23,5 +24,13 @@ export interface InputStyleProps {
   textAlign?: string;
   pointerEvents?: string;
   padding?: string;
+  flexDirection?: string;
+  fontSize?: string;
+  fontWeight?: string;
+  minHeight?: string;
+
   labelDisplay?: string;
+  labelMarginBottom?: string;
+  labelAlignItems?: string;
+
 }

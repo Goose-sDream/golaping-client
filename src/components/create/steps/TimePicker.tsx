@@ -139,7 +139,7 @@ const TimePicker = ({ type, name, value, setValue }: TimePickerProps) => {
     <div
       style={{
         width: "80px",
-        height: "180px",
+        height: "200px",
         backgroundColor: `${LIGHTGRAY}`,
         borderRadius: "10px",
         position: "relative",

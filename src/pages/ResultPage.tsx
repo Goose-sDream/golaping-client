@@ -1,8 +1,7 @@
-import VoteForm from "@/components/vote/VoteForm";
+import VoteResults from "@/components/vote/VoteResults";
 import { WebSocketProvider } from "@/contexts/WebSocketContext";
 
-
-const VotePage = () => {
+const ResultPage = () => {
   return (
     <div
       style={{
@@ -15,11 +14,10 @@ const VotePage = () => {
       }}
     >
       <WebSocketProvider>
-        <VoteForm />
+        <VoteResults />
       </WebSocketProvider>
-
     </div>
   );
 };
 
-export default VotePage;
+export default ResultPage;
