@@ -60,7 +60,7 @@ jobs:
             docker rm golaping-app || true
             docker pull ${{ secrets.DOCKER_USERNAME }}/golaping-app:latest
              # Docker 컨테이너 실행 시 환경변수 API_URL 전달
-            docker run -d --name golaping-app -p 80:80 -e API_URL=${{ secrets.API_URL }} ${{ secrets.DOCKER_USERNAME }}/golaping-app:latest
+            docker run -d --name golaping-app -p 80:80 -p 443:443 -e API_URL=${{ secrets.API_URL }} ${{ secrets.DOCKER_USERNAME }}/golaping-app:latest
             docker container prune -f
             docker image prune -af
             docker ps -a
