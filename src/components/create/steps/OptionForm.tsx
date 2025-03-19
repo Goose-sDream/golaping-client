@@ -6,6 +6,7 @@ import Description from "./Description";
 import TimePicker from "./TimePicker";
 import { limitState } from "@/atoms/createAtom";
 import Input from "@/components/common/Input";
+import Radio from "@/components/common/Radio";
 import Select from "@/components/common/Select";
 import { YELLOW } from "@/styles/color";
 import { Vote } from "@/types/voteTypes";
@@ -17,6 +18,7 @@ const OptionForm = () => {
   const timeRef = useRef<(HTMLDivElement | null)[]>([]);
   const userVoteLimit = Array.from({ length: 5 }, (_, i) => i + 1);
   const [hasError, setHasError] = useState<string>("");
+
 
   useEffect(() => {
     if (timeRef && timeRef.current) {
@@ -37,6 +39,7 @@ const OptionForm = () => {
   };
 
   const timerInputStyleProps = {
+
     width: "70px",
     textAlign: "right",
     pointerEvents: "none",
@@ -53,11 +56,13 @@ const OptionForm = () => {
     labelMarginBottom: "0px",
     labelDisplay: "flex",
     labelAlignItems: "center",
+
   };
 
   return (
     <VoteDiv>
       <div style={{ display: "flex", flexDirection: "column", marginBottom: 30 }}>
+
         <Label>타이머</Label>
         <div style={{ display: "flex", justifyContent: "space-around", alignItems: "center" }}>
           {timeOpen.map((_, idx) => (
@@ -83,6 +88,7 @@ const OptionForm = () => {
 
                   return true;
                 },
+
               }}
               render={({ field, fieldState: { error } }) => (
                 <div
@@ -107,12 +113,14 @@ const OptionForm = () => {
                       $styleProps={timerInputStyleProps}
                     />
                     <h3 style={{ fontSize: "20px", minWidth: "40px" }}>{idx > 0 ? "분" : "시간"}</h3>
+
                     {timeOpen[idx] && (
                       <div
                         style={{
                           display: "flex",
                           alignItems: "center",
                           gap: "10px",
+
                           position: "absolute",
                           top: "50%",
                           left: "50%",
@@ -134,6 +142,7 @@ const OptionForm = () => {
           ))}
         </div>
         <ErrorMessage>{hasError}</ErrorMessage>
+
       </div>
 
       <LimitWrapper>

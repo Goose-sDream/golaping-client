@@ -1,6 +1,7 @@
 import VoteForm from "@/components/vote/VoteForm";
 import { WebSocketProvider } from "@/contexts/WebSocketContext";
 
+
 const VotePage = () => {
   return (
     <div
@@ -16,6 +17,7 @@ const VotePage = () => {
       <WebSocketProvider>
         <VoteForm />
       </WebSocketProvider>
+
     </div>
   );
 };

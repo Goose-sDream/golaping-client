@@ -24,6 +24,7 @@ export const CreateForm = () => {
   const { limited } = useRecoilValue(limitState);
   const request = Request();
 
+
   const createVote = async (data: FieldValues) => {
     const timeLimit = data.hour * 60 + data.minute;
     const link = `${window.location.origin}${generateLink()}`;
@@ -48,6 +49,7 @@ export const CreateForm = () => {
       storage.setItem("voteIdx", String(voteIdx));
       storage.setItem("limited", JSON.stringify(limited));
       // 새로고침 시에도 "제한"/"무제한" 유지되도록 세션스토리지에 저장함
+
     } else {
       console.error("Vote creation failed:", response.message);
     }
@@ -103,6 +105,7 @@ export const CreateForm = () => {
                   handleSubmit((data) => createVote(data as FieldValues))();
                 }
               }}
+
             >
               생성하기
             </Button>

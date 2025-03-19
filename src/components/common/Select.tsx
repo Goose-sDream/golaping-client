@@ -1,6 +1,7 @@
 import { SelectHTMLAttributes } from "react";
 import styled from "styled-components";
 import ArrowIcon from "@/assets/Arrow.svg";
+
 import { LIGHTGRAY } from "@/styles/color";
 
 interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
@@ -35,6 +36,7 @@ const Select = ({ label, options, error, disabled, ...props }: SelectProps) => {
           }}
         />
       </SelectContainer>
+
       {error && <ErrorText>{error}</ErrorText>}
     </Wrapper>
   );
@@ -46,6 +48,7 @@ const Wrapper = styled.div`
   justify-content: center;
   align-items: center;
 `;
+
 
 const Label = styled.label`
   display: block;
@@ -65,6 +68,7 @@ const StyledSelect = styled.select<{ color: string }>`
   border: none;
   border-radius: 4px;
   appearance: none;
+
   font-size: 20px;
   background-color: ${({ color }) => color || ""};
   height: 60px;

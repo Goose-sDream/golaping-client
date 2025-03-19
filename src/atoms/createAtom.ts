@@ -17,5 +17,5 @@ export const limitState = atom<{ limitList: string[]; limited: string }>({
   default: {
     limitList,
     limited: limitList[0],
-  },
+  }
 });
