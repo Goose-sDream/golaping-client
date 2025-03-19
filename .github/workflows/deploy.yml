@@ -59,7 +59,7 @@ jobs:
             docker stop golaping-app || true
             docker rm golaping-app || true
             docker pull ${{ secrets.DOCKER_USERNAME }}/golaping-app:latest
-             # 컨테이너 실행
+            # 컨테이너 실행
             docker run -d --name golaping-app -p 80:80 -p 443:443 \
             -v /etc/letsencrypt:/etc/letsencrypt \
             -e API_URL=${{ secrets.API_URL }} \
@@ -74,6 +74,14 @@ jobs:
             sudo docker cp /etc/letsencrypt/archive/golaping.site/chain1.pem golaping-app:/etc/letsencrypt/live/golaping.site/chain.pem
             sudo docker cp /etc/letsencrypt/archive/golaping.site/fullchain1.pem golaping-app:/etc/letsencrypt/live/golaping.site/fullchain.pem
             sudo docker cp /etc/letsencrypt/archive/golaping.site/privkey1.pem golaping-app:/etc/letsencrypt/live/golaping.site/privkey.pem
+
+            # Nginx 설정 파일을 컨테이너 내부로 복사
+            sudo docker cp /etc/nginx/nginx.conf golaping-app:/etc/nginx/nginx.conf
+            sudo docker cp /etc/nginx/conf.d golaping-app:/etc/nginx/
+
+            # Nginx 설정 확인 후 재시작
+            sudo docker exec -it golaping-app nginx -t
+            sudo docker restart golaping-app
 
             docker container prune -f
             docker image prune -af
