@@ -32,7 +32,8 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Prepare .env
-        run: echo "API_URL=${{ secrets.API_URL }}" > .env
+        run: |
+          echo "API_URL=${{ secrets.API_URL }}" > .env
           echo "📄 .env file contents:"
           cat .env
 
