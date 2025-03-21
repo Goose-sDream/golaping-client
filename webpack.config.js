@@ -82,7 +82,7 @@ module.exports = (webpackEnv) => {
 
     new CleanWebpackPlugin(),
     new webpack.DefinePlugin({
-      "process.env.API_URL": JSON.stringify(process.env.API_URL || "https://api.golaping.site"),
+      "process.env.API_URL": JSON.stringify(process.env.API_URL),
     }),
   ];
 

@@ -31,11 +31,11 @@ jobs:
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Prepare .env
+        run: echo "API_URL=${{ secrets.API_URL }}" > .env
+
       - name: Build Project
-        run: |
-          # 전달된 환경변수를 Webpack 빌드에서 사용할 수 있도록 .env 파일로 설정
-          echo "API_URL=${{ secrets.API_URL }}" > .env
-          pnpm build
+        run: pnpm build
 
       - name: Log in to DockerHub
         uses: docker/login-action@v3
