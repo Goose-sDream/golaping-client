@@ -51,6 +51,12 @@ jobs:
           docker build -t ${{ secrets.DOCKER_USERNAME }}/golaping-app:latest .
           docker push ${{ secrets.DOCKER_USERNAME }}/golaping-app:latest
 
+      - name: Copy .env to EC2
+        run: |
+          echo "${{ secrets.EC2_KEY }}" > ec2.pem
+          chmod 600 ec2.pem
+          scp -i ec2.pem -o StrictHostKeyChecking=no .env ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}:/home/${{ secrets.EC2_USERNAME }}/.env
+
       - name: Deploy to EC2
         uses: appleboy/ssh-action@v1.0.0
         with:
@@ -62,9 +68,6 @@ jobs:
             docker stop golaping-app || true
             docker rm golaping-app || true
             docker pull ${{ secrets.DOCKER_USERNAME }}/golaping-app:latest
-
-            # Copy .env file to EC2
-            scp -o StrictHostKeyChecking=no .env ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}:/home/${{ secrets.EC2_USERNAME }}/.env || (echo "❌ SCP failed" && exit 1)
 
             # Copy .env file to Docker container
             ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} "docker cp /home/${{ secrets.EC2_USERNAME }}/.env golaping-app:/usr/src/app/.env"
