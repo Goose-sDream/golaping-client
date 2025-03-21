@@ -1,7 +1,6 @@
 import { SelectHTMLAttributes } from "react";
 import styled from "styled-components";
 import ArrowIcon from "@/assets/Arrow.svg";
-
 import { LIGHTGRAY } from "@/styles/color";
 
 interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
@@ -49,7 +48,6 @@ const Wrapper = styled.div`
   align-items: center;
 `;
 
-
 const Label = styled.label`
   display: block;
   font-size: 14px;
@@ -59,14 +57,14 @@ const Label = styled.label`
 
 const SelectContainer = styled.div`
   position: relative;
-  width: 90%;
+  width: 100%;
 `;
 
 const StyledSelect = styled.select<{ color: string }>`
   width: 100%;
   padding: 10px 40px 10px 20px;
   border: none;
-  border-radius: 4px;
+  border-radius: 12px;
   appearance: none;
 
   font-size: 20px;

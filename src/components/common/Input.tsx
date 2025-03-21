@@ -41,17 +41,16 @@ const Input = <T extends string>({ label, error, name, type, ref, ...props }: In
 
 const InputWrapper = styled.div<{ name: string | undefined; $styleProps?: InputStyleProps }>`
   width: 100%;
-
   display: flex;
   flex-direction: ${({ $styleProps }) => $styleProps?.flexDirection || "column"};
-  justify-content: center;
+  justify-content: ${({ $styleProps }) => $styleProps?.justifyContent || "center"};
   min-height: ${({ $styleProps }) => $styleProps?.minHeight || "140px"};
-  gap: 8px;
-  margin-bottom: ${({ name }) => (name === "타이머" ? 0 : "20px")};
+  gap: 12px;
+  margin-bottom: ${({ $styleProps }) => $styleProps?.marginBottom};
 `;
 
 const Label = styled.label<{ $styleProps?: InputStyleProps }>`
-  font-size: ${({ $styleProps }) => $styleProps?.fontSize || "20px"};
+  font-size: ${({ $styleProps }) => $styleProps?.fontSize || "22px"};
   font-weight: ${({ $styleProps }) => $styleProps?.fontWeight || "bold"};
   color: black;
   display: ${({ $styleProps }) => $styleProps?.labelDisplay || "auto"};
@@ -71,14 +70,13 @@ const StyledInput = styled.input<{ error?: string; $styleProps?: InputStyleProps
   width: ${({ $styleProps }) => $styleProps?.width || "300px"};
   pointer-events: ${({ $styleProps }) => $styleProps?.pointerEvents || "auto"};
 
-
   &:focus {
     outline: none;
   }
 `;
 
-const ErrorMessage = styled.p`
-  margin-top: 10px;
+const ErrorMessage = styled.p<{ $styleProps?: InputStyleProps }>`
+  margin-top: ${({ $styleProps }) => $styleProps?.errMsgMarginTop || "10px"};
   font-size: 16px;
   color: red;
   visibility: visible;

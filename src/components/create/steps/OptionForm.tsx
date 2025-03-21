@@ -6,7 +6,6 @@ import Description from "./Description";
 import TimePicker from "./TimePicker";
 import { limitState } from "@/atoms/createAtom";
 import Input from "@/components/common/Input";
-import Radio from "@/components/common/Radio";
 import Select from "@/components/common/Select";
 import { YELLOW } from "@/styles/color";
 import { Vote } from "@/types/voteTypes";
@@ -19,52 +18,55 @@ const OptionForm = () => {
   const userVoteLimit = Array.from({ length: 5 }, (_, i) => i + 1);
   const [hasError, setHasError] = useState<string>("");
 
-
   useEffect(() => {
     if (timeRef && timeRef.current) {
       const handleClickOutside = (e: MouseEvent) => {
-        if (timeRef.current.every((ref) => ref && !ref.contains(e.target as Node))) {
-          setTimeOpen(Array(2).fill(false));
-        }
+        const isAnyOpen = timeOpen.some((t) => t);
+        const isClickOutside = timeRef.current.some((ref) => ref && !ref.contains(e.target as Node));
+        setTimeout(() => {
+          if (isAnyOpen && isClickOutside) {
+            setTimeOpen(Array(2).fill(false));
+          }
+        }, 0);
       };
       document.addEventListener("mousedown", handleClickOutside);
       return () => {
         document.removeEventListener("mousedown", handleClickOutside);
       };
     }
-  }, []);
+  }, [timeOpen]);
 
   const handleRadioChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setLimited((prev) => ({ ...prev, limited: e.target.value }));
   };
 
   const timerInputStyleProps = {
-
     width: "70px",
     textAlign: "right",
     pointerEvents: "none",
     labelDisplay: "none",
     position: "relative",
+    minHeight: "0",
   };
 
   const radioInputStyleProps = {
     flexDirection: "row",
-    fontSize: "18px",
+    fontSize: "20px",
     fontWeight: "normal",
     width: "20px",
     minHeight: "20px",
     labelMarginBottom: "0px",
     labelDisplay: "flex",
     labelAlignItems: "center",
-
+    justifyContent: "flex-start",
+    errMsgMarginTop: 0,
   };
 
   return (
     <VoteDiv>
-      <div style={{ display: "flex", flexDirection: "column", marginBottom: 30 }}>
-
+      <div style={{ display: "flex", flexDirection: "column", width: "300px", height: "150px" }}>
         <Label>타이머</Label>
-        <div style={{ display: "flex", justifyContent: "space-around", alignItems: "center" }}>
+        <div style={{ display: "flex", justifyContent: "space-around", alignItems: "center", margin: "auto 0" }}>
           {timeOpen.map((_, idx) => (
             <Controller
               key={idx}
@@ -88,7 +90,6 @@ const OptionForm = () => {
 
                   return true;
                 },
-
               }}
               render={({ field, fieldState: { error } }) => (
                 <div
@@ -100,7 +101,7 @@ const OptionForm = () => {
                   <div
                     style={{ display: "flex", alignItems: "center", gap: "5px", position: "relative" }}
                     onClick={() => setTimeOpen((prev) => prev.map((p, i) => (i === idx ? true : p)))}
-                    ref={(el) => {
+                    ref={(el: any) => {
                       timeRef.current[idx] = el;
                     }}
                   >
@@ -142,7 +143,6 @@ const OptionForm = () => {
           ))}
         </div>
         <ErrorMessage>{hasError}</ErrorMessage>
-
       </div>
 
       <LimitWrapper>
@@ -150,8 +150,9 @@ const OptionForm = () => {
         <div
           style={{
             display: "flex",
-            width: "90%",
+            width: "100%",
             height: "40px",
+            paddingLeft: "15px",
           }}
         >
           {limitList.map((limit, idx) => (
@@ -188,11 +189,11 @@ const OptionForm = () => {
         <div
           style={{
             display: "flex",
-            gap: "15px",
             alignItems: "center",
             height: "100px",
             width: "100%",
-            padding: "10px",
+            position: "relative",
+            justifyContent: "flex-end",
           }}
         >
           <div
@@ -201,6 +202,10 @@ const OptionForm = () => {
               height: "25px",
               borderRadius: "100%",
               backgroundColor: `${YELLOW}`,
+              position: "absolute",
+              top: "50%",
+              left: "0%",
+              transform: "translateY(-50%)",
             }}
           ></div>
           {limited == "무제한" ? (
@@ -220,9 +225,9 @@ const VoteDiv = styled.div`
   position: relative;
   display: flex;
   flex-direction: column;
-  width: 100%;
-  height: calc(100vh - 80px);
-  gap: 30px;
+  align-items: center;
+  width: 300px;
+  gap: 40px;
 `;
 
 const LimitWrapper = styled.div`
@@ -233,7 +238,7 @@ const LimitWrapper = styled.div`
 `;
 
 const Label = styled.label`
-  font-size: 20px;
+  font-size: 22px;
   font-weight: bold;
   color: black;
 `;
@@ -242,5 +247,4 @@ const ErrorMessage = styled.p`
   font-size: 16px;
   color: red;
   text-align: center;
-  height: 20px;
 `;
