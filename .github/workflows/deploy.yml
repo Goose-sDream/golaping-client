@@ -33,6 +33,8 @@ jobs:
 
       - name: Prepare .env
         run: echo "API_URL=${{ secrets.API_URL }}" > .env
+          echo "📄 .env file contents:"
+          cat .env
 
       - name: Build Project
         run: pnpm build
@@ -61,7 +63,7 @@ jobs:
             docker pull ${{ secrets.DOCKER_USERNAME }}/golaping-app:latest
 
             # Copy .env file to EC2
-            scp -o StrictHostKeyChecking=no .env ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}:/home/${{ secrets.EC2_USERNAME }}/.env
+            scp -o StrictHostKeyChecking=no .env ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}:/home/${{ secrets.EC2_USERNAME }}/.env || (echo "❌ SCP failed" && exit 1)
 
             # Copy .env file to Docker container
             ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} "docker cp /home/${{ secrets.EC2_USERNAME }}/.env golaping-app:/usr/src/app/.env"
