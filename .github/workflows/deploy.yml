@@ -69,14 +69,14 @@ jobs:
             docker rm golaping-app || true
             docker pull ${{ secrets.DOCKER_USERNAME }}/golaping-app:latest
 
-            # Copy .env file to Docker container
-            ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} "docker cp /home/${{ secrets.EC2_USERNAME }}/.env golaping-app:/usr/src/app/.env"
-
             # 컨테이너 실행
             docker run -d --name golaping-app -p 80:80 -p 443:443 \
             -v /etc/letsencrypt:/etc/letsencrypt \
             -e API_URL=${{ secrets.API_URL }} \
             ${{ secrets.DOCKER_USERNAME }}/golaping-app:latest
+
+            # Copy .env file to Docker container
+            ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} "docker cp /home/${{ secrets.EC2_USERNAME }}/.env golaping-app:/usr/src/app/.env"
 
             # 컨테이너 내부에 /etc/letsencrypt/ 디렉터리 생성
             sudo docker exec -it golaping-app mkdir -p /etc/letsencrypt/live/golaping.site
