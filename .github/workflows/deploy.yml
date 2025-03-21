@@ -51,12 +51,6 @@ jobs:
           docker build -t ${{ secrets.DOCKER_USERNAME }}/golaping-app:latest .
           docker push ${{ secrets.DOCKER_USERNAME }}/golaping-app:latest
 
-      - name: Copy .env to EC2
-        run: |
-          echo "${{ secrets.EC2_KEY }}" > ec2.pem
-          chmod 600 ec2.pem
-          scp -i ec2.pem -o StrictHostKeyChecking=no .env ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}:/home/${{ secrets.EC2_USERNAME }}/.env
-
       - name: Deploy to EC2
         uses: appleboy/ssh-action@v1.0.0
         with:
@@ -74,12 +68,6 @@ jobs:
             -v /etc/letsencrypt:/etc/letsencrypt \
             -e API_URL=${{ secrets.API_URL }} \
             ${{ secrets.DOCKER_USERNAME }}/golaping-app:latest
-
-            # ✅ 복사 전 컨테이너 내부 디렉토리 생성
-            docker exec golaping-app mkdir -p /usr/src/app
-
-            # Copy .env file to Docker container
-            docker cp /home/${{ secrets.EC2_USERNAME }}/.env golaping-app:/usr/src/app/.env
 
             # 컨테이너 내부에 /etc/letsencrypt/ 디렉터리 생성
             sudo docker exec -it golaping-app mkdir -p /etc/letsencrypt/live/golaping.site
