@@ -7,8 +7,8 @@ WORKDIR /app
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 
-# ✅ .env 파일 추가
-COPY .env ./
+# # ✅ .env 파일 추가
+# COPY .env ./
 
 # 소스 복사 및 빌드
 COPY . ./
