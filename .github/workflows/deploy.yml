@@ -75,6 +75,9 @@ jobs:
             -e API_URL=${{ secrets.API_URL }} \
             ${{ secrets.DOCKER_USERNAME }}/golaping-app:latest
 
+            # ✅ 복사 전 컨테이너 내부 디렉토리 생성
+            docker exec golaping-app mkdir -p /usr/src/app
+
             # Copy .env file to Docker container
             ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} "docker cp /home/${{ secrets.EC2_USERNAME }}/.env golaping-app:/usr/src/app/.env"
 
