@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { Button } from "../common";
-import GreenLogo from "@/assets/GreenLogo.svg";
 import Request from "@/services/requests";
 import StorageController from "@/storage/storageController";
 import { APIResponse } from "@/types/apiTypes";
@@ -71,7 +70,7 @@ const VoteResults = () => {
 
   const getResultFromAPI = async () => {
     const response = await request.get<APIResponse<{ title: string; voteResult: VoteResult[] }>>(
-      `/api/votes/${voteIdx}result`
+      `/api/votes/${voteIdx}/result`
     );
     if (response.isSuccess) {
       setVoteData(response.result.voteResult);
@@ -81,11 +80,7 @@ const VoteResults = () => {
 
   useEffect(() => {
     if (!initialVoteData) {
-      if (!sampleVoteResult) getResultFromAPI();
-      else {
-        setVoteData(sampleVoteResult.voteResult);
-        setMaxVotes(Math.max(...sampleVoteResult.voteResult.map((v) => v.voteCount)));
-      }
+      getResultFromAPI();
     } else {
       setMaxVotes(Math.max(...initialVoteData.map((v) => v.voteCount)));
     }
@@ -122,7 +117,6 @@ const VoteResults = () => {
       >
         투표 만들러 가기
       </Button>
-      <GreenLogo />
     </Container>
   );
 };

@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Engine, Render, Mouse, World, Bodies, MouseConstraint, Runner, Events, Body } from "matter-js";
+import { useNavigate } from "react-router-dom";
 import { useRecoilValue } from "recoil";
 import styled, { keyframes } from "styled-components";
 import VoteInfo from "./VoteInfo";
@@ -38,6 +39,7 @@ type OptionObj = {
 };
 
 const MakeCandidate = () => {
+  const navigate = useNavigate();
   const storage = new StorageController("session");
   const voteEndTime = storage.getItem("voteEndTime");
   const { client, prevVotes, voteLimit, voteUuid, connected, connectWebSocket } = useWebSocket();
@@ -74,6 +76,7 @@ const MakeCandidate = () => {
     subscribeNewOption();
     subscribeVoted();
     subscribeError();
+    subscribeCloseVote();
   }, [connected]);
 
   useEffect(() => {
@@ -385,6 +388,23 @@ const MakeCandidate = () => {
     }
   };
 
+  const publishCloseVote = () => {
+    console.log("publishCloseVote client.connected =>", client?.connected);
+    if (!client?.connected) {
+      console.log("websocket is not connected");
+      return;
+    }
+    try {
+      if (voteUuid) {
+        client.publish({
+          destination: "/app/vote/close",
+        });
+      }
+    } catch (error) {
+      console.error("Failed to publish a close message:", error);
+    }
+  };
+
   // 구독
   const subscribeError = () => {
     if (!client?.connected) {
@@ -435,6 +455,24 @@ const MakeCandidate = () => {
       }
     } catch (error) {
       console.error("Failed to subscribe a voted message:", error);
+    }
+  };
+
+  const subscribeCloseVote = () => {
+    if (!client?.connected) {
+      console.log("websocket is not connected");
+      return;
+    }
+    try {
+      if (voteUuid) {
+        client.subscribe(`/topic/vote/${voteUuid}/close`, (message: { body: string }) => {
+          console.log("Received: 투표 종료 응답", JSON.parse(message.body));
+          storage.setItem("voteData", message.body);
+          navigate(`/votes/${voteUuid}/results`);
+        });
+      }
+    } catch (error) {
+      console.error("Failed to subscribe a close message:", error);
     }
   };
 
@@ -614,6 +652,7 @@ const MakeCandidate = () => {
 
   return (
     <StyledSection ref={containerRef}>
+      <CloseButton onClick={publishCloseVote}>투표 종료</CloseButton>
       <VoteInfo voteEndTime={voteEndTime!} voteLimit={voteLimit} totalVoteCount={totalVoteCount} />
       {modalVisible && (
         <ModalWrapper ref={candidateModalRef}>
@@ -652,6 +691,14 @@ const StyledSection = styled.section`
   height: 600px;
   border: 5px solid black;
   position: relative;
+`;
+
+const CloseButton = styled.button`
+  position: relative;
+  background-color: black;
+  color: white;
+  border-radius: 20px;
+  font-size: 24px;
 `;
 
 /* ✅ 모달 스타일 */
