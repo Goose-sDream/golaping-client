@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Engine, Render, Mouse, World, Bodies, MouseConstraint, Runner, Events, Body } from "matter-js";
 import { useRecoilValue } from "recoil";
 import styled, { keyframes } from "styled-components";
+import VoteInfo from "./VoteInfo";
 import { limitState } from "@/atoms/createAtom";
 import {
   BASEGROWTHRATE,
@@ -38,7 +39,9 @@ type OptionObj = {
 
 const MakeCandidate = () => {
   const storage = new StorageController("session");
-  const { client, prevVotes, voteUuid, connected, connectWebSocket } = useWebSocket();
+  const voteEndTime = storage.getItem("voteEndTime");
+  const { client, prevVotes, voteLimit, voteUuid, connected, connectWebSocket } = useWebSocket();
+  const [totalVoteCount, setTotalVoteCount] = useState(0);
   // const limited = storage.getItem("limited");
   const { limited } = useRecoilValue(limitState);
   console.log("limited =>", limited);
@@ -77,6 +80,7 @@ const MakeCandidate = () => {
     console.log("prevVotes =>", prevVotes);
     if (prevVotes.length > 0) {
       renderPrevBalls();
+      setTotalVoteCount(prevVotes.reduce((count, item) => (item.isVotedByUser === true ? count + 1 : count), 0));
     }
   }, [prevVotes]);
 
@@ -420,11 +424,13 @@ const MakeCandidate = () => {
         client.subscribe(`/user/queue/vote/${voteUuid}`, (message: { body: string }) => {
           const {
             result: {
+              totalVoteCount,
               changedOption: { isVotedByUser },
             },
           } = JSON.parse(message.body);
           console.log("Received: 내가 투표한 응답 isVotedByUser=>", isVotedByUser);
           updateBallBorder(countedBall as TargetBall, isVotedByUser);
+          setTotalVoteCount(totalVoteCount);
         });
       }
     } catch (error) {
@@ -608,6 +614,7 @@ const MakeCandidate = () => {
 
   return (
     <StyledSection ref={containerRef}>
+      <VoteInfo voteEndTime={voteEndTime!} voteLimit={voteLimit} totalVoteCount={totalVoteCount} />
       {modalVisible && (
         <ModalWrapper ref={candidateModalRef}>
           <ModalContent>
