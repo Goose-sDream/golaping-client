@@ -6,47 +6,10 @@ import Request from "@/services/requests";
 import StorageController from "@/storage/storageController";
 import { APIResponse } from "@/types/apiTypes";
 
-const sampleVoteResult = {
-  title: "오늘 뭐 먹지?",
-  voteResult: [
-    {
-      ranking: 1,
-      optionId: 101,
-      optionName: "치킨",
-      voteCount: 120,
-      voteColor: "#F7DF1E",
-    },
-    {
-      ranking: 2,
-      optionId: 102,
-      optionName: "떡볶이",
-      voteCount: 95,
-      voteColor: "#3572A5",
-    },
-    {
-      ranking: 3,
-      optionId: 103,
-      optionName: "초밥",
-      voteCount: 80,
-      voteColor: "#3178C6",
-    },
-    {
-      ranking: 4,
-      optionId: 104,
-      optionName: "피자",
-      voteCount: 60,
-      voteColor: "#00ADD8",
-    },
-    {
-      ranking: 5,
-      optionId: 105,
-      optionName: "돈까스",
-      voteCount: 40,
-      voteColor: "#DEA584",
-    },
-  ],
-};
-
+interface VoteData {
+  title: string;
+  voteResult: VoteResult[];
+}
 interface VoteResult {
   ranking: number;
   optionId: number;
@@ -62,7 +25,7 @@ const initialVoteData: VoteResult[] | null = storage.getItem("voteData")
   : null;
 
 const VoteResults = () => {
-  const [voteData, setVoteData] = useState<VoteResult[]>([]);
+  const [voteData, setVoteData] = useState<VoteData>({ title: "", voteResult: [] });
   const [maxVotes, setMaxVotes] = useState(1);
   const voteIdx = storage.getItem("voteIdx");
   const navigate = useNavigate();
@@ -73,7 +36,7 @@ const VoteResults = () => {
       `/api/votes/${voteIdx}/result`
     );
     if (response.isSuccess) {
-      setVoteData(response.result.voteResult);
+      setVoteData({ title: response.result.title, voteResult: response.result.voteResult });
       setMaxVotes(Math.max(...response.result.voteResult.map((v: VoteResult) => v.voteCount)));
     }
   };
@@ -96,8 +59,8 @@ const VoteResults = () => {
 
   return (
     <Container>
-      <Title>{sampleVoteResult.title}</Title>
-      {voteData.map((vote) => (
+      <Title>{voteData.title}</Title>
+      {voteData.voteResult.map((vote) => (
         <VoteItem key={vote.optionId}>
           <VoteText>
             {vote.ranking}. {vote.optionName} {vote.voteCount}표

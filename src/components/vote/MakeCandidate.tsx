@@ -465,7 +465,7 @@ const MakeCandidate = () => {
     }
     try {
       if (voteUuid) {
-        client.subscribe(`/topic/vote/${voteUuid}/close`, (message: { body: string }) => {
+        client.subscribe(`/topic/vote/${voteUuid}/closed`, (message: { body: string }) => {
           console.log("Received: 투표 종료 응답", JSON.parse(message.body));
           storage.setItem("voteData", message.body);
           navigate(`/votes/${voteUuid}/results`);
