@@ -4,11 +4,12 @@ import LinkIcon from "@/assets/Link.svg";
 
 interface ShareVoteProps {
   randomLink: string;
+  title: string;
 }
 
-const ShareVote = ({ randomLink }: ShareVoteProps) => {
+const ShareVote = ({ randomLink, title }: ShareVoteProps) => {
   const handleCopy = () => {
-    const fullUrl = `${window.location.origin}${randomLink}`;
+    const fullUrl = `${window.location.origin}${randomLink}/${title}`;
     navigator.clipboard
       .writeText(fullUrl)
       .then(() => alert("링크가 클립보드에 복사되었습니다!"))

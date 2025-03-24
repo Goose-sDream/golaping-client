@@ -17,7 +17,7 @@ const storage = new StorageController("session");
 
 const EnterVote = () => {
   const { register, handleSubmit } = useForm();
-  const { id } = useParams();
+  const { id, title } = useParams();
   const request = Request();
   const { connectWebSocket } = useWebSocket();
 
@@ -68,7 +68,7 @@ const EnterVote = () => {
 
   return (
     <Wrapper onSubmit={handleSubmit(onSubmit)}>
-      <Title>투표 제목</Title>
+      <Title>{title}</Title>
       <Button type="submit" style={{ position: "absolute", bottom: 20, zIndex: 100 }}>
         투표 입장하기
       </Button>

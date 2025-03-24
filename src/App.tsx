@@ -17,7 +17,7 @@ const App: React.FC = () => {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<CreatePage />}></Route>
-          <Route path="/votes/:id" element={<VotePage />}></Route>
+          <Route path="/votes/:id/:title" element={<VotePage />}></Route>
           <Route path="/votes/:id/results" element={<ResultPage />}></Route>
           <Route path="/test" element={<TestPage />}></Route>
         </Routes>

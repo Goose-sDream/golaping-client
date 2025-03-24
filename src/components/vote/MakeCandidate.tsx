@@ -652,8 +652,10 @@ const MakeCandidate = () => {
 
   return (
     <StyledSection ref={containerRef}>
-      <CloseButton onClick={publishCloseVote}>투표 종료</CloseButton>
-      <VoteInfo voteEndTime={voteEndTime!} voteLimit={voteLimit} totalVoteCount={totalVoteCount} />
+      <HeaderSection>
+        <VoteInfo voteEndTime={voteEndTime!} voteLimit={voteLimit} totalVoteCount={totalVoteCount} />
+        <CloseButton onClick={publishCloseVote}>투표 종료</CloseButton>
+      </HeaderSection>
       {modalVisible && (
         <ModalWrapper ref={candidateModalRef}>
           <ModalContent>
@@ -691,6 +693,13 @@ const StyledSection = styled.section`
   height: 600px;
   border: 5px solid black;
   position: relative;
+`;
+
+const HeaderSection = styled.div`
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
 `;
 
 const CloseButton = styled.button`
