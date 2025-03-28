@@ -1,4 +1,4 @@
-import { SelectHTMLAttributes } from "react";
+import { forwardRef, SelectHTMLAttributes } from "react";
 import styled from "styled-components";
 import ArrowIcon from "@/assets/Arrow.svg";
 import { LIGHTGRAY } from "@/styles/color";
@@ -11,12 +11,12 @@ interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   disabled?: boolean;
 }
 
-const Select = ({ label, options, error, disabled, ...props }: SelectProps) => {
+const Select = forwardRef<HTMLSelectElement, SelectProps>(({ label, options, error, disabled, ...props }, ref) => {
   return (
     <Wrapper>
       {label && <Label htmlFor={props.id}>{label}</Label>}
       <SelectContainer>
-        <StyledSelect id={props.id} {...props} disabled={disabled} color={LIGHTGRAY}>
+        <StyledSelect id={props.id} {...props} disabled={disabled} color={LIGHTGRAY} ref={ref}>
           {options.map((option) => (
             <option key={option.value} value={option.value}>
               {option.label}
@@ -39,7 +39,8 @@ const Select = ({ label, options, error, disabled, ...props }: SelectProps) => {
       {error && <ErrorText>{error}</ErrorText>}
     </Wrapper>
   );
-};
+});
+Select.displayName = "Select";
 
 const Wrapper = styled.div`
   width: 100%;

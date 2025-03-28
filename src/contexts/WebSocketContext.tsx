@@ -24,7 +24,6 @@ type PrevVotes = {
 
 const WebSocketContext = createContext<WebSocketContextType | null>(null);
 const storage = new StorageController("session");
-
 export const WebSocketProvider = ({ children }: { children: React.ReactNode }) => {
   const [step, setStep] = useState(0);
   const [prevVotes, setPrevVotes] = useState<PrevVotes[]>([]);
@@ -65,8 +64,6 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
         setConnected(true);
         setError(null);
         clientRef.current = client;
-        console.log("client.connected =>", client.connected);
-        console.log("프로바이더 내부 clientRef.current =>", clientRef.current.connected);
       },
       onWebSocketClose: () => {
         console.log("WebSocket closed");

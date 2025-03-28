@@ -1,4 +1,4 @@
-import { InputHTMLAttributes } from "react";
+import { InputHTMLAttributes, forwardRef } from "react";
 import styled from "styled-components";
 import { LIGHTGRAY } from "@/styles/color";
 import { InputStyleProps } from "@/types/voteTypes";
@@ -7,7 +7,6 @@ type BaseInputProps = {
   label?: string;
   error?: string;
   name?: string;
-  ref?: any;
   $styleProps?: InputStyleProps;
 };
 
@@ -17,7 +16,10 @@ type InputProps<T extends string> = BaseInputProps &
     ? { type: "radio"; checked: boolean; value: string; onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void }
     : { type?: T });
 
-const Input = <T extends string>({ label, error, name, type, ref, ...props }: InputProps<T>) => {
+const Input = <T extends string>(
+  { label, error, name, type, ...props }: InputProps<T>,
+  ref: React.Ref<HTMLInputElement>
+) => {
   return (
     <InputWrapper name={name} $styleProps={props.$styleProps}>
       {type === "radio" ? (
@@ -38,6 +40,10 @@ const Input = <T extends string>({ label, error, name, type, ref, ...props }: In
     </InputWrapper>
   );
 };
+
+const ForwardedInput = forwardRef(Input) as <T extends string>(
+  props: InputProps<T> & { ref?: React.Ref<HTMLInputElement> }
+) => ReturnType<typeof Input>;
 
 const InputWrapper = styled.div<{ name: string | undefined; $styleProps?: InputStyleProps }>`
   width: 100%;
@@ -82,4 +88,4 @@ const ErrorMessage = styled.p<{ $styleProps?: InputStyleProps }>`
   visibility: visible;
 `;
 
-export default Input;
+export default ForwardedInput;
