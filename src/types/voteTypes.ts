@@ -31,4 +31,6 @@ export interface InputStyleProps {
   labelDisplay?: string;
   labelMarginBottom?: string;
   labelAlignItems?: string;
+
+  errMsgMarginTop?: string;
 }

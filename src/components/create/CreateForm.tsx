@@ -73,14 +73,6 @@ export const CreateForm = () => {
     }
   };
 
-  const handleNextStep = async (fields?: string[]) => {
-    const isValid = fields ? await trigger(fields) : true;
-
-    if (isValid) {
-      setStep(step + 1);
-    }
-  };
-
   const steps: { [key: number]: JSX.Element } = {
     1: <LandingForm />,
     2: <BasicForm />,
