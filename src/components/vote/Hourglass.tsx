@@ -17,7 +17,7 @@ const Hourglass = ({ voteEndTime }: HourglassProps) => {
       const timeLeft = Math.max(endTime - now, 0);
 
       const hours = Math.floor(timeLeft / (1000 * 60 * 60));
-      const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+      const minutes = Math.ceil((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
 
       const formattedTime = `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
 

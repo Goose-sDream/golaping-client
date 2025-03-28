@@ -21,9 +21,9 @@ export const CreateForm = () => {
   const navigate = useNavigate();
   const [step, setStep] = useState<number>(1);
   const [randomLink, setRandomLink] = useState<string>("");
+  const [title, setTitle] = useState<string>("");
   const { limited } = useRecoilValue(limitState);
   const request = Request();
-
 
   const createVote = async (data: FieldValues) => {
     const timeLimit = data.hour * 60 + data.minute;
@@ -48,8 +48,8 @@ export const CreateForm = () => {
       storage.setItem("voteEndTime", voteEndTime);
       storage.setItem("voteIdx", String(voteIdx));
       storage.setItem("limited", JSON.stringify(limited));
+      setTitle(data.title);
       // 새로고침 시에도 "제한"/"무제한" 유지되도록 세션스토리지에 저장함
-
     } else {
       console.error("Vote creation failed:", response.message);
     }
@@ -62,7 +62,7 @@ export const CreateForm = () => {
   };
 
   const handleNavigate = () => {
-    navigate(randomLink);
+    navigate(randomLink + `/${title}`);
   };
 
   const handleNextStep = async (fields?: string[]) => {
@@ -77,7 +77,7 @@ export const CreateForm = () => {
     1: <LandingForm />,
     2: <BasicForm />,
     3: <OptionForm />,
-    4: <ShareVote randomLink={randomLink} />,
+    4: <ShareVote randomLink={randomLink} title={title} />,
   };
 
   return (
@@ -105,7 +105,6 @@ export const CreateForm = () => {
                   handleSubmit((data) => createVote(data as FieldValues))();
                 }
               }}
-
             >
               생성하기
             </Button>

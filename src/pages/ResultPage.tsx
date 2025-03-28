@@ -1,5 +1,4 @@
 import VoteResults from "@/components/vote/VoteResults";
-import { WebSocketProvider } from "@/contexts/WebSocketContext";
 
 const ResultPage = () => {
   return (
@@ -13,9 +12,7 @@ const ResultPage = () => {
         alignItems: "center",
       }}
     >
-      <WebSocketProvider>
-        <VoteResults />
-      </WebSocketProvider>
+      <VoteResults />
     </div>
   );
 };
