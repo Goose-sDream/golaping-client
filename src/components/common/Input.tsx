@@ -43,14 +43,14 @@ const InputWrapper = styled.div<{ name: string | undefined; $styleProps?: InputS
   width: 100%;
   display: flex;
   flex-direction: ${({ $styleProps }) => $styleProps?.flexDirection || "column"};
-  justify-content: ${({ $styleProps }) => $styleProps?.justifyContent || "center"};
+  justify-content: center;
   min-height: ${({ $styleProps }) => $styleProps?.minHeight || "140px"};
-  gap: 12px;
-  margin-bottom: ${({ $styleProps }) => $styleProps?.marginBottom};
+  gap: 8px;
+  margin-bottom: ${({ name }) => (name === "타이머" ? 0 : "20px")};
 `;
 
 const Label = styled.label<{ $styleProps?: InputStyleProps }>`
-  font-size: ${({ $styleProps }) => $styleProps?.fontSize || "22px"};
+  font-size: ${({ $styleProps }) => $styleProps?.fontSize || "20px"};
   font-weight: ${({ $styleProps }) => $styleProps?.fontWeight || "bold"};
   color: black;
   display: ${({ $styleProps }) => $styleProps?.labelDisplay || "auto"};

@@ -5,9 +5,7 @@ const LandingForm = () => {
   return (
     <Wrapper>
       <Title>골라핑</Title>
-      <LogoContainer>
-        <LogoWithText text={`골라핑은 여러분의${"\n"}선택을 도와주는${"\n"}투표 서비스입니다`} />
-      </LogoContainer>
+      <LogoWithText text={`골라핑은 여러분의${"\n"}선택을 도와주는${"\n"}투표 서비스입니다`} />
     </Wrapper>
   );
 };
@@ -21,7 +19,6 @@ const Wrapper = styled.div`
   justify-content: center;
   overflow: hidden;
   height: 100vh;
-  width: 100%;
 `;
 
 const Title = styled.h1`
@@ -32,9 +29,4 @@ const Title = styled.h1`
   display: flex;
   align-items: center;
   justify-content: center;
-`;
-
-const LogoContainer = styled.div`
-  flex: 1;
-  width: 100%;
 `;

@@ -13,9 +13,7 @@ const ResultPage = () => {
         alignItems: "center",
       }}
     >
-      <WebSocketProvider>
-        <VoteResults />
-      </WebSocketProvider>
+      <VoteResults />
     </div>
   );
 };

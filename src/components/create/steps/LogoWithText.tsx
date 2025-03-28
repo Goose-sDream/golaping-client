@@ -6,7 +6,7 @@ interface LogoWithTextProps {
 
 const LogoWithText = ({ text }: LogoWithTextProps) => {
   return (
-    <SvgWrapper viewBox="0 0 500 751" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg width="500" height="751" viewBox="0 0 500 751" fill="none" xmlns="http://www.w3.org/2000/svg">
       <g clipPath="url(#clip0_71_1848)">
         <path
           d="M549.002 568.075C549.002 773.239 538.147 869.131 208.04 869.131C-44.6008 869.131 -48.709 790.258 -48.709 585.094C-48.709 379.932 -48.7087 230.047 -48.709 196.596C281.398 196.596 549.002 362.913 549.002 568.075Z"
@@ -45,7 +45,7 @@ const LogoWithText = ({ text }: LogoWithTextProps) => {
           <rect width="500" height="750.587" fill="white" />
         </clipPath>
       </defs>
-    </SvgWrapper>
+    </svg>
   );
 };
 
@@ -57,9 +57,4 @@ const LogoText = styled.p`
   text-align: center;
   z-index: 100;
   white-space: pre-line;
-`;
-const SvgWrapper = styled.svg`
-  width: 100%;
-  height: 100%;
-  display: block;
 `;
