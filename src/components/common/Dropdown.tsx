@@ -55,7 +55,7 @@ const Wrapper = styled.div`
 
 const Label = styled.label`
   margin-bottom: 8px;
-  font-size: 20px;
+  font-size: 22px;
   font-weight: bold;
   color: black;
 `;

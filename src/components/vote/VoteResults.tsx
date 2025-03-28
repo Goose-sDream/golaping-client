@@ -10,6 +10,7 @@ interface VoteData {
   title: string;
   voteResult: VoteResult[];
 }
+
 interface VoteResult {
   ranking: number;
   optionId: number;

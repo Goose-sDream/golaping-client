@@ -19,7 +19,6 @@ const Wrapper = styled.div`
   justify-content: center;
   overflow: hidden;
   height: 100vh;
-
 `;
 
 const Title = styled.h1`

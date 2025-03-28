@@ -25,6 +25,7 @@ const RadioWrapper = styled.div`
   gap: 10px;
   height: 40px;
   font-size: 18px;
+  padding: 10px;
 `;
 
 const RadioInput = styled.input`

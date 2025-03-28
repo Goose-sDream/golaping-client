@@ -9,6 +9,7 @@ import VotePage from "./pages/VotePage";
 import GlobalStyle from "./styles/GlobalStyle";
 
 const App: React.FC = () => {
+  console.log("API URL:", process.env.API_URL);
   return (
     <RecoilRoot>
       <div id="modal"></div>

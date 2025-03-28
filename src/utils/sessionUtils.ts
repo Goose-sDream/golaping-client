@@ -26,9 +26,6 @@ export const clearSession = (onPurpose: boolean = false) => {
   }
 
   const endTime = new Date(voteEndTime).getTime();
-
-  console.log("time", endTime, Date.now());
-
   if (onPurpose || Date.now() >= endTime) {
     // 투표 시간이 만료되었거나 사용자가 의도적으로 초기화한 경우
     removeItems(["voteUuid", "voteEndTime"]);

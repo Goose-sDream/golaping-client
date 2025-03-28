@@ -1,4 +1,5 @@
 import VoteResults from "@/components/vote/VoteResults";
+import { WebSocketProvider } from "@/contexts/WebSocketContext";
 
 const ResultPage = () => {
   return (

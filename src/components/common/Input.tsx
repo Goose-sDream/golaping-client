@@ -41,7 +41,6 @@ const Input = <T extends string>({ label, error, name, type, ref, ...props }: In
 
 const InputWrapper = styled.div<{ name: string | undefined; $styleProps?: InputStyleProps }>`
   width: 100%;
-
   display: flex;
   flex-direction: ${({ $styleProps }) => $styleProps?.flexDirection || "column"};
   justify-content: center;
@@ -71,14 +70,13 @@ const StyledInput = styled.input<{ error?: string; $styleProps?: InputStyleProps
   width: ${({ $styleProps }) => $styleProps?.width || "300px"};
   pointer-events: ${({ $styleProps }) => $styleProps?.pointerEvents || "auto"};
 
-
   &:focus {
     outline: none;
   }
 `;
 
-const ErrorMessage = styled.p`
-  margin-top: 10px;
+const ErrorMessage = styled.p<{ $styleProps?: InputStyleProps }>`
+  margin-top: ${({ $styleProps }) => $styleProps?.errMsgMarginTop || "10px"};
   font-size: 16px;
   color: red;
   visibility: visible;

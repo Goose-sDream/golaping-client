@@ -28,9 +28,7 @@ export interface InputStyleProps {
   fontSize?: string;
   fontWeight?: string;
   minHeight?: string;
-
   labelDisplay?: string;
   labelMarginBottom?: string;
   labelAlignItems?: string;
-
 }

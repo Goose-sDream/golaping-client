@@ -73,6 +73,14 @@ export const CreateForm = () => {
     }
   };
 
+  const handleNextStep = async (fields?: string[]) => {
+    const isValid = fields ? await trigger(fields) : true;
+
+    if (isValid) {
+      setStep(step + 1);
+    }
+  };
+
   const steps: { [key: number]: JSX.Element } = {
     1: <LandingForm />,
     2: <BasicForm />,
@@ -124,9 +132,8 @@ const FormContainer = styled.form`
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  max-width: 400px;
   min-width: 300px;
+  width: 100%;
 `;
 
 const ButtonContainer = styled.div`

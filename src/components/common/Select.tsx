@@ -1,7 +1,6 @@
 import { SelectHTMLAttributes } from "react";
 import styled from "styled-components";
 import ArrowIcon from "@/assets/Arrow.svg";
-
 import { LIGHTGRAY } from "@/styles/color";
 
 interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
@@ -48,7 +47,6 @@ const Wrapper = styled.div`
   justify-content: center;
   align-items: center;
 `;
-
 
 const Label = styled.label`
   display: block;

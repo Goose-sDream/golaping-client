@@ -31,6 +31,12 @@ jobs:
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Prepare .env
+        run: |
+          echo "API_URL=${{ secrets.API_URL }}" > .env
+          echo "📄 .env file contents:"
+          cat .env
+
       - name: Build Project
         run: |
           # 전달된 환경변수를 Webpack 빌드에서 사용할 수 있도록 .env 파일로 설정
@@ -59,8 +65,31 @@ jobs:
             docker stop golaping-app || true
             docker rm golaping-app || true
             docker pull ${{ secrets.DOCKER_USERNAME }}/golaping-app:latest
-             # Docker 컨테이너 실행 시 환경변수 API_URL 전달하도록
-            docker run -d --name golaping-app -p 80:80 -p 443:443 -e API_URL=${{ secrets.API_URL }} ${{ secrets.DOCKER_USERNAME }}/golaping-app:latest
+
+            # 컨테이너 실행
+            docker run -d --name golaping-app -p 80:80 -p 443:443 \
+            -v /etc/letsencrypt:/etc/letsencrypt \
+            -e API_URL=${{ secrets.API_URL }} \
+            ${{ secrets.DOCKER_USERNAME }}/golaping-app:latest
+
+            # 컨테이너 내부에 /etc/letsencrypt/ 디렉터리 생성
+            sudo docker exec -it golaping-app mkdir -p /etc/letsencrypt/live/golaping.site
+            sudo docker exec -it golaping-app mkdir -p /etc/letsencrypt/archive/golaping.site
+
+            # 원본 인증서 파일을 컨테이너 내부로 직접 복사
+            sudo docker cp /etc/letsencrypt/archive/golaping.site/cert1.pem golaping-app:/etc/letsencrypt/live/golaping.site/cert.pem
+            sudo docker cp /etc/letsencrypt/archive/golaping.site/chain1.pem golaping-app:/etc/letsencrypt/live/golaping.site/chain.pem
+            sudo docker cp /etc/letsencrypt/archive/golaping.site/fullchain1.pem golaping-app:/etc/letsencrypt/live/golaping.site/fullchain.pem
+            sudo docker cp /etc/letsencrypt/archive/golaping.site/privkey1.pem golaping-app:/etc/letsencrypt/live/golaping.site/privkey.pem
+
+            # Nginx 설정 파일을 컨테이너 내부로 복사
+            sudo docker cp /etc/nginx/nginx.conf golaping-app:/etc/nginx/nginx.conf
+            sudo docker cp /etc/nginx/conf.d golaping-app:/etc/nginx/
+
+            # Nginx 설정 확인 후 재시작
+            sudo docker exec -it golaping-app nginx -t
+            sudo docker restart golaping-app
+
             docker container prune -f
             docker image prune -af
             docker ps -a
