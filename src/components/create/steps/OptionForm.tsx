@@ -62,9 +62,17 @@ const OptionForm = () => {
 
   return (
     <VoteDiv>
-      <div style={{ display: "flex", flexDirection: "column", marginBottom: 30 }}>
+      <div style={{ display: "flex", flexDirection: "column", width: "100%" }}>
         <Label>타이머</Label>
-        <div style={{ display: "flex", justifyContent: "space-around", alignItems: "center", margin: "auto 0" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-around",
+            alignItems: "center",
+            margin: "auto 0",
+            width: "100%",
+          }}
+        >
           {timeOpen.map((_, idx) => (
             <Controller
               key={idx}
@@ -221,7 +229,6 @@ const VoteDiv = styled.div`
   flex-direction: column;
   align-items: center;
   width: 300px;
-  gap: 40px;
 `;
 
 const LimitWrapper = styled.div`
