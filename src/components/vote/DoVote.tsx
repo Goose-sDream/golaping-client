@@ -10,7 +10,6 @@ const DoVote = () => {
   const candidatesRef = useRef<Body[]>([]);
   const currentEditBallRef = useRef<Body | null>(null); // ✅ 현재 편집 중인 원 관리
 
-  // const animationFrameRef = useRef<number | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   const [inputPosition, setInputPosition] = useState({ x: 0, y: 0 });
@@ -20,9 +19,9 @@ const DoVote = () => {
   const smallRadius = 80;
   const largeRadius = 160;
 
-  console.log("현재까지 후보들 =>", candidatesRef && candidatesRef.current);
-  console.log("현재 후보 =>", currentEditBallRef && currentEditBallRef.current);
-  console.log("inputVisible =>", inputVisible);
+  // console.log("현재까지 후보들 =>", candidatesRef && candidatesRef.current);
+  // console.log("현재 후보 =>", currentEditBallRef && currentEditBallRef.current);
+  // console.log("inputVisible =>", inputVisible);
 
   useEffect(() => {
     if (!containerRef.current) return;

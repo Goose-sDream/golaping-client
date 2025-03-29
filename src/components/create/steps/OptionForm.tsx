@@ -18,8 +18,6 @@ const OptionForm = () => {
   const userVoteLimit = Array.from({ length: 5 }, (_, i) => i + 1);
   const [hasError, setHasError] = useState<string>("");
 
-  console.log("timeOpen =>", timeOpen);
-
   useEffect(() => {
     if (timeRef && timeRef.current) {
       const handleClickOutside = (e: MouseEvent) => {
