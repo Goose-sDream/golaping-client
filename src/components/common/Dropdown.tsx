@@ -23,7 +23,7 @@ const Dropdown = ({ label, options, value, onChange, error }: DropdownProps) => 
   return (
     <Wrapper>
       {label && <Label>{label}</Label>}
-      <DropdownButton type="button" onClick={toggleDropdown} isOpen={isOpen}>
+      <DropdownButton type="button" onClick={toggleDropdown} $isOpen={isOpen}>
         {options.find((option) => option.value === value)?.label}
         <ArrowIcon style={{ transform: isOpen ? "rotate(90deg)" : "rotate(-90deg)" }} />
         {isOpen && (
@@ -60,13 +60,13 @@ const Label = styled.label`
   color: black;
 `;
 
-const DropdownButton = styled.button<{ isOpen: boolean }>`
+const DropdownButton = styled.button<{ $isOpen: boolean }>`
   width: 100%;
   padding: 18px;
   font-size: 20px;
   text-align: left;
   border: None;
-  border-radius: ${({ isOpen }) => (isOpen ? "12px 12px 0 0" : "12px")};
+  border-radius: ${({ $isOpen }) => ($isOpen ? "12px 12px 0 0" : "12px")};
   background-color: #efefef;
   cursor: pointer;
   display: flex;

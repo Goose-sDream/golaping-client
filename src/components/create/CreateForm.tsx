@@ -125,6 +125,7 @@ const FormContainer = styled.form`
   flex-direction: column;
   align-items: center;
   min-width: 300px;
+  max-width: 400px;
   width: 100%;
 `;
 

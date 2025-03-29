@@ -22,13 +22,14 @@ const OptionForm = () => {
     if (timeRef && timeRef.current) {
       const handleClickOutside = (e: MouseEvent) => {
         const isAnyOpen = timeOpen.some((t) => t);
-        const isClickOutside = timeRef.current.some((ref) => ref && !ref.contains(e.target as Node));
+        const isClickOutside = timeRef.current.every((ref) => ref && !ref.contains(e.target as Node));
         setTimeout(() => {
           if (isAnyOpen && isClickOutside) {
             setTimeOpen(Array(2).fill(false));
           }
         }, 0);
       };
+
       document.addEventListener("mousedown", handleClickOutside);
       return () => {
         document.removeEventListener("mousedown", handleClickOutside);
@@ -61,9 +62,17 @@ const OptionForm = () => {
 
   return (
     <VoteDiv>
-      <div style={{ display: "flex", flexDirection: "column", marginBottom: 30 }}>
+      <div style={{ display: "flex", flexDirection: "column", width: "100%" }}>
         <Label>타이머</Label>
-        <div style={{ display: "flex", justifyContent: "space-around", alignItems: "center", margin: "auto 0" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-around",
+            alignItems: "center",
+            margin: "auto 0",
+            width: "100%",
+          }}
+        >
           {timeOpen.map((_, idx) => (
             <Controller
               key={idx}
@@ -93,6 +102,8 @@ const OptionForm = () => {
                   style={{
                     display: "flex",
                     justifyContent: "space-around",
+                    alignItems: "center",
+                    gap: "8px",
                   }}
                 >
                   <div
@@ -110,7 +121,6 @@ const OptionForm = () => {
                       autoComplete="off"
                       $styleProps={timerInputStyleProps}
                     />
-                    <h3 style={{ fontSize: "20px", minWidth: "40px" }}>{idx > 0 ? "분" : "시간"}</h3>
 
                     {timeOpen[idx] && (
                       <div
@@ -118,11 +128,10 @@ const OptionForm = () => {
                           display: "flex",
                           alignItems: "center",
                           gap: "10px",
-
                           position: "absolute",
                           top: "50%",
                           left: "50%",
-                          transform: "translate(-75%, -50%)",
+                          transform: "translate(-50%, -50%)",
                         }}
                       >
                         <TimePicker
@@ -134,6 +143,7 @@ const OptionForm = () => {
                       </div>
                     )}
                   </div>
+                  <h3 style={{ fontSize: "20px", minWidth: "40px" }}>{idx > 0 ? "분" : "시간"}</h3>
                 </div>
               )}
             />
@@ -219,7 +229,6 @@ const VoteDiv = styled.div`
   flex-direction: column;
   align-items: center;
   width: 300px;
-  gap: 40px;
 `;
 
 const LimitWrapper = styled.div`

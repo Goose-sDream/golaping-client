@@ -9,10 +9,6 @@ import Request from "@/services/requests";
 import StorageController from "@/storage/storageController";
 import { APIResponse } from "@/types/apiTypes";
 
-// interface EnterVoteProps {
-//   setStep: Dispatch<SetStateAction<number>>;
-// }
-
 const storage = new StorageController("session");
 
 const EnterVote = () => {
@@ -40,31 +36,6 @@ const EnterVote = () => {
       alert("투표 입장에 실패했습니다.");
     }
   };
-
-  // const subscribeToMessages = () => {
-  //   if (!client || error) {
-  //     console.error("WebSocket not ready:", error || "Client not initialized");
-  //     return;
-  //   }
-
-  //   try {
-  //     client.publish({
-  //       destination: `/app/vote/connect`,
-  //     });
-  //     client.subscribe("/user/queue/initialResponse", (message: { body: string }) => {
-  //       console.log("Received: ", JSON.parse(message.body));
-  //     });
-  //     setStep(2);
-  //   } catch (error) {
-  //     console.error("Failed to subscribe to messages:", error);
-  //   }
-  // };
-
-  // useEffect(() => {
-  //   if (connected && client) {
-  //     subscribeToMessages();
-  //   }
-  // }, [connected, client]); // connected나 client가 변경될 때 실행
 
   return (
     <Wrapper onSubmit={handleSubmit(onSubmit)}>

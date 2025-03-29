@@ -1,21 +1,21 @@
+import styled from "styled-components";
 import VoteResults from "@/components/vote/VoteResults";
-import { WebSocketProvider } from "@/contexts/WebSocketContext";
 
 const ResultPage = () => {
   return (
-    <div
-      style={{
-        height: "100vh",
-        overflow: "hidden",
-        width: "100vw",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-      }}
-    >
+    <ResultContainer>
       <VoteResults />
-    </div>
+    </ResultContainer>
   );
 };
 
 export default ResultPage;
+
+const ResultContainer = styled.div`
+  height: 100vh;
+  overflow: hidden;
+  width: 100vw;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+`;

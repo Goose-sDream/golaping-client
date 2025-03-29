@@ -19,7 +19,7 @@ const Stepper = ({ currentStep, totalSteps, onPrevClick }: StepperProps) => {
       <Steps>
         {Array.from({ length: totalSteps }, (_, index) => (
           <BarWrapper key={index}>
-            <Bar isActive={index <= currentStep - 1} />
+            <Bar $isActive={index <= currentStep - 1} />
           </BarWrapper>
         ))}
       </Steps>
@@ -47,10 +47,10 @@ const BarWrapper = styled.div`
   align-items: center;
 `;
 
-const Bar = styled.div<{ isActive: boolean }>`
+const Bar = styled.div<{ $isActive: boolean }>`
   width: 130px;
   height: 4px;
-  background-color: ${({ isActive }) => (isActive ? PURPLE : LIGHTGRAY)};
+  background-color: ${({ $isActive }) => ($isActive ? PURPLE : LIGHTGRAY)};
   border-radius: 10px;
 `;
 
