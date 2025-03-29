@@ -1,6 +1,6 @@
 const Description = ({ limit, des1, des2 }: { limit: string; des1: string; des2: string }) => {
   return (
-    <p style={{ fontSize: "16px", width: "85%" }}>
+    <p style={{ fontSize: "15px", width: "85%" }}>
       <span
         style={{
           fontWeight: "bold",

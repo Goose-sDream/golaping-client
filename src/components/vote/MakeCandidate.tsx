@@ -1,7 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Engine, Render, Mouse, World, Bodies, MouseConstraint, Runner, Events, Body } from "matter-js";
+import { useNavigate } from "react-router-dom";
 import { useRecoilValue } from "recoil";
 import styled, { keyframes } from "styled-components";
+import VoteInfo from "./VoteInfo";
 import { limitState } from "@/atoms/createAtom";
 import {
   BASEGROWTHRATE,
@@ -37,8 +39,11 @@ type OptionObj = {
 };
 
 const MakeCandidate = () => {
+  const navigate = useNavigate();
   const storage = new StorageController("session");
-  const { client, prevVotes, voteUuid, connected, connectWebSocket } = useWebSocket();
+  const voteEndTime = storage.getItem("voteEndTime");
+  const { client, prevVotes, voteLimit, voteUuid, connected, connectWebSocket } = useWebSocket();
+  const [totalVoteCount, setTotalVoteCount] = useState(0);
   // const limited = storage.getItem("limited");
   const { limited } = useRecoilValue(limitState);
   console.log("limited =>", limited);
@@ -71,12 +76,14 @@ const MakeCandidate = () => {
     subscribeNewOption();
     subscribeVoted();
     subscribeError();
+    subscribeCloseVote();
   }, [connected]);
 
   useEffect(() => {
     console.log("prevVotes =>", prevVotes);
     if (prevVotes.length > 0) {
       renderPrevBalls();
+      setTotalVoteCount(prevVotes.reduce((count, item) => (item.isVotedByUser === true ? count + 1 : count), 0));
     }
   }, [prevVotes]);
 
@@ -381,6 +388,23 @@ const MakeCandidate = () => {
     }
   };
 
+  const publishCloseVote = () => {
+    console.log("publishCloseVote client.connected =>", client?.connected);
+    if (!client?.connected) {
+      console.log("websocket is not connected");
+      return;
+    }
+    try {
+      if (voteUuid) {
+        client.publish({
+          destination: "/app/vote/close",
+        });
+      }
+    } catch (error) {
+      console.error("Failed to publish a close message:", error);
+    }
+  };
+
   // 구독
   const subscribeError = () => {
     if (!client?.connected) {
@@ -420,15 +444,35 @@ const MakeCandidate = () => {
         client.subscribe(`/user/queue/vote/${voteUuid}`, (message: { body: string }) => {
           const {
             result: {
+              totalVoteCount,
               changedOption: { isVotedByUser },
             },
           } = JSON.parse(message.body);
           console.log("Received: 내가 투표한 응답 isVotedByUser=>", isVotedByUser);
           updateBallBorder(countedBall as TargetBall, isVotedByUser);
+          setTotalVoteCount(totalVoteCount);
         });
       }
     } catch (error) {
       console.error("Failed to subscribe a voted message:", error);
+    }
+  };
+
+  const subscribeCloseVote = () => {
+    if (!client?.connected) {
+      console.log("websocket is not connected");
+      return;
+    }
+    try {
+      if (voteUuid) {
+        client.subscribe(`/topic/vote/${voteUuid}/closed`, (message: { body: string }) => {
+          console.log("Received: 투표 종료 응답", JSON.parse(message.body));
+          storage.setItem("voteData", message.body);
+          navigate(`/votes/${voteUuid}/results`);
+        });
+      }
+    } catch (error) {
+      console.error("Failed to subscribe a close message:", error);
     }
   };
 
@@ -608,6 +652,10 @@ const MakeCandidate = () => {
 
   return (
     <StyledSection ref={containerRef}>
+      <HeaderSection>
+        <VoteInfo voteEndTime={voteEndTime!} voteLimit={voteLimit} totalVoteCount={totalVoteCount} />
+        <CloseButton onClick={publishCloseVote}>투표 종료</CloseButton>
+      </HeaderSection>
       {modalVisible && (
         <ModalWrapper ref={candidateModalRef}>
           <ModalContent>
@@ -645,6 +693,21 @@ const StyledSection = styled.section`
   height: 600px;
   border: 5px solid black;
   position: relative;
+`;
+
+const HeaderSection = styled.div`
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+`;
+
+const CloseButton = styled.button`
+  position: relative;
+  background-color: black;
+  color: white;
+  border-radius: 20px;
+  font-size: 24px;
 `;
 
 /* ✅ 모달 스타일 */

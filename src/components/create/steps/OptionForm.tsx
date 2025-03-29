@@ -47,25 +47,22 @@ const OptionForm = () => {
     pointerEvents: "none",
     labelDisplay: "none",
     position: "relative",
-    minHeight: "0",
   };
 
   const radioInputStyleProps = {
     flexDirection: "row",
-    fontSize: "20px",
+    fontSize: "18px",
     fontWeight: "normal",
     width: "20px",
     minHeight: "20px",
     labelMarginBottom: "0px",
     labelDisplay: "flex",
     labelAlignItems: "center",
-    justifyContent: "flex-start",
-    errMsgMarginTop: 0,
   };
 
   return (
     <VoteDiv>
-      <div style={{ display: "flex", flexDirection: "column", width: "300px", height: "150px" }}>
+      <div style={{ display: "flex", flexDirection: "column", marginBottom: 30 }}>
         <Label>타이머</Label>
         <div style={{ display: "flex", justifyContent: "space-around", alignItems: "center", margin: "auto 0" }}>
           {timeOpen.map((_, idx) => (
@@ -152,9 +149,8 @@ const OptionForm = () => {
         <div
           style={{
             display: "flex",
-            width: "100%",
+            width: "90%",
             height: "40px",
-            paddingLeft: "15px",
           }}
         >
           {limitList.map((limit, idx) => (
@@ -191,11 +187,11 @@ const OptionForm = () => {
         <div
           style={{
             display: "flex",
+            gap: "15px",
             alignItems: "center",
             height: "100px",
             width: "100%",
-            position: "relative",
-            justifyContent: "flex-end",
+            padding: "10px",
           }}
         >
           <div
@@ -204,10 +200,6 @@ const OptionForm = () => {
               height: "25px",
               borderRadius: "100%",
               backgroundColor: `${YELLOW}`,
-              position: "absolute",
-              top: "50%",
-              left: "0%",
-              transform: "translateY(-50%)",
             }}
           ></div>
           {limited == "무제한" ? (
@@ -240,7 +232,7 @@ const LimitWrapper = styled.div`
 `;
 
 const Label = styled.label`
-  font-size: 22px;
+  font-size: 20px;
   font-weight: bold;
   color: black;
 `;
@@ -249,4 +241,5 @@ const ErrorMessage = styled.p`
   font-size: 16px;
   color: red;
   text-align: center;
+  height: 20px;
 `;

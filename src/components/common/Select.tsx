@@ -58,14 +58,14 @@ const Label = styled.label`
 
 const SelectContainer = styled.div`
   position: relative;
-  width: 100%;
+  width: 90%;
 `;
 
 const StyledSelect = styled.select<{ color: string }>`
   width: 100%;
   padding: 10px 40px 10px 20px;
   border: none;
-  border-radius: 12px;
+  border-radius: 4px;
   appearance: none;
 
   font-size: 20px;

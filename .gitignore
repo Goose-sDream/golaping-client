@@ -9,8 +9,9 @@
 .eslintcache
 
 # https
-cert.pem
-key.pem
+
+localhost.pem
+localhost-key.pem
 localhost+1.pem
 localhost+1-key.pem
 
