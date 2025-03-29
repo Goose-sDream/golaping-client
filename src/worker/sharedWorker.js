@@ -1,11 +1,9 @@
-import { Client } from "@stomp/stompjs";
+/* eslint-disable no-undef */
+importScripts("https://cdn.jsdelivr.net/npm/@stomp/stompjs@7.0.0/bundles/stomp.umd.min.js");
+let client = null;
+const ports = [];
 
-const globalSelf = self as unknown as SharedWorkerGlobalScope;
-
-let client: Client | null = null;
-const ports: MessagePort[] = [];
-
-globalSelf.onconnect = (e: MessageEvent) => {
+self.onconnect = (e) => {
   const port = e.ports[0];
   ports.push(port);
   port.start();
@@ -26,10 +24,10 @@ globalSelf.onconnect = (e: MessageEvent) => {
   };
 };
 
-const connectStomp = (apiUrl: string, voteUuid: string) => {
+const connectStomp = (apiUrl, voteUuid) => {
   if (client) return;
 
-  client = new Client({
+  client = new self.StompJs.Client({
     brokerURL: `wss://${apiUrl}/ws/votes`,
     reconnectDelay: 5000,
 
@@ -60,15 +58,18 @@ const connectStomp = (apiUrl: string, voteUuid: string) => {
       broadcast({ type: "ERROR", payload: frame.headers["message"] });
     },
   });
+  console.log("STOMP client created:", client);
 
   client.activate();
 };
 
-const broadcast = (messageObj: BroadcastMsg) => {
+const broadcast = (messageObj) => {
   ports.forEach((port) => port.postMessage(messageObj));
 };
 
-export type BroadcastMsg = {
-  type: string;
-  payload?: any;
-};
+// self.onconnect = function (e) {
+//   const port = e.ports[0];
+//   port.start();
+
+//   port.postMessage({ type: "CONNECTED" });
+// };
