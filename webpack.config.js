@@ -63,6 +63,10 @@ module.exports = (webpackEnv) => {
         test: /\.css$/i,
         use: ["style-loader", "css-loader", "postcss-loader"],
       },
+      {
+        test: /sharedWorker\.ts$/,
+        use: { loader: "worker-loader", options: { inline: "no", type: "sharedWorker" } },
+      },
     ],
   };
 
