@@ -364,6 +364,7 @@ const MakeCandidate = () => {
     }
   };
 
+  // 구독
   const subscribeNewOption = () => {
     if (!client?.connected) {
       console.log("websocket is not connected");
@@ -405,7 +406,6 @@ const MakeCandidate = () => {
     }
   };
 
-  // 구독
   const subscribeError = () => {
     if (!client?.connected) {
       console.log("websocket is not connected");
@@ -437,7 +437,7 @@ const MakeCandidate = () => {
             changedOption: { optionId, voteCount },
           } = JSON.parse(message.body) as Voted;
           countedBall = candidatesRef.current.find((candidate) => candidate.ball.id === Number(optionId));
-          console.log("countedBall =>", countedBall);
+          // console.log("countedBall =>", countedBall);
           if (countedBall) renderCountedBalls(countedBall, voteCount);
         });
 

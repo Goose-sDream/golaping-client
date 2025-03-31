@@ -74,7 +74,7 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
         worker.port.close();
       };
     } else {
-      console.log("sharedWorker 실행안됌");
+      console.log("sharedWorker 실행 안 됌");
       const client = new Client({
         brokerURL: `wss://${process.env.API_URL}/ws/votes`,
         debug: (msg) => console.log(msg),
