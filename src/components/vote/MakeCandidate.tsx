@@ -18,33 +18,12 @@ import { useWebSocket } from "@/contexts/WebSocketContext";
 import StorageController from "@/storage/storageController";
 import { borderMap, optionColorMap, optionColors } from "@/styles/color";
 
-type TargetBall = { count: number; ball: Body; text: string };
-type NewBall = { coordinates: { x: number; y: number }; count: number; color: string; text: string };
-type UsedPercentage = { percentage: number; time: number; count: number };
-type Voted = {
-  isCreator?: boolean;
-  totalVoteCount?: number;
-  changedOption: {
-    optionId: string;
-    optionName: string;
-    voteCount: number;
-    voteColor: string;
-    isVotedByUser?: boolean;
-  };
-};
-
-type OptionObj = {
-  optionText: string;
-  optionColor: string;
-};
-
 const MakeCandidate = () => {
   const navigate = useNavigate();
   const storage = new StorageController("session");
   const voteEndTime = storage.getItem("voteEndTime");
   const { client, prevVotes, voteLimit, voteUuid, connected, connectWebSocket } = useWebSocket();
   const [totalVoteCount, setTotalVoteCount] = useState(0);
-  // const limited = storage.getItem("limited");
   const { limited } = useRecoilValue(limitState);
   console.log("limited =>", limited);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -73,10 +52,7 @@ const MakeCandidate = () => {
       console.log("재연결");
       connectWebSocket();
     }
-    subscribeNewOption();
-    subscribeVoted();
-    subscribeError();
-    subscribeCloseVote();
+    subscribeAll();
   }, [connected]);
 
   useEffect(() => {
@@ -102,27 +78,7 @@ const MakeCandidate = () => {
         wireframes: false,
       },
     });
-
-    // 벽 세우기
-    const walls = [
-      Bodies.rectangle(400, 0, 800, 50, {
-        isStatic: true,
-        ...(limited === "무제한" && { collisionFilter: { category: 0x0008 } }),
-      }),
-      Bodies.rectangle(400, 600, 800, 50, {
-        isStatic: true,
-        ...(limited === "무제한" && { collisionFilter: { category: 0x0008 } }),
-      }),
-      Bodies.rectangle(0, 300, 50, 600, {
-        isStatic: true,
-        ...(limited === "무제한" && { collisionFilter: { category: 0x0008 } }),
-      }),
-      Bodies.rectangle(800, 300, 50, 600, {
-        isStatic: true,
-        ...(limited === "무제한" && { collisionFilter: { category: 0x0008 } }),
-      }),
-    ];
-    World.add(world, walls);
+    World.add(world, makeWalls());
 
     if (prevVotes.length > 0) {
       renderPrevBalls();
@@ -141,71 +97,18 @@ const MakeCandidate = () => {
     // ✅ 빈 공간을 클릭하면 모달 표시 + 클릭 위치 저장
     Events.on(mouseConstraint, "mousedown", (event) => {
       const { mouse } = event.source;
-      const clickX = mouse.position.x;
-      const clickY = mouse.position.y;
-
-      // 기존 원과 겹치는지 확인
-      const overlapInfo = candidatesRef.current.reduce<{ isOverLapping: boolean; targetId: number | null }>(
-        (acc, cur, i) => {
-          const dx = clickX - cur.ball.position.x;
-          const dy = clickY - cur.ball.position.y;
-          if (Math.sqrt(dx * dx + dy * dy) < BASERADIUS) {
-            acc.isOverLapping = true;
-            acc.targetId = i;
-          }
-          return acc;
-        },
-        { isOverLapping: false, targetId: null }
-      );
-
-      const { isOverLapping, targetId } = overlapInfo;
-      if (!isOverLapping || targetId === null) {
-        setPendingPosition({ x: clickX, y: clickY });
-        setModalVisible(true);
-      } else {
-        // 원 클릭하면
-        const targetBall = candidatesRef.current[targetId];
-        // updateCount(targetBall);
-        publishVoteCount(targetBall);
-        subscribeVoted();
-      }
+      checkOverLapping(mouse.position.x, mouse.position.y, makeOrVote);
     });
 
     // ✅ 마우스가 벽을 벗어나면 드래그 중지
     Events.on(mouseConstraint, "mousemove", (event) => {
-      const { mouse } = event.source;
-      const { x, y } = mouse.position;
-      // 벽 안쪽 범위 (조정 가능)
-      const minX = 50,
-        maxX = 750;
-      const minY = 50,
-        maxY = 550;
-      if (x < minX || x > maxX || y < minY || y > maxY) {
-        if (mouseConstraint.constraint.bodyB) {
-          mouseConstraint.constraint.bodyB = null; // 드래그 해제
-        }
-        mouseConstraint.mouse.button = -1; // 마우스 버튼 해제 상태로 변경
-      }
+      handleMouseConstraints(mouseConstraint, event);
     });
 
     // ✅ Matter.js의 afterRender를 활용하여 원 위에 텍스트를 지속적으로 업데이트
     // Matter.js는 본래 물리 객체들만 그리는데, 현재 각 원에 텍스트를 추가하고 싶기에 afterRender로 따로 관리해줘야
     Events.on(render, "afterRender", () => {
-      if (!renderRef.current) return;
-      const context = renderRef.current.context;
-
-      context.font = "16px Arial";
-      context.fillStyle = "black";
-      context.textAlign = "center";
-      context.textBaseline = "middle";
-
-      candidatesRef.current.forEach((candidate) => {
-        const text = candidate.text || "";
-        const count = candidate.count.toString();
-        if (text) {
-          context.fillText(`${text} [ ${count} ]`, candidate.ball.position.x, candidate.ball.position.y);
-        }
-      });
+      handleFillText();
     });
 
     Runner.run(runner, engine);
@@ -218,6 +121,75 @@ const MakeCandidate = () => {
       render.canvas.remove();
     };
   }, [client]);
+
+  const makeWalls = () => {
+    const rentangleInfo = [
+      [400, 0, 800, 20],
+      [400, 600, 800, 20],
+      [0, 300, 20, 600],
+      [800, 300, 20, 600],
+    ];
+    const makeSingleWall = (x: number, y: number, width: number, height: number) => {
+      return Bodies.rectangle(x, y, width, height, {
+        isStatic: true,
+        ...(limited === "무제한" && { collisionFilter: { category: 0x0008 } }),
+      });
+    };
+    return rentangleInfo.map((info) => {
+      const [x, y, width, height] = info;
+      return makeSingleWall(x, y, width, height);
+    });
+  };
+
+  const checkOverLapping = (
+    clickX: number,
+    clickY: number,
+    callback: (clickX: number, clickY: number, isOverLapping: boolean, targetId: number | null) => void
+  ) => {
+    // 기존 원과 겹치는지 확인
+    const overlapInfo = candidatesRef.current.reduce<{ isOverLapping: boolean; targetId: number | null }>(
+      (acc, cur, i) => {
+        const dx = clickX - cur.ball.position.x;
+        const dy = clickY - cur.ball.position.y;
+        if (Math.sqrt(dx * dx + dy * dy) < BASERADIUS) {
+          acc.isOverLapping = true;
+          acc.targetId = i;
+        }
+        return acc;
+      },
+      { isOverLapping: false, targetId: null }
+    );
+    callback(clickX, clickY, overlapInfo.isOverLapping, overlapInfo.targetId);
+    return overlapInfo;
+  };
+
+  const makeOrVote = (clickX: number, clickY: number, isOverLapping: boolean, targetId: number | null) => {
+    if (!isOverLapping || targetId === null) {
+      setPendingPosition({ x: clickX, y: clickY });
+      setModalVisible(true);
+    } else {
+      // 원 클릭하면
+      const targetBall = candidatesRef.current[targetId];
+      publishVoteCount(targetBall);
+      subscribeVoted();
+    }
+  };
+
+  const handleMouseConstraints = (mouseConstraint: MouseConstraint, event: Matter.IMouseEvent<MouseConstraint>) => {
+    const { mouse } = event.source;
+    const { x, y } = mouse.position;
+    // 벽 안쪽 범위 (조정 가능)
+    const minX = 50,
+      maxX = 750;
+    const minY = 50,
+      maxY = 550;
+    if (x < minX || x > maxX || y < minY || y > maxY) {
+      if (mouseConstraint.constraint.bodyB) {
+        mouseConstraint.constraint.bodyB = null; // 드래그 해제
+      }
+      mouseConstraint.mouse.button = -1; // 마우스 버튼 해제 상태로 변경
+    }
+  };
 
   const makeNewBall = (newBallObj: NewBall, ballId: number, Bordered: boolean) => {
     console.log("생성");
@@ -249,6 +221,24 @@ const MakeCandidate = () => {
 
     candidatesRef.current.push({ count, ball: newBall, text: text });
     return newBall;
+  };
+
+  const handleFillText = () => {
+    if (!renderRef.current) return;
+    const context = renderRef.current.context;
+
+    context.font = "16px Arial";
+    context.fillStyle = "black";
+    context.textAlign = "center";
+    context.textBaseline = "middle";
+
+    candidatesRef.current.forEach((candidate) => {
+      const text = candidate.text || "";
+      const count = candidate.count.toString();
+      if (text) {
+        context.fillText(`${text} [ ${count} ]`, candidate.ball.position.x, candidate.ball.position.y);
+      }
+    });
   };
 
   // prevBalls
@@ -298,7 +288,7 @@ const MakeCandidate = () => {
     updateZoom();
   };
 
-  // ✅ newBall + send
+  // 웹소켓 요청
   // 웹소켓으로 생성할 때마다 요청 보내야 함
   const makeNewOption = (e: React.FormEvent) => {
     e.preventDefault();
@@ -365,6 +355,13 @@ const MakeCandidate = () => {
   };
 
   // 구독
+  const subscribeAll = () => {
+    subscribeNewOption();
+    subscribeVoted();
+    subscribeError();
+    subscribeCloseVote();
+  };
+
   const subscribeNewOption = () => {
     if (!client?.connected) {
       console.log("websocket is not connected");
@@ -679,6 +676,26 @@ const MakeCandidate = () => {
 
 export default MakeCandidate;
 
+type TargetBall = { count: number; ball: Body; text: string };
+type NewBall = { coordinates: { x: number; y: number }; count: number; color: string; text: string };
+type UsedPercentage = { percentage: number; time: number; count: number };
+type Voted = {
+  isCreator?: boolean;
+  totalVoteCount?: number;
+  changedOption: {
+    optionId: string;
+    optionName: string;
+    voteCount: number;
+    voteColor: string;
+    isVotedByUser?: boolean;
+  };
+};
+
+type OptionObj = {
+  optionText: string;
+  optionColor: string;
+};
+
 const shake = keyframes`
   0% { transform: rotate(0deg); }
   20% { transform: rotate(-5deg); }
@@ -696,6 +713,9 @@ const StyledSection = styled.section`
 `;
 
 const HeaderSection = styled.div`
+  width: 100%;
+  position: absolute;
+  top: 0;
   display: flex;
   flex-direction: row;
   justify-content: space-between;

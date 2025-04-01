@@ -13,7 +13,7 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
   const [error, setError] = useState<string | null>(null);
   const [voteUuid, setVoteUuid] = useState<string | null>(null);
   const clientRef = useRef<Client | null>(null);
-  const workerRef = useRef<SharedWorker | null>(null);
+  // const workerRef = useRef<SharedWorker | null>(null);
 
   const initializeWebSocket = () => {
     if (isVoteExpired()) {
@@ -30,83 +30,84 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
 
     setVoteUuid(storedVoteUuid); // Set voteUuid state
 
-    const isSharedWorkerSupported = typeof SharedWorker !== "undefined";
+    // const isSharedWorkerSupported = typeof SharedWorker !== "undefined";
 
-    if (isSharedWorkerSupported) {
-      console.log("sharedWorker 실행");
-      const worker = new SharedWorker(new URL("../worker/sharedWorker.js", import.meta.url), { type: "module" });
-      worker.port.start();
+    // if (isSharedWorkerSupported) {
+    //   console.log("sharedWorker 실행");
+    //   const worker = new SharedWorker(new URL("../worker/sharedWorker.js", import.meta.url), { type: "module" });
+    //   worker.port.start();
 
-      worker.port.postMessage({
-        type: "INIT",
-        payload: {
-          apiUrl: process.env.API_URL,
-          voteUuid: storedVoteUuid,
-        },
-      });
+    //   worker.port.postMessage({
+    //     type: "INIT",
+    //     payload: {
+    //       apiUrl: process.env.API_URL,
+    //       voteUuid: storedVoteUuid,
+    //     },
+    //   });
 
-      worker.port.onmessage = (e) => {
-        const { type, payload } = e.data as BroadcastMsg;
+    //   worker.port.onmessage = (e) => {
+    //     const { type, payload } = e.data as BroadcastMsg;
 
-        switch (type) {
-          case "CONNECTED":
-            setConnected(true);
-            setError(null);
-            setStep(2);
-            console.log("CONNECTED Message received from worker");
-            break;
-          case "DISCONNECTED":
-            setConnected(false);
-            break;
-          case "VOTE_DATA":
-            setPrevVotes(payload.previousVotes);
-            setVoteLimit(payload.voteLimit);
-            break;
-          case "ERROR":
-            setError(payload);
-            break;
-        }
-      };
+    //     switch (type) {
+    //       case "CONNECTED":
+    //         setConnected(true);
+    //         setError(null);
+    //         setStep(2);
+    //         console.log("CONNECTED Message received from worker");
+    //         break;
+    //       case "DISCONNECTED":
+    //         setConnected(false);
+    //         break;
+    //       case "VOTE_DATA":
+    //         setPrevVotes(payload.previousVotes);
+    //         setVoteLimit(payload.voteLimit);
+    //         break;
+    //       case "ERROR":
+    //         setError(payload);
+    //         break;
+    //     }
+    //   };
 
-      workerRef.current = worker;
+    //   workerRef.current = worker;
 
-      return () => {
-        worker.port.close();
-      };
-    } else {
-      console.log("sharedWorker 실행 안 됌");
-      const client = new Client({
-        brokerURL: `wss://${process.env.API_URL}/ws/votes`,
-        debug: (msg) => console.log(msg),
-        reconnectDelay: 500000000,
-        onConnect: () => {
-          console.log("WebSocket connected successfully");
-          subscribeWebsocket(client);
-          setStep(2);
-          setConnected(true);
-          setError(null);
-          clientRef.current = client;
-        },
-        onWebSocketClose: () => {
-          console.log("WebSocket closed");
-          setConnected(false);
-        },
-        onStompError: (frame) => {
-          console.error("STOMP Error:", frame);
-          setError(`STOMP Error: ${frame.headers?.message || "Unknown error"}`);
-        },
-      });
+    //   return () => {
+    //     worker.port.close();
+    //   };
+    // } else {
+    console.log("sharedWorker 실행 안 됌");
+    const client = new Client({
+      brokerURL: `wss://${process.env.API_URL}/ws/votes`,
+      debug: (msg) => console.log(msg),
+      reconnectDelay: 500000000,
+      onConnect: () => {
+        console.log("WebSocket 연결 완!");
+        console.log("voteUuid (세션스토리지)", storage.getItem("voteUuid"));
+        subscribeWebsocket(client);
+        setStep(2);
+        setConnected(true);
+        setError(null);
+        clientRef.current = client;
+      },
+      onWebSocketClose: () => {
+        console.log("WebSocket closed");
+        setConnected(false);
+      },
+      onStompError: (frame) => {
+        console.error("STOMP Error:", frame);
+        setError(`STOMP Error: ${frame.headers?.message || "Unknown error"}`);
+      },
+    });
 
-      console.log("activating client", client);
+    console.log("activating client", client);
 
-      try {
-        client.activate();
-      } catch (error) {
-        console.error("WebSocket activation failed:", error);
-        setError("Failed to initialize WebSocket");
-      }
+    try {
+      client.activate();
+    } catch (error) {
+      console.error("WebSocket activation failed:", error);
+      setError("Failed to initialize WebSocket");
     }
   };
+  // };
 
   useEffect(() => {
     initializeWebSocket();
