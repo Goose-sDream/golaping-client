@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Engine, Render, Mouse, World, Bodies, MouseConstraint, Runner, Events, Body } from "matter-js";
 import { useNavigate } from "react-router-dom";
-import { useRecoilValue } from "recoil";
+import { useRecoilState } from "recoil";
 import styled, { keyframes } from "styled-components";
 import VoteInfo from "./VoteInfo";
 import { limitState } from "@/atoms/createAtom";
@@ -16,15 +16,16 @@ import {
 } from "@/constants/vote";
 import { useWebSocket } from "@/contexts/WebSocketContext";
 import StorageController from "@/storage/storageController";
-import { borderMap, optionColorMap, optionColors } from "@/styles/color";
+import { borderMap, optionColorMap, optionColors, PURPLE } from "@/styles/color";
 
 const MakeCandidate = () => {
   const navigate = useNavigate();
   const storage = new StorageController("session");
   const voteEndTime = storage.getItem("voteEndTime");
-  const { client, prevVotes, voteLimit, voteUuid, connected, connectWebSocket } = useWebSocket();
+  const { client, prevVotes, voteLimit, voteUuid, connected, connectWebSocket, workerRef, registerListener } =
+    useWebSocket();
   const [totalVoteCount, setTotalVoteCount] = useState(0);
-  const { limited } = useRecoilValue(limitState);
+  const [{ limited }] = useRecoilState(limitState);
   console.log("limited =>", limited);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const engineRef = useRef(Engine.create());
@@ -48,6 +49,7 @@ const MakeCandidate = () => {
   useEffect(() => {
     console.log("connected =>", connected);
     console.log("client.connected =>", client?.connected);
+    console.log("voteLimit =>", voteLimit);
     if (!connected) {
       console.log("재연결");
       connectWebSocket();
@@ -132,6 +134,11 @@ const MakeCandidate = () => {
     const makeSingleWall = (x: number, y: number, width: number, height: number) => {
       return Bodies.rectangle(x, y, width, height, {
         isStatic: true,
+        render: {
+          fillStyle: PURPLE, // 빨간색
+          strokeStyle: PURPLE, // 테두리 색 (선택)
+          lineWidth: 2, // 테두리 두께 (선택)
+        },
         ...(limited === "무제한" && { collisionFilter: { category: 0x0008 } }),
       });
     };
@@ -317,40 +324,77 @@ const MakeCandidate = () => {
     updateZoom();
   };
 
+  // 투표 publish
+  const sendMessageToWorker = (type: string, destination: string, body?: any) => {
+    if (workerRef?.current) {
+      workerRef?.current.port.postMessage({
+        type,
+        payload: {
+          destination,
+          body,
+        },
+      });
+    }
+  };
+
   const sendNewOption = (optionObj: OptionObj) => {
     console.log("sendNewOption client.connected =>", client?.connected);
-    if (!client?.connected) {
-      console.log("websocket is not connected");
-      return;
-    }
+    // if (!client?.connected) {
+    //   console.log("websocket is not connected");
+    //   return;
+    // }
     try {
-      client.publish({
-        destination: "/app/vote/addOption",
-        body: JSON.stringify(optionObj),
-      });
+      // client.publish({
+      //   destination: "/app/vote/addOption",
+      //   body: JSON.stringify(optionObj),
+      // });
+      if (workerRef?.current) {
+        sendMessageToWorker("SEND", "/app/vote/addOption", optionObj);
+      } else if (client?.connected) {
+        client.publish({
+          destination: "/app/vote/addOption",
+          body: JSON.stringify(optionObj),
+        });
+      }
     } catch (error) {
       console.error("Failed to send a new message:", error);
     }
   };
 
   const publishVoteCount = (targetBall: TargetBall) => {
-    console.log("publishVoteCount client.connected =>", client?.connected);
-    if (!client?.connected) {
-      console.log("websocket is not connected So reconnect");
-      return;
-    }
     const targetOption = {
       optionId: targetBall.ball.id,
     };
+
     try {
-      if (voteUuid) {
-        client.publish({
-          destination: "/app/vote",
-          body: JSON.stringify(targetOption),
-        });
+      if (workerRef?.current) {
+        sendMessageToWorker("VOTE", "/app/vote", targetOption);
+      } else if (client?.connected) {
+        if (voteUuid) {
+          client.publish({
+            destination: "/app/vote",
+            body: JSON.stringify(targetOption),
+          });
+        }
       }
     } catch (error) {
       console.error("Failed to subscribe a new message:", error);
+    }
+  };
+
+  const publishVoteClose = () => {
+    try {
+      if (workerRef?.current) {
+        sendMessageToWorker("CLOSE", "/app/vote/close");
+      } else if (client?.connected) {
+        if (voteUuid) {
+          client.publish({
+            destination: "/app/vote/close",
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Failed to publish a close message:", error);
     }
   };
 
@@ -358,70 +402,54 @@ const MakeCandidate = () => {
   const subscribeAll = () => {
     subscribeNewOption();
     subscribeVoted();
-    subscribeError();
     subscribeCloseVote();
+    subscribeError();
   };
 
   const subscribeNewOption = () => {
-    if (!client?.connected) {
-      console.log("websocket is not connected");
-      return;
-    }
     try {
-      if (voteUuid) {
-        client.subscribe(`/topic/vote/${voteUuid}/addOption`, (message: { body: string }) => {
-          console.log("Received: 추가한 뒤 응답", JSON.parse(message.body));
-          const { optionId, optionName, voteColor } = JSON.parse(message.body);
-          const newBall = {
-            coordinates: pendingPosition ?? getRandomCoordinates(),
-            color: voteColor,
-            count: 0,
-            text: optionName,
-          };
-          makeNewBall(newBall, optionId, false);
+      if (workerRef?.current) {
+        registerListener("onNewOption", (payload: RecievedMsg) => {
+          commonSubscribeNewOption(payload);
         });
+      } else if (client?.connected) {
+        if (voteUuid) {
+          client.subscribe(`/topic/vote/${voteUuid}/addOption`, (message: { body: string }) => {
+            console.log("Received: 추가한 뒤 응답", JSON.parse(message.body));
+            commonSubscribeNewOption(JSON.parse(message.body));
+          });
+        }
       }
     } catch (error) {
       console.error("Failed to subscribe a new message:", error);
     }
   };
 
-  const publishCloseVote = () => {
-    console.log("publishCloseVote client.connected =>", client?.connected);
-    if (!client?.connected) {
-      console.log("websocket is not connected");
-      return;
-    }
-    try {
-      if (voteUuid) {
-        client.publish({
-          destination: "/app/vote/close",
-        });
-      }
-    } catch (error) {
-      console.error("Failed to publish a close message:", error);
-    }
+  const commonSubscribeNewOption = (payload: RecievedMsg) => {
+    const { optionId, optionName, voteColor } = payload;
+    const newBall = {
+      coordinates: pendingPosition ?? getRandomCoordinates(),
+      color: voteColor,
+      count: 0,
+      text: optionName,
+    };
+    makeNewBall(newBall, optionId, false);
   };
 
-  const subscribeError = () => {
-    if (!client?.connected) {
-      console.log("websocket is not connected");
-      return;
-    }
-    client.subscribe(`/user/queue/errors`, (message: { body: string }) => {
-      console.log("message =>", message);
-      console.log("Received: 투표한 뒤 에러", JSON.parse(message.body));
-    });
-  };
-
+  // 투표 카운트 구독
   const subscribeVoted = () => {
-    if (!client?.connected) {
-      console.log("websocket is not connected");
-      return;
-    }
-    try {
+    let countedBall: TargetBall | undefined;
+    if (workerRef?.current) {
+      registerListener("onSomeoneVoted", (payload: Voted) => {
+        countedBall = commonSubscribeSomeoneVote(payload, countedBall);
+        console.log("1 countedBall =>", countedBall);
+      });
+      registerListener("onMyVoteResult", (payload: Omit<Voted, "isCreator">) => {
+        console.log("2 countedBall =>", countedBall);
+        commonSubscribeMyVote(payload, countedBall);
+      });
+    } else if (client?.connected) {
       if (voteUuid) {
-        let countedBall: TargetBall | undefined;
         client.subscribe(`/topic/vote/${voteUuid}`, (message: { body: string }) => {
           console.log("message =>", message);
           console.log("Received: 투표한 뒤 응답", JSON.parse(message.body));
@@ -430,49 +458,116 @@ const MakeCandidate = () => {
           //   totalVoteCount,
           //   changedOption: { optionId, optionName, voteCount, voteColor, isVotedByUser },
           // } = JSON.parse(message.body) as Voted; // 서진님 참고하세여 서버에서 오는 남은 카운트
-          const {
-            changedOption: { optionId, voteCount },
-          } = JSON.parse(message.body) as Voted;
-          countedBall = candidatesRef.current.find((candidate) => candidate.ball.id === Number(optionId));
-          // console.log("countedBall =>", countedBall);
-          if (countedBall) renderCountedBalls(countedBall, voteCount);
+          commonSubscribeSomeoneVote(JSON.parse(message.body), countedBall);
         });
-
         client.subscribe(`/user/queue/vote/${voteUuid}`, (message: { body: string }) => {
-          const {
-            result: {
-              totalVoteCount,
-              changedOption: { isVotedByUser },
-            },
-          } = JSON.parse(message.body);
-          console.log("Received: 내가 투표한 응답 isVotedByUser=>", isVotedByUser);
-          updateBallBorder(countedBall as TargetBall, isVotedByUser);
-          setTotalVoteCount(totalVoteCount);
+          commonSubscribeMyVote(JSON.parse(message.body), countedBall);
+          // const {
+          //   // result: {
+          //   totalVoteCount,
+          //   changedOption: { isVotedByUser },
+          //   // },
+          // } = JSON.parse(message.body);
+          // console.log("Received: 내가 투표한 응답 isVotedByUser=>", isVotedByUser);
+          // updateBallBorder(countedBall as TargetBall, isVotedByUser);
+          // setTotalVoteCount(totalVoteCount);
         });
       }
+    }
+    try {
+      // if (voteUuid) {
+      //   let countedBall: TargetBall | undefined;
+      //   client.subscribe(`/topic/vote/${voteUuid}`, (message: { body: string }) => {
+      //     console.log("message =>", message);
+      //     console.log("Received: 투표한 뒤 응답", JSON.parse(message.body));
+      //     // const {
+      //     //   isCreator,
+      //     //   totalVoteCount,
+      //     //   changedOption: { optionId, optionName, voteCount, voteColor, isVotedByUser },
+      //     // } = JSON.parse(message.body) as Voted; // 서진님 참고하세여 서버에서 오는 남은 카운트
+      //     const {
+      //       changedOption: { optionId, voteCount },
+      //     } = JSON.parse(message.body) as Voted;
+      //     countedBall = candidatesRef.current.find((candidate) => candidate.ball.id === Number(optionId));
+      //     // console.log("countedBall =>", countedBall);
+      //     if (countedBall) renderCountedBalls(countedBall, voteCount);
+      //   });
+      // client.subscribe(`/user/queue/vote/${voteUuid}`, (message: { body: string }) => {
+      //   const {
+      //     // result: {
+      //     totalVoteCount,
+      //     changedOption: { isVotedByUser },
+      //     // },
+      //   } = JSON.parse(message.body);
+      //   console.log("Received: 내가 투표한 응답 isVotedByUser=>", isVotedByUser);
+      //   updateBallBorder(countedBall as TargetBall, isVotedByUser);
+      //   setTotalVoteCount(totalVoteCount);
+      // });
     } catch (error) {
       console.error("Failed to subscribe a voted message:", error);
     }
   };
 
+  const commonSubscribeSomeoneVote = (payload: Voted, countedBall: TargetBall | undefined) => {
+    const {
+      changedOption: { optionId, voteCount },
+    } = payload;
+    countedBall = candidatesRef.current.find((candidate) => candidate.ball.id === Number(optionId));
+    if (countedBall) renderCountedBalls(countedBall, voteCount);
+    return countedBall;
+  };
+
+  const commonSubscribeMyVote = (payload: any, countedBall: TargetBall | undefined) => {
+    const {
+      result: {
+        totalVoteCount,
+        changedOption: { isVotedByUser },
+      },
+    } = payload;
+    console.log("Received: 내가 투표한 응답 isVotedByUser=>", isVotedByUser);
+    updateBallBorder(countedBall as TargetBall, isVotedByUser ?? false);
+    setTotalVoteCount(totalVoteCount);
+  };
+
   const subscribeCloseVote = () => {
-    if (!client?.connected) {
-      console.log("websocket is not connected");
-      return;
-    }
     try {
-      if (voteUuid) {
-        client.subscribe(`/topic/vote/${voteUuid}/closed`, (message: { body: string }) => {
-          console.log("Received: 투표 종료 응답", JSON.parse(message.body));
-          storage.setItem("voteData", message.body);
-          navigate(`/votes/${voteUuid}/results`);
+      if (workerRef?.current) {
+        registerListener("onVoteClosed", (payload: any) => {
+          commonSubscribeVoteClose(payload);
         });
+      } else if (client?.connected) {
+        if (voteUuid) {
+          client.subscribe(`/topic/vote/${voteUuid}/closed`, (message: { body: string }) => {
+            console.log("Received: 투표 종료 응답", JSON.parse(message.body));
+            commonSubscribeVoteClose(message.body);
+          });
+        }
       }
     } catch (error) {
       console.error("Failed to subscribe a close message:", error);
     }
   };
 
+  const commonSubscribeVoteClose = (payload: any) => {
+    storage.setItem("voteData", payload);
+    navigate(`/votes/${voteUuid}/results`);
+  };
+
+  const subscribeError = () => {
+    if (workerRef?.current) {
+      registerListener("onVoteError", (payload: any) => {
+        console.error("에러 수신:", payload);
+        setError("투표 중 문제가 발생했어요.");
+      });
+    } else if (client?.connected) {
+      client.subscribe(`/user/queue/errors`, (message: { body: string }) => {
+        console.log("message =>", message);
+        console.log("Received: 투표한 뒤 에러", JSON.parse(message.body));
+      });
+    }
+  };
+
+  // 투표 UI
   const updateCount = (ball: Body, voteCount: number) => {
     candidatesRef.current.map((candidate) => {
       if (candidate.ball.id === ball.id) {
@@ -511,32 +606,32 @@ const MakeCandidate = () => {
 
   const updateBallBorder = (targetBall: TargetBall, isVotedByUser: boolean) => {
     const { ball } = targetBall;
-    console.log("업데이트 보더");
+    console.log("업데이트 보더", "targetBall =>", targetBall, "isVotedByUser =>", isVotedByUser);
     const selectedBall = storage.getItem(`${voteUuid}`);
     const parsedBalls: number[] = selectedBall ? JSON.parse(selectedBall) : [];
-    // if (limited === "제한") {
-    if (isVotedByUser) {
-      // 투표 시
-      updateBorder(ball, isVotedByUser);
-      parsedBalls.push(ball.id);
-      storage.setItem(`${voteUuid}`, JSON.stringify([...new Set(parsedBalls)]));
-    } else {
-      // 투표 해제 시
-      updateBorder(ball, isVotedByUser);
-      const renewedBalls = parsedBalls.filter((id: number) => id !== ball.id);
-      storage.setItem(`${voteUuid}`, JSON.stringify(renewedBalls));
-    }
-    // } else {
-    // 무제한일 때
-    if (isVotedByUser) {
-      if (!parsedBalls.some((id: number) => id === ball.id)) {
-        // 새로 투표하는 애면
-        ball.render.lineWidth = 8;
-        ball.render.strokeStyle = chooseBorderColor(ball) || "black";
+    if (limited === "제한") {
+      if (isVotedByUser) {
+        // 투표 시
+        updateBorder(ball, isVotedByUser);
         parsedBalls.push(ball.id);
         storage.setItem(`${voteUuid}`, JSON.stringify([...new Set(parsedBalls)]));
+      } else {
+        // 투표 해제 시
+        updateBorder(ball, isVotedByUser);
+        const renewedBalls = parsedBalls.filter((id: number) => id !== ball.id);
+        storage.setItem(`${voteUuid}`, JSON.stringify(renewedBalls));
       }
-      // }
+    } else {
+      // 무제한일 때
+      if (isVotedByUser) {
+        if (!parsedBalls.some((id: number) => id === ball.id)) {
+          // 새로 투표하는 애면
+          ball.render.lineWidth = 8;
+          ball.render.strokeStyle = chooseBorderColor(ball) || "black";
+          parsedBalls.push(ball.id);
+          storage.setItem(`${voteUuid}`, JSON.stringify([...new Set(parsedBalls)]));
+        }
+      }
     }
   };
 
@@ -651,7 +746,7 @@ const MakeCandidate = () => {
     <StyledSection ref={containerRef}>
       <HeaderSection>
         <VoteInfo voteEndTime={voteEndTime!} voteLimit={voteLimit} totalVoteCount={totalVoteCount} />
-        <CloseButton onClick={publishCloseVote}>투표 종료</CloseButton>
+        <CloseButton onClick={publishVoteClose}>투표 종료</CloseButton>
       </HeaderSection>
       {modalVisible && (
         <ModalWrapper ref={candidateModalRef}>
@@ -676,12 +771,18 @@ const MakeCandidate = () => {
 
 export default MakeCandidate;
 
+type RecievedMsg = {
+  optionId: number;
+  optionName: string;
+  voteColor: string;
+};
+
 type TargetBall = { count: number; ball: Body; text: string };
 type NewBall = { coordinates: { x: number; y: number }; count: number; color: string; text: string };
 type UsedPercentage = { percentage: number; time: number; count: number };
 type Voted = {
-  isCreator?: boolean;
-  totalVoteCount?: number;
+  isCreator: boolean;
+  totalVoteCount: number;
   changedOption: {
     optionId: string;
     optionName: string;

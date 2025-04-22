@@ -2,6 +2,9 @@
 importScripts("https://cdn.jsdelivr.net/npm/@stomp/stompjs@7.0.0/bundles/stomp.umd.min.js");
 let client = null;
 const ports = [];
+let isConnected = false;
+
+console.log("[SharedWorker] New instance created!", Date.now());
 
 self.onconnect = (e) => {
   const port = e.ports[0];
@@ -10,16 +13,40 @@ self.onconnect = (e) => {
 
   port.onmessage = (e) => {
     const { type, payload } = e.data;
-
-    if (type === "INIT") {
-      connectStomp(payload.apiUrl, payload.voteUuid);
-    }
-
-    if (type === "SEND") {
-      client?.publish({
-        destination: payload.destination,
-        body: JSON.stringify(payload.body),
-      });
+    console.log("[Worker] Received message:", type, payload);
+    switch (type) {
+      case "INIT":
+        connectStomp(payload.apiUrl, payload.voteUuid);
+        break;
+      case "SEND":
+        if (!isConnected) {
+          console.log("WebSocket not connected yet, dropping message");
+          return;
+        }
+        client?.publish({
+          destination: payload.destination,
+          body: JSON.stringify(payload.body),
+        });
+        break;
+      case "VOTE":
+        if (!isConnected) {
+          console.log("WebSocket not connected yet, dropping message");
+          return;
+        }
+        client.publish({
+          destination: payload.destination,
+          body: JSON.stringify(payload.body),
+        });
+        break;
+      case "CLOSE":
+        if (!isConnected) {
+          console.log("WebSocket not connected yet, dropping message");
+          return;
+        }
+        client.publish({
+          destination: payload.destination,
+        });
+        break;
     }
   };
 };
@@ -32,20 +59,61 @@ const connectStomp = (apiUrl, voteUuid) => {
     reconnectDelay: 5000,
 
     onConnect: () => {
+      isConnected = true;
+      console.log("first");
+
       broadcast({ type: "CONNECTED" });
 
-      client?.subscribe(`user/queue/${voteUuid}/initialResponse`, (message) => {
+      console.log("voteUuid =>", voteUuid);
+
+      // ✅ 서버에 연결 알림
+      client?.publish({
+        destination: `/app/vote/connect`,
+      });
+      // ✅ 1. 초기 투표 데이터 구독
+      client?.subscribe(`/user/queue/${voteUuid}/initialResponse`, (message) => {
         const body = JSON.parse(message.body);
+        console.log("초기데이터 body =>", body);
         broadcast({
-          type: "VOTE_DATA",
+          type: "INITIAL_RESPONSE",
           payload: {
             previousVotes: body.previousVotes,
             voteLimit: body.voteLimit,
           },
         });
       });
-      client?.publish({
-        destination: `app/vote/connect`,
+
+      // ✅ 2. 새 옵션 추가 이벤트 구독
+      client?.subscribe(`/topic/vote/${voteUuid}/addOption`, (message) => {
+        const body = JSON.parse(message.body);
+        broadcast({
+          type: "NEW_OPTION_RECEIVED",
+          payload: body,
+        });
+      });
+
+      // 3. 누가 투표했을 때
+      client?.subscribe(`/topic/vote/${voteUuid}`, (message) => {
+        const body = JSON.parse(message.body);
+        broadcast({ type: "SOMEONE_VOTED", payload: body });
+      });
+
+      // 4. 내가 투표했을 때 결과
+      client?.subscribe(`/user/queue/vote/${voteUuid}`, (message) => {
+        const body = JSON.parse(message.body);
+        broadcast({ type: "MY_VOTE_RESULT", payload: body });
+      });
+
+      // 5. 에러 응답
+      client?.subscribe(`/user/queue/errors`, (message) => {
+        const body = JSON.parse(message.body);
+        broadcast({ type: "VOTE_ERROR", payload: body });
+      });
+
+      // 6. 투표 종료
+      client?.subscribe(`/topic/vote/${voteUuid}/closed`, (message) => {
+        const body = JSON.parse(message.body);
+        broadcast({ type: "VOTE_CLOSED", payload: body });
       });
     },
 
