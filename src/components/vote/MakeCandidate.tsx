@@ -58,14 +58,6 @@ const MakeCandidate = () => {
   }, [connected]);
 
   useEffect(() => {
-    console.log("prevVotes =>", prevVotes);
-    if (prevVotes.length > 0) {
-      renderPrevBalls();
-      setTotalVoteCount(prevVotes.reduce((count, item) => (item.isVotedByUser === true ? count + 1 : count), 0));
-    }
-  }, [prevVotes]);
-
-  useEffect(() => {
     if (!containerRef.current) return;
 
     const engine = engineRef.current;
@@ -81,10 +73,6 @@ const MakeCandidate = () => {
       },
     });
     World.add(world, makeWalls());
-
-    if (prevVotes.length > 0) {
-      renderPrevBalls();
-    }
 
     renderRef.current = render;
     const mouse = Mouse.create(render.canvas);
@@ -116,13 +104,26 @@ const MakeCandidate = () => {
     Runner.run(runner, engine);
     Render.run(render);
 
+    const afterUpdateHandler = () => {
+      if (prevVotes.length > 0) {
+        console.log("afterUpdate 타이밍, prevVotes 렌더 시작");
+        renderPrevBalls();
+        setTotalVoteCount(prevVotes.reduce((count, item) => (item.isVotedByUser ? count + 1 : count), 0));
+      }
+      // ✅ 딱 한 번만 실행하고, 핸들러 등록 해제
+      Events.off(engine, "afterUpdate", afterUpdateHandler);
+    };
+
+    Events.on(engine, "afterUpdate", afterUpdateHandler);
+
     return () => {
       Render.stop(render);
       Runner.stop(runner);
       Engine.clear(engine);
       render.canvas.remove();
+      Events.off(engine, "afterUpdate", afterUpdateHandler);
     };
-  }, [client]);
+  }, [client, prevVotes]);
 
   const makeWalls = () => {
     const rentangleInfo = [
@@ -132,6 +133,7 @@ const MakeCandidate = () => {
       [800, 300, 20, 600],
     ];
     const makeSingleWall = (x: number, y: number, width: number, height: number) => {
+      console.log("limiteddddd =>", limited);
       return Bodies.rectangle(x, y, width, height, {
         isStatic: true,
         render: {
@@ -199,7 +201,6 @@ const MakeCandidate = () => {
   };
 
   const makeNewBall = (newBallObj: NewBall, ballId: number, Bordered: boolean) => {
-    console.log("생성");
     const {
       coordinates: { x, y },
       count,
@@ -209,18 +210,19 @@ const MakeCandidate = () => {
     const newBall = Bodies.circle(x, y, BASERADIUS, {
       restitution: 0.8,
       frictionAir: 0.02,
+      // isStatic: limited === "무제한",
       render: {
         fillStyle: color,
         lineWidth: Bordered ? 8 : 0,
         strokeStyle: Bordered ? chooseBorderColor(color) || "black" : "",
       },
-      ...(limited === "무제한" && {
-        // 움직일 수 없게
-        collisionFilter: {
-          category: 0x0002, // 사용자 정의 원 카테고리 설정
-          mask: 0x0002 | 0x0008, // 다른 물체들(벽)과 충돌 가능
-        },
-      }),
+      // ...(limited === "무제한" && {
+      // 움직일 수 없게
+      collisionFilter: {
+        category: 0x0002, // 사용자 정의 원 카테고리 설정
+        mask: 0x0002 | 0x0008, // 다른 물체들(벽)과 충돌 가능
+      },
+      // }),
     });
     if (ballId) newBall.id = ballId;
     // console.log("newBall =>", newBall);
@@ -442,10 +444,8 @@ const MakeCandidate = () => {
     if (workerRef?.current) {
       registerListener("onSomeoneVoted", (payload: Voted) => {
         countedBall = commonSubscribeSomeoneVote(payload, countedBall);
-        console.log("1 countedBall =>", countedBall);
       });
       registerListener("onMyVoteResult", (payload: Omit<Voted, "isCreator">) => {
-        console.log("2 countedBall =>", countedBall);
         commonSubscribeMyVote(payload, countedBall);
       });
     } else if (client?.connected) {
@@ -453,24 +453,10 @@ const MakeCandidate = () => {
         client.subscribe(`/topic/vote/${voteUuid}`, (message: { body: string }) => {
           console.log("message =>", message);
           console.log("Received: 투표한 뒤 응답", JSON.parse(message.body));
-          // const {
-          //   isCreator,
-          //   totalVoteCount,
-          //   changedOption: { optionId, optionName, voteCount, voteColor, isVotedByUser },
-          // } = JSON.parse(message.body) as Voted; // 서진님 참고하세여 서버에서 오는 남은 카운트
           commonSubscribeSomeoneVote(JSON.parse(message.body), countedBall);
         });
         client.subscribe(`/user/queue/vote/${voteUuid}`, (message: { body: string }) => {
           commonSubscribeMyVote(JSON.parse(message.body), countedBall);
-          // const {
-          //   // result: {
-          //   totalVoteCount,
-          //   changedOption: { isVotedByUser },
-          //   // },
-          // } = JSON.parse(message.body);
-          // console.log("Received: 내가 투표한 응답 isVotedByUser=>", isVotedByUser);
-          // updateBallBorder(countedBall as TargetBall, isVotedByUser);
-          // setTotalVoteCount(totalVoteCount);
         });
       }
     }
@@ -525,7 +511,7 @@ const MakeCandidate = () => {
       },
     } = payload;
     console.log("Received: 내가 투표한 응답 isVotedByUser=>", isVotedByUser);
-    updateBallBorder(countedBall as TargetBall, isVotedByUser ?? false);
+    if (countedBall) updateBallBorder(countedBall as TargetBall, isVotedByUser ?? false);
     setTotalVoteCount(totalVoteCount);
   };
 
@@ -610,14 +596,13 @@ const MakeCandidate = () => {
     const selectedBall = storage.getItem(`${voteUuid}`);
     const parsedBalls: number[] = selectedBall ? JSON.parse(selectedBall) : [];
     if (limited === "제한") {
+      updateBorder(ball, isVotedByUser);
       if (isVotedByUser) {
         // 투표 시
-        updateBorder(ball, isVotedByUser);
         parsedBalls.push(ball.id);
         storage.setItem(`${voteUuid}`, JSON.stringify([...new Set(parsedBalls)]));
       } else {
         // 투표 해제 시
-        updateBorder(ball, isVotedByUser);
         const renewedBalls = parsedBalls.filter((id: number) => id !== ball.id);
         storage.setItem(`${voteUuid}`, JSON.stringify(renewedBalls));
       }

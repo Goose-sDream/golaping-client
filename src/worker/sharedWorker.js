@@ -60,7 +60,6 @@ const connectStomp = (apiUrl, voteUuid) => {
 
     onConnect: () => {
       isConnected = true;
-      console.log("first");
 
       broadcast({ type: "CONNECTED" });
 

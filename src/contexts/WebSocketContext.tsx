@@ -34,7 +34,8 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
 
     setVoteUuid(storedVoteUuid); // Set voteUuid state
 
-    const isSharedWorkerSupported = typeof SharedWorker !== "undefined";
+    // const isSharedWorkerSupported = typeof SharedWorker !== "undefined";
+    const isSharedWorkerSupported = false;
 
     if (isSharedWorkerSupported) {
       console.log("sharedWorker 실행");
@@ -158,9 +159,6 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
   };
 
   const subscribeWebsocket = (client: Client) => {
-    if (workerRef.current) {
-      // registerListener("INITIAL_RESPONSE")
-    }
     const storedVoteUuid = storage.getItem("voteUuid");
     client.publish({
       destination: `/app/vote/connect`,
@@ -168,15 +166,11 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
     client.subscribe(`/user/queue/${storedVoteUuid}/initialResponse`, (message: { body: string }) => {
       console.log("Received: 프로바이더 내부에서 ", JSON.parse(message.body));
       const received = JSON.parse(message.body).previousVotes;
-      // console.log("received =>", received);
       setPrevVotes([...received]);
       setVoteLimit(JSON.parse(message.body).voteLimit);
+      setLimited((prev) => ({ ...prev, limited: received.voteLimit ? "제한" : "무제한" }));
     });
   };
-
-  // const commonSubscribeInitialRes = (payload: ) => {
-
-  // }
 
   const registerListener = <T extends keyof typeof listenersRef.current>(type: T, fn: (payload: any) => void) => {
     listenersRef.current[type] = fn;
