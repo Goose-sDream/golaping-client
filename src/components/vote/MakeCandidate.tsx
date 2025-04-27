@@ -1,10 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Engine, Render, Mouse, World, Bodies, MouseConstraint, Runner, Events, Body } from "matter-js";
 import { useNavigate } from "react-router-dom";
-import { useRecoilState } from "recoil";
 import styled, { keyframes } from "styled-components";
 import VoteInfo from "./VoteInfo";
-import { limitState } from "@/atoms/createAtom";
 import {
   BASEGROWTHRATE,
   BASERADIUS,
@@ -25,8 +23,6 @@ const MakeCandidate = () => {
   const { client, prevVotes, voteLimit, voteUuid, connected, connectWebSocket, workerRef, registerListener } =
     useWebSocket();
   const [totalVoteCount, setTotalVoteCount] = useState(0);
-  const [{ limited }] = useRecoilState(limitState);
-  console.log("limited =>", limited);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const engineRef = useRef(Engine.create());
   const world = engineRef.current.world;
@@ -45,17 +41,20 @@ const MakeCandidate = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const isAnimating = useRef(false);
   const [error, setError] = useState<string | null>(null);
-
+  console.log("voteLimit =>", voteLimit);
   useEffect(() => {
     console.log("connected =>", connected);
     console.log("client.connected =>", client?.connected);
-    console.log("voteLimit =>", voteLimit);
+
     if (!connected) {
       console.log("재연결");
       connectWebSocket();
     }
-    subscribeAll();
-  }, [connected]);
+    if (workerRef?.current && connected && containerRef.current) {
+      console.log("[SAFE] subscribeAll 호출!");
+      subscribeAll();
+    }
+  }, [workerRef?.current, connected, containerRef.current]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -133,7 +132,7 @@ const MakeCandidate = () => {
       [800, 300, 20, 600],
     ];
     const makeSingleWall = (x: number, y: number, width: number, height: number) => {
-      console.log("limiteddddd =>", limited);
+      console.log("voteLimit =>", voteLimit);
       return Bodies.rectangle(x, y, width, height, {
         isStatic: true,
         render: {
@@ -141,7 +140,11 @@ const MakeCandidate = () => {
           strokeStyle: PURPLE, // 테두리 색 (선택)
           lineWidth: 2, // 테두리 두께 (선택)
         },
-        ...(limited === "무제한" && { collisionFilter: { category: 0x0008 } }),
+        collisionFilter: {
+          category: 0x0008, // ✅ 벽은 무조건 0x0008
+          mask: 0x0001 | 0x0002, // ✅ Ball 제한/무제한 둘 다와 충돌 가능
+        },
+        // ...(voteLimit === null && { collisionFilter: { category: 0x0008 } }),
       });
     };
     return rentangleInfo.map((info) => {
@@ -200,29 +203,31 @@ const MakeCandidate = () => {
     }
   };
 
-  const makeNewBall = (newBallObj: NewBall, ballId: number, Bordered: boolean) => {
+  const makeNewBall = (newBallObj: NewBall, ballId: number, Bordered: boolean, isLimited: boolean) => {
     const {
       coordinates: { x, y },
       count,
       color,
       text,
     } = newBallObj;
+
+    // const isLimited = voteLimit !== null;
+    console.log("에? =>", voteLimit);
+    console.log("isLimited =>", isLimited);
+
     const newBall = Bodies.circle(x, y, BASERADIUS, {
       restitution: 0.8,
       frictionAir: 0.02,
-      // isStatic: limited === "무제한",
+      // isStatic: isLimited,
       render: {
         fillStyle: color,
         lineWidth: Bordered ? 8 : 0,
         strokeStyle: Bordered ? chooseBorderColor(color) || "black" : "",
       },
-      // ...(limited === "무제한" && {
-      // 움직일 수 없게
       collisionFilter: {
-        category: 0x0002, // 사용자 정의 원 카테고리 설정
-        mask: 0x0002 | 0x0008, // 다른 물체들(벽)과 충돌 가능
+        category: isLimited ? 0x0001 : 0x0002, // ✅ 제한이면 드래그 가능 (0x0001), 무제한이면 드래그 불가 (0x0002)
+        mask: 0x0001 | 0x0002 | 0x0008, // ✅ 마우스+벽 충돌 허용
       },
-      // }),
     });
     if (ballId) newBall.id = ballId;
     // console.log("newBall =>", newBall);
@@ -255,9 +260,15 @@ const MakeCandidate = () => {
     if (!containerRef.current) return { x: 0, y: 0 };
     const boxWidth = containerRef.current.clientWidth;
     const boxTop = containerRef.current.clientHeight;
-    const x = Math.floor(Math.random() * boxWidth);
-    const y = Math.floor(Math.random() * boxTop);
+    const margin = BASERADIUS; // 공 반지름만큼 여유
+
+    const x = Math.random() * (boxWidth - margin * 2) + margin;
+    const y = Math.random() * (boxTop - margin * 2) + margin;
+
     return { x, y };
+    // const x = Math.floor(Math.random() * boxWidth);
+    // const y = Math.floor(Math.random() * boxTop);
+    // return { x, y };
   };
 
   const organizeBalls = () => {
@@ -276,7 +287,8 @@ const MakeCandidate = () => {
             text: prev.optionName,
           },
           prev.optionId,
-          alreadyBordered
+          alreadyBordered,
+          voteLimit !== null
         );
       }
     });
@@ -435,60 +447,32 @@ const MakeCandidate = () => {
       count: 0,
       text: optionName,
     };
-    makeNewBall(newBall, optionId, false);
+    makeNewBall(newBall, optionId, false, voteLimit !== null);
   };
 
   // 투표 카운트 구독
   const subscribeVoted = () => {
-    let countedBall: TargetBall | undefined;
-    if (workerRef?.current) {
-      registerListener("onSomeoneVoted", (payload: Voted) => {
-        countedBall = commonSubscribeSomeoneVote(payload, countedBall);
-      });
-      registerListener("onMyVoteResult", (payload: Omit<Voted, "isCreator">) => {
-        commonSubscribeMyVote(payload, countedBall);
-      });
-    } else if (client?.connected) {
-      if (voteUuid) {
-        client.subscribe(`/topic/vote/${voteUuid}`, (message: { body: string }) => {
-          console.log("message =>", message);
-          console.log("Received: 투표한 뒤 응답", JSON.parse(message.body));
-          commonSubscribeSomeoneVote(JSON.parse(message.body), countedBall);
-        });
-        client.subscribe(`/user/queue/vote/${voteUuid}`, (message: { body: string }) => {
-          commonSubscribeMyVote(JSON.parse(message.body), countedBall);
-        });
-      }
-    }
     try {
-      // if (voteUuid) {
-      //   let countedBall: TargetBall | undefined;
-      //   client.subscribe(`/topic/vote/${voteUuid}`, (message: { body: string }) => {
-      //     console.log("message =>", message);
-      //     console.log("Received: 투표한 뒤 응답", JSON.parse(message.body));
-      //     // const {
-      //     //   isCreator,
-      //     //   totalVoteCount,
-      //     //   changedOption: { optionId, optionName, voteCount, voteColor, isVotedByUser },
-      //     // } = JSON.parse(message.body) as Voted; // 서진님 참고하세여 서버에서 오는 남은 카운트
-      //     const {
-      //       changedOption: { optionId, voteCount },
-      //     } = JSON.parse(message.body) as Voted;
-      //     countedBall = candidatesRef.current.find((candidate) => candidate.ball.id === Number(optionId));
-      //     // console.log("countedBall =>", countedBall);
-      //     if (countedBall) renderCountedBalls(countedBall, voteCount);
-      //   });
-      // client.subscribe(`/user/queue/vote/${voteUuid}`, (message: { body: string }) => {
-      //   const {
-      //     // result: {
-      //     totalVoteCount,
-      //     changedOption: { isVotedByUser },
-      //     // },
-      //   } = JSON.parse(message.body);
-      //   console.log("Received: 내가 투표한 응답 isVotedByUser=>", isVotedByUser);
-      //   updateBallBorder(countedBall as TargetBall, isVotedByUser);
-      //   setTotalVoteCount(totalVoteCount);
-      // });
+      let countedBall: TargetBall | undefined;
+      if (workerRef?.current) {
+        registerListener("onSomeoneVoted", (payload: Voted) => {
+          countedBall = commonSubscribeSomeoneVote(payload, countedBall);
+        });
+        registerListener("onMyVoteResult", (payload: Omit<Voted, "isCreator">) => {
+          commonSubscribeMyVote(payload, countedBall);
+        });
+      } else if (client?.connected) {
+        if (voteUuid) {
+          client.subscribe(`/topic/vote/${voteUuid}`, (message: { body: string }) => {
+            console.log("message =>", message);
+            console.log("Received: 투표한 뒤 응답", JSON.parse(message.body));
+            commonSubscribeSomeoneVote(JSON.parse(message.body), countedBall);
+          });
+          client.subscribe(`/user/queue/vote/${voteUuid}`, (message: { body: string }) => {
+            commonSubscribeMyVote(JSON.parse(message.body), countedBall);
+          });
+        }
+      }
     } catch (error) {
       console.error("Failed to subscribe a voted message:", error);
     }
@@ -595,7 +579,7 @@ const MakeCandidate = () => {
     console.log("업데이트 보더", "targetBall =>", targetBall, "isVotedByUser =>", isVotedByUser);
     const selectedBall = storage.getItem(`${voteUuid}`);
     const parsedBalls: number[] = selectedBall ? JSON.parse(selectedBall) : [];
-    if (limited === "제한") {
+    if (voteLimit !== null) {
       updateBorder(ball, isVotedByUser);
       if (isVotedByUser) {
         // 투표 시

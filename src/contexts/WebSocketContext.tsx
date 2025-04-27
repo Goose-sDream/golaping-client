@@ -1,7 +1,5 @@
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { Client } from "@stomp/stompjs";
-import { useRecoilState } from "recoil";
-import { limitState } from "@/atoms/createAtom";
 import StorageController from "@/storage/storageController";
 import { isVoteExpired } from "@/utils/sessionUtils";
 
@@ -11,7 +9,6 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
   const [step, setStep] = useState(0);
   const [prevVotes, setPrevVotes] = useState<PrevVotes[]>([]);
   const [voteLimit, setVoteLimit] = useState<number | null>(null);
-  const [, setLimited] = useRecoilState(limitState);
   const [connected, setConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [voteUuid, setVoteUuid] = useState<string | null>(null);
@@ -34,8 +31,8 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
 
     setVoteUuid(storedVoteUuid); // Set voteUuid state
 
-    // const isSharedWorkerSupported = typeof SharedWorker !== "undefined";
-    const isSharedWorkerSupported = false;
+    const isSharedWorkerSupported = typeof SharedWorker !== "undefined";
+    // const isSharedWorkerSupported = false;
 
     if (isSharedWorkerSupported) {
       console.log("sharedWorker 실행");
@@ -67,7 +64,7 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
             setPrevVotes(payload.previousVotes);
             console.log("payload.voteLimit =>", payload.voteLimit);
             setVoteLimit(payload.voteLimit);
-            setLimited((prev) => ({ ...prev, limited: payload.voteLimit ? "제한" : "무제한" }));
+            // setLimited((prev) => ({ ...prev, limited: payload.voteLimit ? "제한" : "무제한" }));
             break;
           case "ERROR":
             setError(payload);
@@ -165,10 +162,9 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
     });
     client.subscribe(`/user/queue/${storedVoteUuid}/initialResponse`, (message: { body: string }) => {
       console.log("Received: 프로바이더 내부에서 ", JSON.parse(message.body));
-      const received = JSON.parse(message.body).previousVotes;
-      setPrevVotes([...received]);
+      const payload = JSON.parse(message.body);
+      setPrevVotes([...payload.previousVotes]);
       setVoteLimit(JSON.parse(message.body).voteLimit);
-      setLimited((prev) => ({ ...prev, limited: received.voteLimit ? "제한" : "무제한" }));
     });
   };
 
