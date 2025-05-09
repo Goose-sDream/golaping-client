@@ -128,8 +128,6 @@ const MakeCandidate = () => {
 
       // ✅ 빈 공간을 클릭하면 모달 표시 + 클릭 위치 저장
       Events.on(mouseConstraint, "mousedown", (event) => {
-        console.log("잡은 대상 =>", mouseConstraint.constraint.bodyB);
-
         const { mouse } = event.source;
         checkOverLapping(mouse.position.x, mouse.position.y, makeOrVote);
       });
@@ -342,12 +340,14 @@ const MakeCandidate = () => {
   const organizeBalls = (payload: InitialResponse) => {
     const { previousVotes: prevVotes, voteLimit } = payload;
     if (!candidatesRef.current) return;
-    console.log("prevVotes =>", prevVotes);
     const selectedBall = storage.getItem(`${voteUuid}`);
+    console.log("selectedBall =>", selectedBall);
     const parsedBalls = selectedBall ? JSON.parse(selectedBall) : [];
+    console.log("parsedBalls =>", parsedBalls);
     prevVotes.forEach((prev) => {
       if (!candidatesRef.current.some((candidate) => candidate.ball.id === prev.optionId)) {
         const alreadyBordered = parsedBalls.some((id: number) => id === prev.optionId);
+        console.log("alreadyBordered =>", alreadyBordered);
         makeNewBall(
           {
             coordinates: getRandomCoordinates(),
@@ -526,20 +526,19 @@ const MakeCandidate = () => {
       let countedBall: TargetBall | undefined;
       if (workerRef?.current) {
         registerListener("onSomeoneVoted", (payload: Voted) => {
-          countedBall = commonSubscribeSomeoneVote(payload, countedBall);
+          countedBall = commonSubscribeSomeoneVote(payload);
         });
         registerListener("onMyVoteResult", (payload: Omit<Voted, "isCreator">) => {
-          commonSubscribeMyVote(payload, countedBall);
+          if (countedBall) commonSubscribeMyVote(payload, countedBall);
         });
       } else if (client?.connected) {
         if (voteUuid) {
           client.subscribe(`/topic/vote/${voteUuid}`, (message: { body: string }) => {
-            console.log("message =>", message);
             console.log("Received: 투표한 뒤 응답", JSON.parse(message.body));
-            commonSubscribeSomeoneVote(JSON.parse(message.body), countedBall);
+            countedBall = commonSubscribeSomeoneVote(JSON.parse(message.body));
           });
           client.subscribe(`/user/queue/vote/${voteUuid}`, (message: { body: string }) => {
-            commonSubscribeMyVote(JSON.parse(message.body), countedBall);
+            if (countedBall) commonSubscribeMyVote(JSON.parse(message.body), countedBall);
           });
         }
       }
@@ -548,11 +547,11 @@ const MakeCandidate = () => {
     }
   };
 
-  const commonSubscribeSomeoneVote = (payload: Voted, countedBall: TargetBall | undefined) => {
+  const commonSubscribeSomeoneVote = (payload: Voted) => {
     const {
       changedOption: { optionId, voteCount },
     } = payload;
-    countedBall = candidatesRef.current.find((candidate) => candidate.ball.id === Number(optionId));
+    const countedBall = candidatesRef.current.find((candidate) => candidate.ball.id === Number(optionId));
     if (countedBall) renderCountedBalls(countedBall, voteCount);
     return countedBall;
   };
@@ -564,8 +563,8 @@ const MakeCandidate = () => {
         changedOption: { isVotedByUser },
       },
     } = payload;
-    console.log("Received: 내가 투표한 응답 isVotedByUser=>", isVotedByUser);
-    if (countedBall) updateBallBorder(countedBall as TargetBall, isVotedByUser ?? false);
+    console.log("Received: 내가 투표한 응답의 isVotedByUser=>", isVotedByUser, countedBall);
+    updateBallBorder(countedBall as TargetBall, isVotedByUser ?? false);
     setTotalVoteCount(totalVoteCount);
   };
 
@@ -645,14 +644,16 @@ const MakeCandidate = () => {
   };
 
   const updateBallBorder = (targetBall: TargetBall, isVotedByUser: boolean) => {
+    console.log("아니 실행조차 안된다고?");
     const { ball } = targetBall;
-    console.log("업데이트 보더", "targetBall =>", targetBall, "isVotedByUser =>", isVotedByUser);
+    console.log("업데이트 보더", "voteLimit =>", voteLimit);
     const selectedBall = storage.getItem(`${voteUuid}`);
     const parsedBalls: number[] = selectedBall ? JSON.parse(selectedBall) : [];
     if (voteLimit !== null) {
       updateBorder(ball, isVotedByUser);
       if (isVotedByUser) {
         // 투표 시
+        console.log("들어오나요");
         parsedBalls.push(ball.id);
         storage.setItem(`${voteUuid}`, JSON.stringify([...new Set(parsedBalls)]));
       } else {
