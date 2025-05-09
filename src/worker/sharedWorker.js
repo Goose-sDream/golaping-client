@@ -133,10 +133,3 @@ const connectStomp = (apiUrl, voteUuid) => {
 const broadcast = (messageObj) => {
   ports.forEach((port) => port.postMessage(messageObj));
 };
-
-// self.onconnect = function (e) {
-//   const port = e.ports[0];
-//   port.start();
-
-//   port.postMessage({ type: "CONNECTED" });
-// };

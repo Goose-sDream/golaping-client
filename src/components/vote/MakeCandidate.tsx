@@ -12,7 +12,7 @@ import {
   SHRINKTERM,
   SHRINKTHRESHOLD,
 } from "@/constants/vote";
-import { useWebSocket } from "@/contexts/WebSocketContext";
+import { InitialResponse, useWebSocket } from "@/contexts/WebSocketContext";
 import StorageController from "@/storage/storageController";
 import { borderMap, optionColorMap, optionColors, PURPLE } from "@/styles/color";
 
@@ -20,13 +20,14 @@ const MakeCandidate = () => {
   const navigate = useNavigate();
   const storage = new StorageController("session");
   const voteEndTime = storage.getItem("voteEndTime");
-  const { client, prevVotes, voteLimit, voteUuid, connected, connectWebSocket, workerRef, registerListener } =
-    useWebSocket();
-  const [totalVoteCount, setTotalVoteCount] = useState(0);
+  const { client, voteLimit, voteUuid, connected, connectWebSocket, workerRef, registerListener } = useWebSocket();
+
+  const afterUpdateHandlerRef = useRef<((e: Matter.IEvent<Engine>) => void) | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const engineRef = useRef(Engine.create());
   const world = engineRef.current.world;
   const renderRef = useRef<Render | null>(null);
+  const runnerRef = useRef<Runner | null>(null);
   const candidatesRef = useRef<TargetBall[]>([]);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const mouseConstraintRef = useRef<MouseConstraint | null>(null);
@@ -37,12 +38,14 @@ const MakeCandidate = () => {
   });
   const usedColorRef = useRef<string[]>([]);
 
+  const [totalVoteCount, setTotalVoteCount] = useState(0);
   const [pendingPosition, setPendingPosition] = useState<{ x: number; y: number } | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const isAnimating = useRef(false);
   const [error, setError] = useState<string | null>(null);
-  console.log("voteLimit =>", voteLimit);
+
   useEffect(() => {
+    if (workerRef?.current) return;
     console.log("connected =>", connected);
     console.log("client.connected =>", client?.connected);
 
@@ -50,13 +53,40 @@ const MakeCandidate = () => {
       console.log("재연결");
       connectWebSocket();
     }
-    if (workerRef?.current && connected && containerRef.current) {
-      console.log("[SAFE] subscribeAll 호출!");
-      subscribeAll();
-    }
-  }, [workerRef?.current, connected, containerRef.current]);
+  }, [connected]);
+
+  // useEffect(() => {
+  //   if (!workerRef?.current) return;
+  //   // sharedWorker 사용 시
+  //   console.log("connected =>", connected);
+  //   console.log("client.connected =>", client?.connected);
+  //   if (!connected) {
+  //     console.log("재연결");
+  //     connectWebSocket();
+  //   }
+
+  //   if (workerRef?.current && connected && containerRef.current) {
+  //     console.log("[SAFE] subscribeAll 호출!");
+  //     subscribeAll();
+  //   }
+  // }, [workerRef?.current, connected, containerRef.current]);
 
   useEffect(() => {
+    registerListener("initialResponse", (payload: InitialResponse) => {
+      console.log("voteLimit 받아왔고, 이제 matterJS + subscribeAll 시작!");
+      setMatterJs(payload);
+      subscribeAll(payload.voteLimit); // ✅ 이 타이밍에 실행
+    });
+
+    return () => {
+      if (runnerRef.current) {
+        cleanupMatterJsEngine(runnerRef.current);
+      }
+    };
+  }, []);
+
+  const setMatterJs = (initialResponse: InitialResponse) => {
+    console.log("재실행?");
     if (!containerRef.current) return;
 
     const engine = engineRef.current;
@@ -71,58 +101,90 @@ const MakeCandidate = () => {
         wireframes: false,
       },
     });
-    World.add(world, makeWalls());
 
+    runnerRef.current = runner;
     renderRef.current = render;
-    const mouse = Mouse.create(render.canvas);
-    const mouseConstraint = MouseConstraint.create(engine, {
-      mouse,
-      constraint: { stiffness: 0.02, damping: 0.1, render: { visible: false } },
-    });
 
-    World.add(world, mouseConstraint);
-    mouseConstraintRef.current = mouseConstraint;
-
-    // ✅ 빈 공간을 클릭하면 모달 표시 + 클릭 위치 저장
-    Events.on(mouseConstraint, "mousedown", (event) => {
-      const { mouse } = event.source;
-      checkOverLapping(mouse.position.x, mouse.position.y, makeOrVote);
-    });
-
-    // ✅ 마우스가 벽을 벗어나면 드래그 중지
-    Events.on(mouseConstraint, "mousemove", (event) => {
-      handleMouseConstraints(mouseConstraint, event);
-    });
-
-    // ✅ Matter.js의 afterRender를 활용하여 원 위에 텍스트를 지속적으로 업데이트
-    // Matter.js는 본래 물리 객체들만 그리는데, 현재 각 원에 텍스트를 추가하고 싶기에 afterRender로 따로 관리해줘야
-    Events.on(render, "afterRender", () => {
-      handleFillText();
-    });
-
-    Runner.run(runner, engine);
-    Render.run(render);
-
-    const afterUpdateHandler = () => {
-      if (prevVotes.length > 0) {
-        console.log("afterUpdate 타이밍, prevVotes 렌더 시작");
-        renderPrevBalls();
-        setTotalVoteCount(prevVotes.reduce((count, item) => (item.isVotedByUser ? count + 1 : count), 0));
-      }
-      // ✅ 딱 한 번만 실행하고, 핸들러 등록 해제
-      Events.off(engine, "afterUpdate", afterUpdateHandler);
-    };
-
-    Events.on(engine, "afterUpdate", afterUpdateHandler);
+    initMatterJsEngine(initialResponse);
 
     return () => {
-      Render.stop(render);
-      Runner.stop(runner);
-      Engine.clear(engine);
-      render.canvas.remove();
-      Events.off(engine, "afterUpdate", afterUpdateHandler);
+      cleanupMatterJsEngine(runner);
     };
-  }, [client, prevVotes]);
+  };
+
+  const initMatterJsEngine = (payload: InitialResponse) => {
+    const { previousVotes } = payload;
+    if (renderRef.current && runnerRef.current) {
+      World.add(world, makeWalls());
+
+      const mouse = Mouse.create(renderRef.current.canvas);
+      const mouseConstraint = MouseConstraint.create(engineRef.current, {
+        mouse,
+        constraint: { stiffness: 0.02, damping: 0.1, render: { visible: false } },
+      });
+
+      World.add(world, mouseConstraint);
+      mouseConstraintRef.current = mouseConstraint;
+
+      // ✅ 빈 공간을 클릭하면 모달 표시 + 클릭 위치 저장
+      Events.on(mouseConstraint, "mousedown", (event) => {
+        console.log("잡은 대상 =>", mouseConstraint.constraint.bodyB);
+
+        const { mouse } = event.source;
+        checkOverLapping(mouse.position.x, mouse.position.y, makeOrVote);
+      });
+
+      // ✅ 마우스가 벽을 벗어나면 드래그 중지
+      Events.on(mouseConstraint, "mousemove", (event) => {
+        handleMouseConstraints(mouseConstraint, event);
+      });
+
+      // ✅ Matter.js의 afterRender를 활용하여 원 위에 텍스트를 지속적으로 업데이트
+      // Matter.js는 본래 물리 객체들만 그리는데, 현재 각 원에 텍스트를 추가하고 싶기에 afterRender로 따로 관리해줘야
+      Events.on(renderRef.current, "afterRender", () => {
+        handleFillText();
+      });
+
+      Runner.run(runnerRef.current, engineRef.current);
+      Render.run(renderRef.current);
+      afterUpdateHandler(payload);
+
+      afterUpdateHandlerRef.current = () => {
+        renderPrevBalls(payload);
+        setTotalVoteCount(previousVotes.reduce((count, item) => (item.isVotedByUser ? count + 1 : count), 0));
+        Events.off(engineRef.current, "afterUpdate", afterUpdateHandlerRef.current!);
+      };
+
+      Events.on(engineRef.current, "afterUpdate", afterUpdateHandlerRef.current!);
+    }
+  };
+
+  const afterUpdateHandler = (payload: InitialResponse) => {
+    const { previousVotes } = payload;
+    if (previousVotes.length > 0) {
+      console.log("afterUpdate 타이밍, prevVotes 렌더 시작");
+      renderPrevBalls(payload);
+      setTotalVoteCount(previousVotes.reduce((count, item) => (item.isVotedByUser ? count + 1 : count), 0));
+    }
+    // ✅ 딱 한 번만 실행하고, 핸들러 등록 해제
+    Events.off(engineRef.current, "afterUpdate", afterUpdateHandler);
+  };
+
+  const cleanupMatterJsEngine = (runner: Runner) => {
+    if (renderRef.current) {
+      Render.stop(renderRef.current);
+      renderRef.current.canvas.remove();
+      renderRef.current.textures = {};
+    }
+
+    if (engineRef.current) {
+      Runner.stop(runner ?? Runner.create()); // 혹시라도 runner 참조가 없다면
+      Engine.clear(engineRef.current);
+    }
+
+    // 이벤트 해제
+    Events.off(engineRef.current, "afterUpdate"); // 핸들러 직접 넘기지 않아도 전체 해제 가능
+  };
 
   const makeWalls = () => {
     const rentangleInfo = [
@@ -131,25 +193,26 @@ const MakeCandidate = () => {
       [0, 300, 20, 600],
       [800, 300, 20, 600],
     ];
-    const makeSingleWall = (x: number, y: number, width: number, height: number) => {
-      console.log("voteLimit =>", voteLimit);
-      return Bodies.rectangle(x, y, width, height, {
-        isStatic: true,
-        render: {
-          fillStyle: PURPLE, // 빨간색
-          strokeStyle: PURPLE, // 테두리 색 (선택)
-          lineWidth: 2, // 테두리 두께 (선택)
-        },
-        collisionFilter: {
-          category: 0x0008, // ✅ 벽은 무조건 0x0008
-          mask: 0x0001 | 0x0002, // ✅ Ball 제한/무제한 둘 다와 충돌 가능
-        },
-        // ...(voteLimit === null && { collisionFilter: { category: 0x0008 } }),
-      });
-    };
+
     return rentangleInfo.map((info) => {
       const [x, y, width, height] = info;
       return makeSingleWall(x, y, width, height);
+    });
+  };
+
+  const makeSingleWall = (x: number, y: number, width: number, height: number) => {
+    return Bodies.rectangle(x, y, width, height, {
+      isStatic: true,
+      render: {
+        fillStyle: PURPLE, // 빨간색
+        strokeStyle: PURPLE, // 테두리 색 (선택)
+        lineWidth: 2, // 테두리 두께 (선택)
+      },
+      collisionFilter: {
+        category: 0x0008, // ✅ 벽은 무조건 0x0008
+        mask: 0x0001 | 0x0002, // ✅ Ball 제한/무제한 둘 다와 충돌 가능
+      },
+      // ...(!isLimited && { collisionFilter: { category: 0x0008 } }),
     });
   };
 
@@ -211,14 +274,14 @@ const MakeCandidate = () => {
       text,
     } = newBallObj;
 
-    // const isLimited = voteLimit !== null;
-    console.log("에? =>", voteLimit);
     console.log("isLimited =>", isLimited);
 
     const newBall = Bodies.circle(x, y, BASERADIUS, {
       restitution: 0.8,
-      frictionAir: 0.02,
-      // isStatic: isLimited,
+      // isStatic: isLimited ? false : true,
+      // frictionAir: isLimited ? 0.02 : 1, // ✅ 제한이면 공기저항 크게
+      // inertia: isLimited ? undefined : Infinity, // ✅ 제한이면 회전 불가
+      // mass: isLimited ? 1 : 1000, // ✅ 제한이면 무겁게
       render: {
         fillStyle: color,
         lineWidth: Bordered ? 8 : 0,
@@ -226,12 +289,20 @@ const MakeCandidate = () => {
       },
       collisionFilter: {
         category: isLimited ? 0x0001 : 0x0002, // ✅ 제한이면 드래그 가능 (0x0001), 무제한이면 드래그 불가 (0x0002)
-        mask: 0x0001 | 0x0002 | 0x0008, // ✅ 마우스+벽 충돌 허용
+        mask: isLimited ? 0x0001 | 0x0008 : 0x0002 | 0x0008, // ✅  충돌 허용
       },
+      // ...(!isLimited && {
+      //   // 움직일 수 없게
+      //   collisionFilter: {
+      //     category: 0x0002, // 사용자 정의 원 카테고리 설정
+      //     mask: 0x0002 | 0x0008, // 다른 물체들(벽)과 충돌 가능
+      //   },
+      // }),
     });
     if (ballId) newBall.id = ballId;
     // console.log("newBall =>", newBall);
     World.add(world, newBall);
+    console.log("만들어지는 공의 category", newBall.collisionFilter);
 
     candidatesRef.current.push({ count, ball: newBall, text: text });
     return newBall;
@@ -266,12 +337,10 @@ const MakeCandidate = () => {
     const y = Math.random() * (boxTop - margin * 2) + margin;
 
     return { x, y };
-    // const x = Math.floor(Math.random() * boxWidth);
-    // const y = Math.floor(Math.random() * boxTop);
-    // return { x, y };
   };
 
-  const organizeBalls = () => {
+  const organizeBalls = (payload: InitialResponse) => {
+    const { previousVotes: prevVotes, voteLimit } = payload;
     if (!candidatesRef.current) return;
     console.log("prevVotes =>", prevVotes);
     const selectedBall = storage.getItem(`${voteUuid}`);
@@ -295,8 +364,8 @@ const MakeCandidate = () => {
     console.log("candidatesRef =>", candidatesRef.current);
   };
 
-  const renderPrevBalls = () => {
-    organizeBalls();
+  const renderPrevBalls = (payload: InitialResponse) => {
+    organizeBalls(payload);
     updateBallsize();
     updateUsedPercentage();
     updateZoom();
@@ -413,24 +482,24 @@ const MakeCandidate = () => {
   };
 
   // 구독
-  const subscribeAll = () => {
-    subscribeNewOption();
+  const subscribeAll = (currentVoteLimit: number | null) => {
+    subscribeNewOption(currentVoteLimit);
     subscribeVoted();
     subscribeCloseVote();
     subscribeError();
   };
 
-  const subscribeNewOption = () => {
+  const subscribeNewOption = (currentVoteLimit: number | null) => {
     try {
       if (workerRef?.current) {
         registerListener("onNewOption", (payload: RecievedMsg) => {
-          commonSubscribeNewOption(payload);
+          commonSubscribeNewOption(payload, currentVoteLimit);
         });
       } else if (client?.connected) {
         if (voteUuid) {
           client.subscribe(`/topic/vote/${voteUuid}/addOption`, (message: { body: string }) => {
             console.log("Received: 추가한 뒤 응답", JSON.parse(message.body));
-            commonSubscribeNewOption(JSON.parse(message.body));
+            commonSubscribeNewOption(JSON.parse(message.body), currentVoteLimit);
           });
         }
       }
@@ -439,7 +508,7 @@ const MakeCandidate = () => {
     }
   };
 
-  const commonSubscribeNewOption = (payload: RecievedMsg) => {
+  const commonSubscribeNewOption = (payload: RecievedMsg, currentVoteLimit: number | null) => {
     const { optionId, optionName, voteColor } = payload;
     const newBall = {
       coordinates: pendingPosition ?? getRandomCoordinates(),
@@ -447,7 +516,8 @@ const MakeCandidate = () => {
       count: 0,
       text: optionName,
     };
-    makeNewBall(newBall, optionId, false, voteLimit !== null);
+    console.log("voteLimittted =>", currentVoteLimit);
+    makeNewBall(newBall, optionId, false, currentVoteLimit !== null);
   };
 
   // 투표 카운트 구독

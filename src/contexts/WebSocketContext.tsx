@@ -31,8 +31,8 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
 
     setVoteUuid(storedVoteUuid); // Set voteUuid state
 
-    const isSharedWorkerSupported = typeof SharedWorker !== "undefined";
-    // const isSharedWorkerSupported = false;
+    // const isSharedWorkerSupported = typeof SharedWorker !== "undefined";
+    const isSharedWorkerSupported = false;
 
     if (isSharedWorkerSupported) {
       console.log("sharedWorker 실행");
@@ -162,13 +162,14 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
     });
     client.subscribe(`/user/queue/${storedVoteUuid}/initialResponse`, (message: { body: string }) => {
       console.log("Received: 프로바이더 내부에서 ", JSON.parse(message.body));
-      const payload = JSON.parse(message.body);
-      setPrevVotes([...payload.previousVotes]);
-      setVoteLimit(JSON.parse(message.body).voteLimit);
+      const payload: InitialResponse = JSON.parse(message.body);
+      // setPrevVotes([...payload.previousVotes]);
+      setVoteLimit(payload.voteLimit);
+      listenersRef.current.initialResponse?.(payload);
     });
   };
 
-  const registerListener = <T extends keyof typeof listenersRef.current>(type: T, fn: (payload: any) => void) => {
+  const registerListener = <T extends keyof typeof listenersRef.current>(type: T, fn: (payload?: any) => void) => {
     listenersRef.current[type] = fn;
   };
 
@@ -218,6 +219,14 @@ interface WebSocketContextType {
   registerListener?: any;
   workerRef?: React.RefObject<SharedWorker | null>;
 }
+
+export type InitialResponse = {
+  voteLimit: number;
+  voteEndTime: string;
+  webSocketSessionId: string;
+  previousVotes: PrevVotes[];
+};
+
 export type PrevVotes = {
   optionId: number;
   optionName: string;
@@ -231,7 +240,7 @@ export type BroadcastMsg = {
 };
 
 type ListenersRef = {
-  INITIAL_RESPONSE?: (payload: any) => void;
+  initialResponse?: (payload: InitialResponse) => void;
   onNewOption?: (payload: any) => void;
   onSomeoneVoted?: (payload: any) => void;
   onMyVoteResult?: (payload: any) => void;
