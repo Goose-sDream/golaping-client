@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Client } from "@stomp/stompjs";
 import StorageController from "@/storage/storageController";
 import { isVoteExpired } from "@/utils/sessionUtils";
@@ -8,13 +8,14 @@ const storage = new StorageController("session");
 export const WebSocketProvider = ({ children }: { children: React.ReactNode }) => {
   const [step, setStep] = useState(0);
   const [prevVotes, setPrevVotes] = useState<PrevVotes[]>([]);
-  const [voteLimit, setVoteLimit] = useState<number | null>(null);
+  // const [voteLimit, setVoteLimit] = useState<number | null>(null);
   const [connected, setConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [voteUuid, setVoteUuid] = useState<string | null>(null);
   const clientRef = useRef<Client | null>(null);
   const workerRef = useRef<SharedWorker | null>(null);
   const listenersRef = useRef<ListenersRef>({});
+  const voteLimitRef = useRef<number | null>(null);
 
   const initializeWebSocket = () => {
     if (isVoteExpired()) {
@@ -63,7 +64,8 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
           case "INITIAL_RESPONSE":
             setPrevVotes(payload.previousVotes);
             console.log("payload.voteLimit =>", payload.voteLimit);
-            setVoteLimit(payload.voteLimit);
+            voteLimitRef.current = payload.voteLimit;
+            // setVoteLimit(payload.voteLimit);
             // setLimited((prev) => ({ ...prev, limited: payload.voteLimit ? "제한" : "무제한" }));
             break;
           case "ERROR":
@@ -135,10 +137,7 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
     initializeWebSocket();
     return () => {
       console.log("끝??");
-      if (clientRef.current?.active) {
-        clientRef.current.deactivate();
-        clientRef.current = null;
-      }
+      disconnect();
     };
   }, []); // 처음 마운트될 때 한 번만 실행
 
@@ -164,7 +163,8 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
       console.log("Received: 프로바이더 내부에서 ", JSON.parse(message.body));
       const payload: InitialResponse = JSON.parse(message.body);
       // setPrevVotes([...payload.previousVotes]);
-      setVoteLimit(payload.voteLimit);
+      // setVoteLimit(payload.voteLimit);
+      voteLimitRef.current = payload.voteLimit;
       listenersRef.current.initialResponse?.(payload);
     });
   };
@@ -173,27 +173,25 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
     listenersRef.current[type] = fn;
   };
 
-  return (
-    <WebSocketContext.Provider
-      value={{
-        step,
-        setStep,
-        voteLimit,
-        prevVotes,
-        voteUuid,
-        client: clientRef.current,
-        connected,
-        error,
-        disconnect,
-        connectWebSocket,
-        // sendMessageToWorker,
-        workerRef,
-        registerListener,
-      }}
-    >
-      {children}
-    </WebSocketContext.Provider>
+  const contextValue = useMemo(
+    () => ({
+      step,
+      setStep,
+      voteLimit: voteLimitRef.current,
+      prevVotes,
+      voteUuid,
+      client: clientRef.current,
+      connected,
+      error,
+      connectWebSocket,
+      // sendMessageToWorker,
+      workerRef,
+      registerListener,
+    }),
+    [step, prevVotes, voteUuid, connected, error]
   );
+
+  return <WebSocketContext.Provider value={contextValue}>{children}</WebSocketContext.Provider>;
 };
 
 export const useWebSocket = () => {
@@ -213,7 +211,6 @@ interface WebSocketContextType {
   client: Client | null;
   connected: boolean;
   error: string | null;
-  disconnect: () => void;
   connectWebSocket: () => void; // 새로고침 없이 WebSocket 연결하는 함수 추가
   // sendMessageToWorker: any;
   registerListener?: any;

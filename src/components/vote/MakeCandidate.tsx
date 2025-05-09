@@ -83,7 +83,7 @@ const MakeCandidate = () => {
         cleanupMatterJsEngine(runnerRef.current);
       }
     };
-  }, []);
+  }, [connected]);
 
   const setMatterJs = (initialResponse: InitialResponse) => {
     console.log("재실행?");
@@ -563,7 +563,14 @@ const MakeCandidate = () => {
         changedOption: { isVotedByUser },
       },
     } = payload;
-    console.log("Received: 내가 투표한 응답의 isVotedByUser=>", isVotedByUser, countedBall);
+    console.log(
+      "Received: 내가 투표한 응답의 isVotedByUser=>",
+      isVotedByUser,
+      "countedBall =>",
+      countedBall,
+      "voteLimit =>",
+      voteLimit
+    );
     updateBallBorder(countedBall as TargetBall, isVotedByUser ?? false);
     setTotalVoteCount(totalVoteCount);
   };
@@ -644,7 +651,6 @@ const MakeCandidate = () => {
   };
 
   const updateBallBorder = (targetBall: TargetBall, isVotedByUser: boolean) => {
-    console.log("아니 실행조차 안된다고?");
     const { ball } = targetBall;
     console.log("업데이트 보더", "voteLimit =>", voteLimit);
     const selectedBall = storage.getItem(`${voteUuid}`);
