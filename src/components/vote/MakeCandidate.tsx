@@ -74,6 +74,7 @@ const MakeCandidate = () => {
   useEffect(() => {
     registerListener("initialResponse", (payload: InitialResponse) => {
       console.log("voteLimit 받아왔고, 이제 matterJS + subscribeAll 시작!");
+      console.log("voteLimit =>", voteLimit);
       setMatterJs(payload);
       subscribeAll(payload.voteLimit); // ✅ 이 타이밍에 실행
     });
@@ -86,7 +87,6 @@ const MakeCandidate = () => {
   }, [connected]);
 
   const setMatterJs = (initialResponse: InitialResponse) => {
-    console.log("재실행?");
     if (!containerRef.current) return;
 
     const engine = engineRef.current;

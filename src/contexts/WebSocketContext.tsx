@@ -8,14 +8,13 @@ const storage = new StorageController("session");
 export const WebSocketProvider = ({ children }: { children: React.ReactNode }) => {
   const [step, setStep] = useState(0);
   const [prevVotes, setPrevVotes] = useState<PrevVotes[]>([]);
-  // const [voteLimit, setVoteLimit] = useState<number | null>(null);
+  const [voteLimit, setVoteLimit] = useState<number | null>(null);
   const [connected, setConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [voteUuid, setVoteUuid] = useState<string | null>(null);
   const clientRef = useRef<Client | null>(null);
   const workerRef = useRef<SharedWorker | null>(null);
   const listenersRef = useRef<ListenersRef>({});
-  const voteLimitRef = useRef<number | null>(null);
 
   const initializeWebSocket = () => {
     if (isVoteExpired()) {
@@ -64,7 +63,6 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
           case "INITIAL_RESPONSE":
             setPrevVotes(payload.previousVotes);
             console.log("payload.voteLimit =>", payload.voteLimit);
-            voteLimitRef.current = payload.voteLimit;
             // setVoteLimit(payload.voteLimit);
             // setLimited((prev) => ({ ...prev, limited: payload.voteLimit ? "제한" : "무제한" }));
             break;
@@ -163,8 +161,7 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
       console.log("Received: 프로바이더 내부에서 ", JSON.parse(message.body));
       const payload: InitialResponse = JSON.parse(message.body);
       // setPrevVotes([...payload.previousVotes]);
-      // setVoteLimit(payload.voteLimit);
-      voteLimitRef.current = payload.voteLimit;
+      setVoteLimit(payload.voteLimit);
       listenersRef.current.initialResponse?.(payload);
     });
   };
@@ -177,7 +174,7 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
     () => ({
       step,
       setStep,
-      voteLimit: voteLimitRef.current,
+      voteLimit,
       prevVotes,
       voteUuid,
       client: clientRef.current,
@@ -188,7 +185,7 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
       workerRef,
       registerListener,
     }),
-    [step, prevVotes, voteUuid, connected, error]
+    [step, connected, error, voteLimit]
   );
 
   return <WebSocketContext.Provider value={contextValue}>{children}</WebSocketContext.Provider>;

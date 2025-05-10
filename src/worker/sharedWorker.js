@@ -60,9 +60,7 @@ const connectStomp = (apiUrl, voteUuid) => {
 
     onConnect: () => {
       isConnected = true;
-
       broadcast({ type: "CONNECTED" });
-
       console.log("voteUuid =>", voteUuid);
 
       // ✅ 서버에 연결 알림
