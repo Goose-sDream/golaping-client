@@ -70,7 +70,6 @@ const connectStomp = (apiUrl, voteUuid) => {
       // ✅ 1. 초기 투표 데이터 구독
       client?.subscribe(`/user/queue/${voteUuid}/initialResponse`, (message) => {
         const body = JSON.parse(message.body);
-        console.log("초기데이터 body =>", body);
         broadcast({
           type: "INITIAL_RESPONSE",
           payload: {
@@ -89,25 +88,25 @@ const connectStomp = (apiUrl, voteUuid) => {
         });
       });
 
-      // 3. 누가 투표했을 때
+      // 3. 누가 투표했을 때 구독
       client?.subscribe(`/topic/vote/${voteUuid}`, (message) => {
         const body = JSON.parse(message.body);
         broadcast({ type: "SOMEONE_VOTED", payload: body });
       });
 
-      // 4. 내가 투표했을 때 결과
+      // 4. 내가 투표했을 때 결과 구독
       client?.subscribe(`/user/queue/vote/${voteUuid}`, (message) => {
         const body = JSON.parse(message.body);
         broadcast({ type: "MY_VOTE_RESULT", payload: body });
       });
 
-      // 5. 에러 응답
+      // 5. 에러 응답 구독
       client?.subscribe(`/user/queue/errors`, (message) => {
         const body = JSON.parse(message.body);
         broadcast({ type: "VOTE_ERROR", payload: body });
       });
 
-      // 6. 투표 종료
+      // 6. 투표 종료 구독
       client?.subscribe(`/topic/vote/${voteUuid}/closed`, (message) => {
         const body = JSON.parse(message.body);
         broadcast({ type: "VOTE_CLOSED", payload: body });

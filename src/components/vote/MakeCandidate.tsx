@@ -422,15 +422,7 @@ const MakeCandidate = () => {
 
   const sendNewOption = (optionObj: OptionObj) => {
     console.log("sendNewOption client.connected =>", client?.connected);
-    // if (!client?.connected) {
-    //   console.log("websocket is not connected");
-    //   return;
-    // }
     try {
-      // client.publish({
-      //   destination: "/app/vote/addOption",
-      //   body: JSON.stringify(optionObj),
-      // });
       if (workerRef?.current) {
         sendMessageToWorker("SEND", "/app/vote/addOption", optionObj);
       } else if (client?.connected) {
