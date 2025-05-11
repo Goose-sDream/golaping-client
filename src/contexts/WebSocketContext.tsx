@@ -18,18 +18,21 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
   const [client, setClient] = useState<Client | null | undefined>(null);
 
   const voteUuid = storage.getItem("voteUuid");
-  if (!voteUuid) {
-    console.log("No voteUuid found, skipping WebSocket connection.");
-    setStep(1);
-    return;
-  }
 
-  const initializeWebSocket = () => {
+  const initializeWebSocket = (voteUuid: string | null) => {
     if (isVoteExpired()) {
       console.log("Vote has expired, skipping WebSocket connection.");
       setStep(1);
       return;
     }
+
+    if (!voteUuid) {
+      console.log("No voteUuid found, skipping WebSocket connection.");
+      setStep(1);
+      return;
+    }
+
+    // disconnect();
 
     // const isSharedWorkerSupported = typeof SharedWorker !== "undefined";
     const isSharedWorkerSupported = false;
@@ -70,7 +73,7 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
         onConnect: () => {
           clientRef.current = client;
           setClient(client);
-          subscribeGeneralWebSocket(client, {
+          subscribeGeneralWebSocket(client, voteUuid, {
             onEvent: (event) => setEventQueue((prev) => [...prev, event]),
             onVoteLimit: (limit) => setVoteLimit(limit),
             debug: (label, payload) => console.log(`[${label}]`, payload),
@@ -146,7 +149,12 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
     }
   };
 
-  const subscribeGeneralWebSocket = (client: Client, handlers: SubscribeHandlers) => {
+  const subscribeGeneralWebSocket = (
+    client: Client,
+    voteUuid: string | null | undefined,
+    handlers: SubscribeHandlers
+  ) => {
+    console.log("여기여기 =>", voteUuid);
     const { onEvent, onVoteLimit, debug } = handlers;
     client.publish({
       destination: `/app/vote/connect`,
@@ -185,7 +193,7 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
   };
 
   useEffect(() => {
-    initializeWebSocket();
+    initializeWebSocket(voteUuid);
     return () => {
       console.log("끝??");
       disconnect();
@@ -245,7 +253,7 @@ interface WebSocketContextType {
   client: Client | null | undefined;
   connected: boolean;
   error: string | null;
-  connectWebSocket: () => void; // 새로고침 없이 WebSocket 연결하는 함수 추가
+  connectWebSocket: (voteUuid: string | null) => void; // 새로고침 없이 WebSocket 연결하는 함수 추가
   // sendMessageToWorker: any;
   registerListener?: any;
   workerRef?: React.RefObject<SharedWorker | null>;

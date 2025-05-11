@@ -61,7 +61,7 @@ const DoVote = () => {
 
     if (!connected) {
       console.log("재연결");
-      connectWebSocket();
+      connectWebSocket(voteUuid);
     }
   }, [connected]);
 
@@ -155,7 +155,7 @@ const DoVote = () => {
         setTotalVoteCount(previousVotes.reduce((count, item) => (item.isVotedByUser ? count + 1 : count), 0));
       }
       // ✅ 딱 한 번만 실행하고, 핸들러 등록 해제
-      Events.off(engine, "afterUpdate", afterUpdateHandlerRef.current!);
+      // Events.off(engine, "afterUpdate", afterUpdateHandlerRef.current!);
     };
 
     Events.on(engine, "afterUpdate", afterUpdateHandlerRef.current);

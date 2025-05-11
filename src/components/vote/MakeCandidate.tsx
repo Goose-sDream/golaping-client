@@ -51,7 +51,7 @@ const MakeCandidate = () => {
 
     if (!connected) {
       console.log("재연결");
-      connectWebSocket();
+      connectWebSocket(voteUuid);
     }
   }, [connected]);
 

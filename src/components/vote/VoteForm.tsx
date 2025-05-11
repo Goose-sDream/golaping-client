@@ -15,7 +15,6 @@ const VoteForm = () => {
   const voteUuid = storage.getItem("voteUuid");
 
   useEffect(() => {
-    console.log("새로 들어왔어요");
     if (voteUuid) {
       const intervalId = setInterval(() => {
         if (isVoteExpired()) {
@@ -28,7 +27,7 @@ const VoteForm = () => {
 
       return () => clearInterval(intervalId); // 컴포넌트 언마운트 시 정리
     }
-  }, [voteUuid]);
+  }, []);
 
   const steps: { [key: number]: JSX.Element } = {
     1: <EnterVote />,

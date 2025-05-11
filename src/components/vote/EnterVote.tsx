@@ -28,7 +28,7 @@ const EnterVote = () => {
         storage.setItem("voteUuid", id!);
         storage.setItem("voteEndTime", voteEndTime);
         storage.setItem("voteIdx", String(voteIdx));
-        connectWebSocket(); // 새로고침 없이 웹소켓 재연결 실행
+        if (id) connectWebSocket(id); // 새로고침 없이 웹소켓 재연결 실행
       }
     } catch (error) {
       console.error("Failed to enter vote:", error);
