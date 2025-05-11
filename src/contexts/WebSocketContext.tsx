@@ -16,6 +16,8 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
   const workerRef = useRef<SharedWorker | null>(null);
   const listenersRef = useRef<ListenersRef>({});
 
+  const [eventQueue, setEventQueue] = useState<SubDataUnion[]>([]);
+
   const initializeWebSocket = () => {
     if (isVoteExpired()) {
       console.log("Vote has expired, skipping WebSocket connection.");
@@ -102,9 +104,13 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
         debug: (msg) => console.log(msg),
         reconnectDelay: 500000000,
         onConnect: () => {
-          console.log("WebSocket 연결 완!");
-          console.log("voteUuid (세션스토리지)", storage.getItem("voteUuid"));
-          subscribeWebsocket(client);
+          const voteUuid = storage.getItem("voteUuid");
+          if (!voteUuid) return;
+          subscribeWebSocket(client, voteUuid, {
+            onEvent: (event) => setEventQueue((prev) => [...prev, event]),
+            onVoteLimit: (limit) => setVoteLimit(limit),
+            debug: (label, payload) => console.log(`[${label}]`, payload),
+          });
           setStep(2);
           setConnected(true);
           setError(null);
@@ -131,6 +137,45 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
     }
   };
 
+  const subscribeWebSocket = (client: Client, voteUuid: string, handlers: SubscribeHandlers) => {
+    const { onEvent, onVoteLimit, debug } = handlers;
+    client.publish({
+      destination: `/app/vote/connect`,
+    });
+    client.subscribe(`/user/queue/${voteUuid}/initialResponse`, (message: { body: string }) => {
+      const payload: InitialResponse = JSON.parse(message.body);
+      debug?.("INITIAL_RESPONSE", payload);
+      onEvent({ type: "INITIAL_RESPONSE", payload });
+      onVoteLimit(payload.voteLimit);
+    });
+    client.subscribe(`/topic/vote/${voteUuid}/addOption`, (message: { body: string }) => {
+      const payload: RecievedMsg = JSON.parse(message.body);
+      debug?.("NEW_OPTION_RECEIVED", payload);
+      onEvent({ type: "NEW_OPTION_RECEIVED", payload });
+    });
+    client.subscribe(`/user/queue/vote/${voteUuid}`, (message: { body: string }) => {
+      const payload: VotedEvent<"me"> = JSON.parse(message.body);
+      debug?.("I_VOTED", payload);
+      onEvent({ type: "I_VOTED", payload });
+    });
+    client.subscribe(`/topic/vote/${voteUuid}`, (message: { body: string }) => {
+      const payload: VotedEvent<"someone"> = JSON.parse(message.body);
+      debug?.("SOMEONE_VOTED", payload);
+      onEvent({ type: "SOMEONE_VOTED", payload });
+    });
+    client.subscribe(`/user/queue/errors`, (message: { body: string }) => {
+      const payload = JSON.parse(message.body);
+      debug?.("VOTE_ERROR", payload);
+      onEvent({ type: "VOTE_ERROR", payload });
+    });
+    client.subscribe(`/topic/vote/${voteUuid}/closed`, (message: { body: string }) => {
+      console.log("투표 종료 응답", JSON.parse(message.body));
+      const payload = JSON.parse(message.body);
+      debug?.("VOTE_CLOSED", payload);
+      onEvent({ type: "VOTE_CLOSED", payload });
+    });
+  };
+
   useEffect(() => {
     initializeWebSocket();
     return () => {
@@ -152,20 +197,6 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
     }
   };
 
-  const subscribeWebsocket = (client: Client) => {
-    const storedVoteUuid = storage.getItem("voteUuid");
-    client.publish({
-      destination: `/app/vote/connect`,
-    });
-    client.subscribe(`/user/queue/${storedVoteUuid}/initialResponse`, (message: { body: string }) => {
-      console.log("Received: 프로바이더 내부에서 ", JSON.parse(message.body));
-      const payload: InitialResponse = JSON.parse(message.body);
-      // setPrevVotes([...payload.previousVotes]);
-      setVoteLimit(payload.voteLimit);
-      listenersRef.current.initialResponse?.(payload);
-    });
-  };
-
   const registerListener = <T extends keyof typeof listenersRef.current>(type: T, fn: (payload?: any) => void) => {
     listenersRef.current[type] = fn;
   };
@@ -174,6 +205,8 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
     () => ({
       step,
       setStep,
+      eventQueue,
+      setEventQueue,
       voteLimit,
       prevVotes,
       voteUuid,
@@ -185,7 +218,7 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
       workerRef,
       registerListener,
     }),
-    [step, connected, error, voteLimit]
+    [step, connected, error, voteLimit, eventQueue]
   );
 
   return <WebSocketContext.Provider value={contextValue}>{children}</WebSocketContext.Provider>;
@@ -202,6 +235,8 @@ export const useWebSocket = () => {
 interface WebSocketContextType {
   step: number;
   setStep: any;
+  eventQueue: SubDataUnion[];
+  setEventQueue: React.Dispatch<React.SetStateAction<SubDataUnion[]>>;
   prevVotes: PrevVotes[];
   voteLimit: number | null;
   voteUuid: string | null;
@@ -213,6 +248,12 @@ interface WebSocketContextType {
   registerListener?: any;
   workerRef?: React.RefObject<SharedWorker | null>;
 }
+
+type SubscribeHandlers = {
+  onEvent: (event: SubDataUnion) => void;
+  onVoteLimit: (limit: number | null) => void;
+  debug?: (label: string, payload: any) => void;
+};
 
 export type InitialResponse = {
   voteLimit: number;
@@ -228,10 +269,71 @@ export type PrevVotes = {
   voteColor: string;
   isVotedByUser: boolean;
 };
+
+export type RecievedMsg = {
+  optionId: number;
+  optionName: string;
+  voteColor: string;
+};
+
+export type VotedByMe = {
+  type: "me";
+  isSuccess: boolean;
+  message: string;
+  result: {
+    isCreator: boolean;
+    totalVoteCount: number;
+    changedOption: ChangedOption;
+  };
+};
+
+export type VotedBySomeone = {
+  type: "someone";
+  changedOption: ChangedOption;
+};
+
+type ChangedOption = {
+  optionId: string;
+  optionName: string;
+  voteCount: number;
+  voteColor: string;
+  isVotedByUser?: boolean;
+};
+
+export type VotedEvent<T extends "me" | "someone"> = T extends "me"
+  ? VotedByMe & { changedOption: never }
+  : VotedBySomeone & { result: never };
+
 export type BroadcastMsg = {
   type: string;
   payload?: any;
 };
+
+export type SubType =
+  | "INITIAL_RESPONSE"
+  | "NEW_OPTION_RECEIVED"
+  | "I_VOTED"
+  | "SOMEONE_VOTED"
+  | "VOTE_CLOSED"
+  | "VOTE_ERROR";
+
+type SubPayloadMap = {
+  INITIAL_RESPONSE: InitialResponse;
+  NEW_OPTION_RECEIVED: RecievedMsg;
+  I_VOTED: VotedEvent<"me">;
+  SOMEONE_VOTED: VotedEvent<"someone">;
+  VOTE_CLOSED: any;
+  VOTE_ERROR: any;
+};
+
+export type SubData<T extends SubType> = {
+  type: T;
+  payload: SubPayloadMap[T];
+};
+
+export type SubDataUnion = {
+  [K in SubType]: SubData<K>;
+}[SubType];
 
 type ListenersRef = {
   initialResponse?: (payload: InitialResponse) => void;

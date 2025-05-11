@@ -12,7 +12,7 @@ import {
   SHRINKTERM,
   SHRINKTHRESHOLD,
 } from "@/constants/vote";
-import { InitialResponse, useWebSocket } from "@/contexts/WebSocketContext";
+import { InitialResponse, RecievedMsg, useWebSocket, VotedEvent } from "@/contexts/WebSocketContext";
 import StorageController from "@/storage/storageController";
 import { borderMap, optionColorMap, optionColors, PURPLE } from "@/styles/color";
 
@@ -517,10 +517,10 @@ const MakeCandidate = () => {
     try {
       let countedBall: TargetBall | undefined;
       if (workerRef?.current) {
-        registerListener("onSomeoneVoted", (payload: Voted) => {
+        registerListener("onSomeoneVoted", (payload: VotedEvent<"someone">) => {
           countedBall = commonSubscribeSomeoneVote(payload);
         });
-        registerListener("onMyVoteResult", (payload: Omit<Voted, "isCreator">) => {
+        registerListener("onMyVoteResult", (payload: VotedEvent<"me">) => {
           if (countedBall) commonSubscribeMyVote(payload, countedBall);
         });
       } else if (client?.connected) {
@@ -539,7 +539,7 @@ const MakeCandidate = () => {
     }
   };
 
-  const commonSubscribeSomeoneVote = (payload: Voted) => {
+  const commonSubscribeSomeoneVote = (payload: VotedEvent<"someone">) => {
     const {
       changedOption: { optionId, voteCount },
     } = payload;
@@ -548,21 +548,14 @@ const MakeCandidate = () => {
     return countedBall;
   };
 
-  const commonSubscribeMyVote = (payload: any, countedBall: TargetBall | undefined) => {
+  const commonSubscribeMyVote = (payload: VotedEvent<"me">, countedBall: TargetBall | undefined) => {
     const {
       result: {
         totalVoteCount,
         changedOption: { isVotedByUser },
       },
     } = payload;
-    console.log(
-      "Received: 내가 투표한 응답의 isVotedByUser=>",
-      isVotedByUser,
-      "countedBall =>",
-      countedBall,
-      "voteLimit =>",
-      voteLimit
-    );
+    console.log("내가 투표한 후 응답 =>", payload);
     updateBallBorder(countedBall as TargetBall, isVotedByUser ?? false);
     setTotalVoteCount(totalVoteCount);
   };
@@ -809,26 +802,9 @@ const MakeCandidate = () => {
 
 export default MakeCandidate;
 
-type RecievedMsg = {
-  optionId: number;
-  optionName: string;
-  voteColor: string;
-};
-
 type TargetBall = { count: number; ball: Body; text: string };
 type NewBall = { coordinates: { x: number; y: number }; count: number; color: string; text: string };
 type UsedPercentage = { percentage: number; time: number; count: number };
-type Voted = {
-  isCreator: boolean;
-  totalVoteCount: number;
-  changedOption: {
-    optionId: string;
-    optionName: string;
-    voteCount: number;
-    voteColor: string;
-    isVotedByUser?: boolean;
-  };
-};
 
 type OptionObj = {
   optionText: string;
