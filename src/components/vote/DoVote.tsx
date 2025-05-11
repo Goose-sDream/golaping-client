@@ -35,8 +35,8 @@ const DoVote = () => {
   } = useWebSocket();
   const afterUpdateHandlerRef = useRef<((e: Matter.IEvent<Engine>) => void) | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const engineRef = useRef(Engine.create());
-  const world = engineRef.current.world;
+  const engineRef = useRef<Engine | null>(null);
+  // const world = engineRef.current?.world;
   const renderRef = useRef<Render | null>(null);
   const runnerRef = useRef<Runner | null>(null);
   const candidatesRef = useRef<TargetBall[]>([]);
@@ -65,32 +65,24 @@ const DoVote = () => {
     }
   }, [connected]);
 
-  // useEffect(() => {
-  //   if (!workerRef?.current) return;
-  //   // sharedWorker 사용 시
-  //   console.log("connected =>", connected);
-  //   console.log("client.connected =>", client?.connected);
-  //   if (!connected) {
-  //     console.log("재연결");
-  //     connectWebSocket();
-  //   }
-
-  //   if (workerRef?.current && connected && containerRef.current) {
-  //     console.log("[SAFE] subscribeAll 호출!");
-  //     subscribeAll();
-  //   }
-  // }, [workerRef?.current, connected, containerRef.current]);
   useEffect(() => {
+    console.log("구독액션");
     if (eventQueue.length === 0) return;
     console.log("구독액션 시작!!");
     onSubscribeAction();
-    setEventQueue((prev) => prev.slice(1));
   }, [eventQueue]);
 
   const setMatterJs = (initialResponse: InitialResponse) => {
+    console.log("너냐????");
+
     if (!containerRef.current) return;
 
-    const engine = engineRef.current;
+    console.log("아님 너야???");
+
+    containerRef.current.querySelectorAll("canvas").forEach((c) => c.remove());
+
+    const engine = Engine.create();
+    engineRef.current = engine;
     engine.gravity.y = 0;
 
     const runner = Runner.create();
@@ -114,59 +106,59 @@ const DoVote = () => {
   };
 
   const initMatterJsEngine = (payload: InitialResponse) => {
-    const { previousVotes } = payload;
-    if (renderRef.current && runnerRef.current) {
-      World.add(world, makeWalls());
+    if (!renderRef.current || !runnerRef.current || !engineRef.current) return;
 
-      const mouse = Mouse.create(renderRef.current.canvas);
-      const mouseConstraint = MouseConstraint.create(engineRef.current, {
-        mouse,
-        constraint: { stiffness: 0.02, damping: 0.1, render: { visible: false } },
-      });
+    const world = engineRef.current?.world;
+    World.add(world, makeWalls());
 
-      World.add(world, mouseConstraint);
-      mouseConstraintRef.current = mouseConstraint;
+    const mouse = Mouse.create(renderRef.current.canvas);
+    const mouseConstraint = MouseConstraint.create(engineRef.current, {
+      mouse,
+      constraint: { stiffness: 0.02, damping: 0.1, render: { visible: false } },
+    });
 
-      // ✅ 빈 공간을 클릭하면 모달 표시 + 클릭 위치 저장
-      Events.on(mouseConstraint, "mousedown", (event) => {
-        const { mouse } = event.source;
-        checkOverLapping(mouse.position.x, mouse.position.y, makeOrVote);
-      });
+    World.add(world, mouseConstraint);
+    mouseConstraintRef.current = mouseConstraint;
 
-      // ✅ 마우스가 벽을 벗어나면 드래그 중지
-      Events.on(mouseConstraint, "mousemove", (event) => {
-        handleMouseConstraints(mouseConstraint, event);
-      });
+    // ✅ 빈 공간을 클릭하면 모달 표시 + 클릭 위치 저장
+    Events.on(mouseConstraint, "mousedown", (event) => {
+      const { mouse } = event.source;
+      checkOverLapping(mouse.position.x, mouse.position.y, makeOrVote);
+    });
 
-      // ✅ Matter.js의 afterRender를 활용하여 원 위에 텍스트를 지속적으로 업데이트
-      // Matter.js는 본래 물리 객체들만 그리는데, 현재 각 원에 텍스트를 추가하고 싶기에 afterRender로 따로 관리해줘야
-      Events.on(renderRef.current, "afterRender", () => {
-        handleFillText();
-      });
+    // ✅ 마우스가 벽을 벗어나면 드래그 중지
+    Events.on(mouseConstraint, "mousemove", (event) => {
+      handleMouseConstraints(mouseConstraint, event);
+    });
 
-      Runner.run(runnerRef.current, engineRef.current);
-      Render.run(renderRef.current);
-      afterUpdateHandler(payload);
+    // ✅ Matter.js의 afterRender를 활용하여 원 위에 텍스트를 지속적으로 업데이트
+    // Matter.js는 본래 물리 객체들만 그리는데, 현재 각 원에 텍스트를 추가하고 싶기에 afterRender로 따로 관리해줘야
+    Events.on(renderRef.current, "afterRender", () => {
+      handleFillText();
+    });
 
-      afterUpdateHandlerRef.current = () => {
-        renderPrevBalls(payload);
-        setTotalVoteCount(previousVotes.reduce((count, item) => (item.isVotedByUser ? count + 1 : count), 0));
-        Events.off(engineRef.current, "afterUpdate", afterUpdateHandlerRef.current!);
-      };
-
-      Events.on(engineRef.current, "afterUpdate", afterUpdateHandlerRef.current!);
-    }
+    Runner.run(runnerRef.current, engineRef.current);
+    Render.run(renderRef.current);
+    registerAfterUpdate(payload);
   };
 
-  const afterUpdateHandler = (payload: InitialResponse) => {
-    const { previousVotes } = payload;
-    if (previousVotes.length > 0) {
-      console.log("afterUpdate 타이밍, prevVotes 렌더 시작");
-      renderPrevBalls(payload);
-      setTotalVoteCount(previousVotes.reduce((count, item) => (item.isVotedByUser ? count + 1 : count), 0));
-    }
-    // ✅ 딱 한 번만 실행하고, 핸들러 등록 해제
-    Events.off(engineRef.current, "afterUpdate", afterUpdateHandler);
+  const registerAfterUpdate = (payload: InitialResponse) => {
+    const engine = engineRef.current;
+    const world = engine?.world;
+    if (!engine || !world) return;
+
+    afterUpdateHandlerRef.current = () => {
+      const { previousVotes } = payload;
+      if (previousVotes.length > 0) {
+        console.log("afterUpdate 타이밍, prevVotes 렌더 시작");
+        renderPrevBalls(payload, world);
+        setTotalVoteCount(previousVotes.reduce((count, item) => (item.isVotedByUser ? count + 1 : count), 0));
+      }
+      // ✅ 딱 한 번만 실행하고, 핸들러 등록 해제
+      Events.off(engine, "afterUpdate", afterUpdateHandlerRef.current!);
+    };
+
+    Events.on(engine, "afterUpdate", afterUpdateHandlerRef.current);
   };
 
   const cleanupMatterJsEngine = (runner: Runner) => {
@@ -174,11 +166,14 @@ const DoVote = () => {
       Render.stop(renderRef.current);
       renderRef.current.canvas.remove();
       renderRef.current.textures = {};
+      renderRef.current = null;
+      runnerRef.current = null;
     }
 
     if (engineRef.current) {
       Runner.stop(runner ?? Runner.create()); // 혹시라도 runner 참조가 없다면
       Engine.clear(engineRef.current);
+      engineRef.current = null; // ✅ 이거 추가
     }
 
     // 이벤트 해제
@@ -264,7 +259,7 @@ const DoVote = () => {
     }
   };
 
-  const makeNewBall = (newBallObj: NewBall, ballId: number, Bordered: boolean, isLimited: boolean) => {
+  const makeNewBall = (newBallObj: NewBall, ballId: number, Bordered: boolean, isLimited: boolean, world: World) => {
     const {
       coordinates: { x, y },
       count,
@@ -324,17 +319,17 @@ const DoVote = () => {
     return { x, y };
   };
 
-  const organizeBalls = (payload: InitialResponse) => {
-    const { previousVotes: prevVotes, voteLimit } = payload;
+  const organizeBalls = (payload: InitialResponse, world: World) => {
     if (!candidatesRef.current) return;
+
+    const { previousVotes: prevVotes, voteLimit } = payload;
+
     const selectedBall = storage.getItem(`${voteUuid}`);
-    console.log("selectedBall =>", selectedBall);
     const parsedBalls = selectedBall ? JSON.parse(selectedBall) : [];
-    console.log("parsedBalls =>", parsedBalls);
+
     prevVotes.forEach((prev) => {
       if (!candidatesRef.current.some((candidate) => candidate.ball.id === prev.optionId)) {
         const alreadyBordered = parsedBalls.some((id: number) => id === prev.optionId);
-        console.log("alreadyBordered =>", alreadyBordered);
         makeNewBall(
           {
             coordinates: getRandomCoordinates(),
@@ -344,14 +339,15 @@ const DoVote = () => {
           },
           prev.optionId,
           alreadyBordered,
-          voteLimit !== null
+          voteLimit !== null,
+          world
         );
       }
     });
   };
 
-  const renderPrevBalls = (payload: InitialResponse) => {
-    organizeBalls(payload);
+  const renderPrevBalls = (payload: InitialResponse, world: World) => {
+    organizeBalls(payload, world);
     updateBallsize();
     updateUsedPercentage();
     updateZoom();
@@ -409,8 +405,8 @@ const DoVote = () => {
     try {
       if (workerRef?.current) {
         sendMessageToWorker("SEND", "/app/vote/addOption", optionObj);
-      } else if (client?.connected) {
-        client.publish({
+      } else {
+        client?.publish({
           destination: "/app/vote/addOption",
           body: JSON.stringify(optionObj),
         });
@@ -428,9 +424,9 @@ const DoVote = () => {
     try {
       if (workerRef?.current) {
         sendMessageToWorker("VOTE", "/app/vote", targetOption);
-      } else if (client?.connected) {
+      } else {
         if (voteUuid) {
-          client.publish({
+          client?.publish({
             destination: "/app/vote",
             body: JSON.stringify(targetOption),
           });
@@ -445,9 +441,9 @@ const DoVote = () => {
     try {
       if (workerRef?.current) {
         sendMessageToWorker("CLOSE", "/app/vote/close");
-      } else if (client?.connected) {
+      } else {
         if (voteUuid) {
-          client.publish({
+          client?.publish({
             destination: "/app/vote/close",
           });
         }
@@ -494,6 +490,8 @@ const DoVote = () => {
       default:
         console.log("default");
     }
+
+    setEventQueue((prev) => prev.slice(1));
   };
 
   // const subscribeNewOption = (currentVoteLimit: number | null) => {
@@ -516,6 +514,8 @@ const DoVote = () => {
   // };
 
   const onNewOption = (payload: RecievedMsg, currentVoteLimit: number | null) => {
+    if (!engineRef.current) return;
+    const world = engineRef.current?.world;
     const { optionId, optionName, voteColor } = payload;
     const newBall = {
       coordinates: pendingPosition ?? getRandomCoordinates(),
@@ -524,7 +524,7 @@ const DoVote = () => {
       text: optionName,
     };
     console.log("voteLimittted =>", currentVoteLimit);
-    makeNewBall(newBall, optionId, false, currentVoteLimit !== null);
+    makeNewBall(newBall, optionId, false, currentVoteLimit !== null, world);
   };
 
   // 투표 카운트 구독
@@ -643,9 +643,12 @@ const DoVote = () => {
   };
 
   // 보더
-  const updateBorder = (ball: Body, isVotedByUser: boolean) => {
-    ball.render.lineWidth = isVotedByUser ? 8 : 0;
-    ball.render.strokeStyle = isVotedByUser ? chooseBorderColor(ball) || "black" : "";
+  const updateBorder = (ball: Body, isVotedByUser: boolean, voteLimit: number | null, parsedBalls: number[]) => {
+    ball.render.lineWidth = voteLimit ? (isVotedByUser ? 8 : 0) : 8;
+    console.log("fillStyle 값:", ball.render.fillStyle);
+    ball.render.strokeStyle = isVotedByUser ? chooseBorderColor(ball.render.fillStyle || "black") : "";
+    parsedBalls.push(ball.id);
+    storage.setItem(`${voteUuid}`, JSON.stringify([...new Set(parsedBalls)]));
   };
 
   const updateBallBorder = (targetBall: TargetBall, isVotedByUser: boolean) => {
@@ -654,7 +657,7 @@ const DoVote = () => {
     const selectedBall = storage.getItem(`${voteUuid}`);
     const parsedBalls: number[] = selectedBall ? JSON.parse(selectedBall) : [];
     if (voteLimit !== null) {
-      updateBorder(ball, isVotedByUser);
+      updateBorder(ball, isVotedByUser, voteLimit, parsedBalls);
       if (isVotedByUser) {
         // 투표 시
         console.log("들어오나요");
@@ -670,10 +673,7 @@ const DoVote = () => {
       if (isVotedByUser) {
         if (!parsedBalls.some((id: number) => id === ball.id)) {
           // 새로 투표하는 애면
-          ball.render.lineWidth = 8;
-          ball.render.strokeStyle = chooseBorderColor(ball) || "black";
-          parsedBalls.push(ball.id);
-          storage.setItem(`${voteUuid}`, JSON.stringify([...new Set(parsedBalls)]));
+          updateBorder(ball, isVotedByUser, voteLimit, parsedBalls);
         }
       }
     }
@@ -726,10 +726,7 @@ const DoVote = () => {
     return optionColors[randomIdx];
   };
 
-  const chooseBorderColor = (targetBallOrColor: Body | string) => {
-    const targetColor = typeof targetBallOrColor === "string" ? targetBallOrColor : targetBallOrColor.render.fillStyle;
-    if (!targetColor) return;
-
+  const chooseBorderColor = (targetColor: string): string | undefined => {
     for (const [key, value] of optionColorMap) {
       if (value.includes(targetColor)) {
         return borderMap.get(key);

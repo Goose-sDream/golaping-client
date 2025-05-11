@@ -5,18 +5,24 @@ import { isVoteExpired } from "@/utils/sessionUtils";
 
 const WebSocketContext = createContext<WebSocketContextType | null>(null);
 const storage = new StorageController("session");
+
 export const WebSocketProvider = ({ children }: { children: React.ReactNode }) => {
   const [step, setStep] = useState(0);
-  const [prevVotes, setPrevVotes] = useState<PrevVotes[]>([]);
   const [voteLimit, setVoteLimit] = useState<number | null>(null);
   const [connected, setConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [voteUuid, setVoteUuid] = useState<string | null>(null);
   const clientRef = useRef<Client | null>(null);
   const workerRef = useRef<SharedWorker | null>(null);
   const listenersRef = useRef<ListenersRef>({});
-
   const [eventQueue, setEventQueue] = useState<SubDataUnion[]>([]);
+  const [client, setClient] = useState<Client | null | undefined>(null);
+
+  const voteUuid = storage.getItem("voteUuid");
+  if (!voteUuid) {
+    console.log("No voteUuid found, skipping WebSocket connection.");
+    setStep(1);
+    return;
+  }
 
   const initializeWebSocket = () => {
     if (isVoteExpired()) {
@@ -24,14 +30,6 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
       setStep(1);
       return;
     }
-    const storedVoteUuid = storage.getItem("voteUuid");
-    if (!storedVoteUuid) {
-      console.log("No voteUuid found, skipping WebSocket connection.");
-      setStep(1);
-      return;
-    }
-
-    setVoteUuid(storedVoteUuid); // Set voteUuid state
 
     // const isSharedWorkerSupported = typeof SharedWorker !== "undefined";
     const isSharedWorkerSupported = false;
@@ -45,51 +43,16 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
         type: "INIT",
         payload: {
           apiUrl: process.env.API_URL,
-          voteUuid: storedVoteUuid,
+          voteUuid: voteUuid,
         },
       });
 
       worker.port.onmessage = (e) => {
-        const { type, payload } = e.data as BroadcastMsg;
-
-        switch (type) {
-          case "CONNECTED":
-            setConnected(true);
-            setError(null);
-            setStep(2);
-            console.log("CONNECTED Message received from worker");
-            break;
-          case "DISCONNECTED":
-            setConnected(false);
-            break;
-          case "INITIAL_RESPONSE":
-            setPrevVotes(payload.previousVotes);
-            console.log("payload.voteLimit =>", payload.voteLimit);
-            // setVoteLimit(payload.voteLimit);
-            // setLimited((prev) => ({ ...prev, limited: payload.voteLimit ? "제한" : "무제한" }));
-            break;
-          case "ERROR":
-            setError(payload);
-            break;
-          case "NEW_OPTION_RECEIVED":
-            console.log("새로 추가");
-            listenersRef.current.onNewOption?.(payload);
-            break;
-          case "SOMEONE_VOTED":
-            listenersRef.current.onSomeoneVoted?.(payload);
-            break;
-          case "MY_VOTE_RESULT":
-            listenersRef.current.onMyVoteResult?.(payload);
-            break;
-          case "VOTE_CLOSED":
-            listenersRef.current.onVoteClosed?.(payload);
-            break;
-          case "VOTE_ERROR":
-            listenersRef.current.onVoteError?.(payload);
-            break;
-          default:
-            console.warn("Unknown message type:", type);
-        }
+        subscribeSharedWebsocket(e.data, {
+          onEvent: (event) => setEventQueue((prev) => [...prev, event]),
+          onVoteLimit: (limit) => setVoteLimit(limit),
+          debug: (label, payload) => console.log(`[${label}]`, payload),
+        });
       };
 
       workerRef.current = worker;
@@ -99,14 +62,15 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
       };
     } else {
       console.log("sharedWorker 실행 안 됌");
+
       const client = new Client({
         brokerURL: `wss://${process.env.API_URL}/ws/votes`,
         debug: (msg) => console.log(msg),
         reconnectDelay: 500000000,
         onConnect: () => {
-          const voteUuid = storage.getItem("voteUuid");
-          if (!voteUuid) return;
-          subscribeWebSocket(client, voteUuid, {
+          clientRef.current = client;
+          setClient(client);
+          subscribeGeneralWebSocket(client, {
             onEvent: (event) => setEventQueue((prev) => [...prev, event]),
             onVoteLimit: (limit) => setVoteLimit(limit),
             debug: (label, payload) => console.log(`[${label}]`, payload),
@@ -114,7 +78,6 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
           setStep(2);
           setConnected(true);
           setError(null);
-          clientRef.current = client;
         },
         onWebSocketClose: () => {
           console.log("WebSocket closed");
@@ -137,7 +100,53 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
     }
   };
 
-  const subscribeWebSocket = (client: Client, voteUuid: string, handlers: SubscribeHandlers) => {
+  const subscribeSharedWebsocket = (data: BroadcastMsg, handlers: SubscribeHandlers) => {
+    const { type, payload } = data;
+    const { onEvent, onVoteLimit, debug } = handlers;
+    switch (type) {
+      case "CONNECTED":
+        setStep(2);
+        setConnected(true);
+        setError(null);
+        break;
+      case "INITIAL_RESPONSE":
+        debug?.("INITIAL_RESPONSE", payload);
+        onEvent({ type: "INITIAL_RESPONSE", payload });
+        onVoteLimit(payload.voteLimit);
+        break;
+      case "NEW_OPTION_RECEIVED":
+        debug?.("NEW_OPTION_RECEIVED", payload);
+        onEvent({ type: "NEW_OPTION_RECEIVED", payload });
+        break;
+      case "I_VOTED":
+        debug?.("I_VOTED", payload);
+        onEvent({ type: "I_VOTED", payload });
+        break;
+      case "SOMEONE_VOTED":
+        debug?.("SOMEONE_VOTED", payload);
+        onEvent({ type: "SOMEONE_VOTED", payload });
+        break;
+      case "VOTE_CLOSED":
+        debug?.("VOTE_CLOSED", payload);
+        onEvent({ type: "VOTE_CLOSED", payload });
+        break;
+      case "VOTE_ERROR":
+        debug?.("VOTE_ERROR", payload);
+        onEvent({ type: "VOTE_ERROR", payload });
+        break;
+      case "DISCONNECTED":
+        setConnected(false);
+        break;
+      case "ERROR":
+        setError(payload);
+        console.error("STOMP Error:", payload);
+        break;
+      default:
+        console.warn("Unknown message type:", type);
+    }
+  };
+
+  const subscribeGeneralWebSocket = (client: Client, handlers: SubscribeHandlers) => {
     const { onEvent, onVoteLimit, debug } = handlers;
     client.publish({
       destination: `/app/vote/connect`,
@@ -169,7 +178,6 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
       onEvent({ type: "VOTE_ERROR", payload });
     });
     client.subscribe(`/topic/vote/${voteUuid}/closed`, (message: { body: string }) => {
-      console.log("투표 종료 응답", JSON.parse(message.body));
       const payload = JSON.parse(message.body);
       debug?.("VOTE_CLOSED", payload);
       onEvent({ type: "VOTE_CLOSED", payload });
@@ -183,10 +191,6 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
       disconnect();
     };
   }, []); // 처음 마운트될 때 한 번만 실행
-
-  const connectWebSocket = () => {
-    initializeWebSocket(); // 수동으로 WebSocket을 연결할 수 있도록 추가
-  };
 
   const disconnect = () => {
     if (clientRef.current?.active) {
@@ -208,12 +212,11 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
       eventQueue,
       setEventQueue,
       voteLimit,
-      prevVotes,
       voteUuid,
-      client: clientRef.current,
+      client: client,
       connected,
       error,
-      connectWebSocket,
+      connectWebSocket: initializeWebSocket,
       // sendMessageToWorker,
       workerRef,
       registerListener,
@@ -237,10 +240,9 @@ interface WebSocketContextType {
   setStep: any;
   eventQueue: SubDataUnion[];
   setEventQueue: React.Dispatch<React.SetStateAction<SubDataUnion[]>>;
-  prevVotes: PrevVotes[];
   voteLimit: number | null;
   voteUuid: string | null;
-  client: Client | null;
+  client: Client | null | undefined;
   connected: boolean;
   error: string | null;
   connectWebSocket: () => void; // 새로고침 없이 WebSocket 연결하는 함수 추가

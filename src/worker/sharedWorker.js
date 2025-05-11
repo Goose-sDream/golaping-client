@@ -60,8 +60,7 @@ const connectStomp = (apiUrl, voteUuid) => {
 
     onConnect: () => {
       isConnected = true;
-      broadcast({ type: "CONNECTED" });
-      console.log("voteUuid =>", voteUuid);
+      broadcast(client, { type: "CONNECTED" });
 
       // ✅ 서버에 연결 알림
       client?.publish({
@@ -97,7 +96,7 @@ const connectStomp = (apiUrl, voteUuid) => {
       // 4. 내가 투표했을 때 결과 구독
       client?.subscribe(`/user/queue/vote/${voteUuid}`, (message) => {
         const body = JSON.parse(message.body);
-        broadcast({ type: "MY_VOTE_RESULT", payload: body });
+        broadcast({ type: "I_VOTED", payload: body });
       });
 
       // 5. 에러 응답 구독

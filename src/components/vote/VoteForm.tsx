@@ -15,6 +15,7 @@ const VoteForm = () => {
   const voteUuid = storage.getItem("voteUuid");
 
   useEffect(() => {
+    console.log("새로 들어왔어요");
     if (voteUuid) {
       const intervalId = setInterval(() => {
         if (isVoteExpired()) {
