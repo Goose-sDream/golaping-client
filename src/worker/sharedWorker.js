@@ -13,11 +13,19 @@ self.onconnect = (e) => {
 
   port.onmessage = (e) => {
     const { type, payload } = e.data;
+    const { tabId } = payload || {};
     console.log("[Worker] Received message:", type, payload);
     switch (type) {
-      case "INIT":
+      case "INIT": {
+        const existing = ports.find((p) => p.port === port);
+        if (!existing) {
+          ports.push({ port, tabId });
+          console.log(`[Worker] New tab connected: ${tabId}`);
+        }
+
         connectStomp(payload.apiUrl, payload.voteUuid);
         break;
+      }
       case "SEND":
         if (!isConnected) {
           console.log("WebSocket not connected yet, dropping message");
@@ -127,5 +135,10 @@ const connectStomp = (apiUrl, voteUuid) => {
 };
 
 const broadcast = (messageObj) => {
-  ports.forEach((port) => port.postMessage(messageObj));
+  ports.forEach(({ port, tabId }) => {
+    port.postMessage({
+      ...messageObj,
+      tabId, // ✅ 각 포트에게 자신만의 tabId 포함해서 전송
+    });
+  });
 };

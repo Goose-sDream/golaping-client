@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Client } from "@stomp/stompjs";
+import { v4 as uuid } from "uuid";
 import StorageController from "@/storage/storageController";
 import { isVoteExpired } from "@/utils/sessionUtils";
 
@@ -13,6 +14,7 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
   const [error, setError] = useState<string | null>(null);
   const clientRef = useRef<Client | null>(null);
   const workerRef = useRef<SharedWorker | null>(null);
+  const tabIdRef = useRef(uuid());
   const listenersRef = useRef<ListenersRef>({});
   const [eventQueue, setEventQueue] = useState<SubDataUnion[]>([]);
   const [client, setClient] = useState<Client | null | undefined>(null);
@@ -32,8 +34,6 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
       return;
     }
 
-    // disconnect();
-
     // const isSharedWorkerSupported = typeof SharedWorker !== "undefined";
     const isSharedWorkerSupported = false;
 
@@ -47,6 +47,7 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
         payload: {
           apiUrl: process.env.API_URL,
           voteUuid: voteUuid,
+          tabId: tabIdRef.current,
         },
       });
 
@@ -60,9 +61,9 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
 
       workerRef.current = worker;
 
-      return () => {
-        worker.port.close();
-      };
+      // return () => {
+      //   worker.port.close();
+      // };
     } else {
       console.log("sharedWorker 실행 안 됌");
 
@@ -104,7 +105,8 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
   };
 
   const subscribeSharedWebsocket = (data: BroadcastMsg, handlers: SubscribeHandlers) => {
-    const { type, payload } = data;
+    const { type, payload, tabId } = data;
+    if (tabId !== tabIdRef.current) return;
     const { onEvent, onVoteLimit, debug } = handlers;
     switch (type) {
       case "CONNECTED":
@@ -317,6 +319,7 @@ export type VotedEvent<T extends "me" | "someone"> = T extends "me"
 export type BroadcastMsg = {
   type: string;
   payload?: any;
+  tabId: string;
 };
 
 export type SubType =

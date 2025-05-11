@@ -66,18 +66,17 @@ const DoVote = () => {
   }, [connected]);
 
   useEffect(() => {
-    console.log("구독액션");
+    cleanupMatterJsEngine();
+  }, []);
+
+  useEffect(() => {
     if (eventQueue.length === 0) return;
-    console.log("구독액션 시작!!");
     onSubscribeAction();
   }, [eventQueue]);
 
   const setMatterJs = (initialResponse: InitialResponse) => {
-    console.log("너냐????");
-
     if (!containerRef.current) return;
-
-    console.log("아님 너야???");
+    if (engineRef.current && candidatesRef.current.length > 0) return;
 
     containerRef.current.querySelectorAll("canvas").forEach((c) => c.remove());
 
@@ -99,10 +98,6 @@ const DoVote = () => {
     renderRef.current = render;
 
     initMatterJsEngine(initialResponse);
-
-    return () => {
-      cleanupMatterJsEngine(runner);
-    };
   };
 
   const initMatterJsEngine = (payload: InitialResponse) => {
@@ -150,34 +145,35 @@ const DoVote = () => {
     afterUpdateHandlerRef.current = () => {
       const { previousVotes } = payload;
       if (previousVotes.length > 0) {
-        console.log("afterUpdate 타이밍, prevVotes 렌더 시작");
+        // matter.js 세팅이 완료된 후에 안정적으로 prevBall 렌더
         renderPrevBalls(payload, world);
         setTotalVoteCount(previousVotes.reduce((count, item) => (item.isVotedByUser ? count + 1 : count), 0));
       }
       // ✅ 딱 한 번만 실행하고, 핸들러 등록 해제
-      // Events.off(engine, "afterUpdate", afterUpdateHandlerRef.current!);
+      Events.off(engine, "afterUpdate", afterUpdateHandlerRef.current!);
     };
 
     Events.on(engine, "afterUpdate", afterUpdateHandlerRef.current);
   };
 
-  const cleanupMatterJsEngine = (runner: Runner) => {
+  const cleanupMatterJsEngine = () => {
+    if (engineRef.current) {
+      Events.off(engineRef.current, "afterUpdate");
+    }
+
     if (renderRef.current) {
       Render.stop(renderRef.current);
       renderRef.current.canvas.remove();
       renderRef.current.textures = {};
       renderRef.current = null;
-      runnerRef.current = null;
     }
 
-    if (engineRef.current) {
-      Runner.stop(runner ?? Runner.create()); // 혹시라도 runner 참조가 없다면
+    if (engineRef.current && runnerRef.current) {
+      Runner.stop(runnerRef.current); // 혹시라도 runner 참조가 없다면
       Engine.clear(engineRef.current);
-      engineRef.current = null; // ✅ 이거 추가
+      engineRef.current = null;
     }
-
-    // 이벤트 해제
-    Events.off(engineRef.current, "afterUpdate"); // 핸들러 직접 넘기지 않아도 전체 해제 가능
+    candidatesRef.current = [];
   };
 
   const makeWalls = () => {
