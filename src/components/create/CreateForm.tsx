@@ -8,10 +8,13 @@ import { BasicForm, LandingForm, OptionForm, ShareVote } from "./steps";
 import { limitState } from "@/atoms/createAtom";
 import { Button, Stepper } from "@/components/common";
 import Request from "@/services/requests";
-import StorageController from "@/storage/storageController";
+// import StorageController from "@/storage/storageController";
 import { APIResponse } from "@/types/apiTypes";
+import { getStorage } from "@/util";
 
-const storage = new StorageController("session");
+// const isSharedWorkerSupported = typeof SharedWorker !== "undefined";
+// const storage = new StorageController(isSharedWorkerSupported ? "local" : "session");
+const storage = getStorage();
 
 export const CreateForm = () => {
   const methods = useForm({

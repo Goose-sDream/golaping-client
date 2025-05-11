@@ -3,6 +3,10 @@ importScripts("https://cdn.jsdelivr.net/npm/@stomp/stompjs@7.0.0/bundles/stomp.u
 let client = null;
 const ports = [];
 let isConnected = false;
+let voteLimit;
+let previousVotes,
+  votedOptions = [];
+// let initialResponse;
 
 console.log("[SharedWorker] New instance created!", Date.now());
 
@@ -13,19 +17,27 @@ self.onconnect = (e) => {
 
   port.onmessage = (e) => {
     const { type, payload } = e.data;
-    const { tabId } = payload || {};
     console.log("[Worker] Received message:", type, payload);
-    switch (type) {
-      case "INIT": {
-        const existing = ports.find((p) => p.port === port);
-        if (!existing) {
-          ports.push({ port, tabId });
-          console.log(`[Worker] New tab connected: ${tabId}`);
-        }
 
+    switch (type) {
+      case "INIT":
+        if (isConnected) {
+          broadcast({ type: "CONNECTED" });
+          broadcast({
+            type: "INITIAL_RESPONSE",
+            payload: {
+              previousVotes: previousVotes.map((prev) => ({
+                ...prev,
+                isVotedByUser: votedOptions.includes(prev.optionId),
+              })),
+              voteLimit,
+            },
+          });
+          console.log("<쉐어드> 넘기는 previousVotes", previousVotes);
+          return;
+        }
         connectStomp(payload.apiUrl, payload.voteUuid);
         break;
-      }
       case "SEND":
         if (!isConnected) {
           console.log("WebSocket not connected yet, dropping message");
@@ -60,6 +72,9 @@ self.onconnect = (e) => {
 };
 
 const connectStomp = (apiUrl, voteUuid) => {
+  commonVoteUuid = voteUuid;
+  console.log("이미 있자나");
+  console.log("isConnected =>", isConnected);
   if (client) return;
 
   client = new self.StompJs.Client({
@@ -67,8 +82,9 @@ const connectStomp = (apiUrl, voteUuid) => {
     reconnectDelay: 5000,
 
     onConnect: () => {
+      console.log("새로 연결됨?");
       isConnected = true;
-      broadcast(client, { type: "CONNECTED" });
+      broadcast({ type: "CONNECTED" });
 
       // ✅ 서버에 연결 알림
       client?.publish({
@@ -77,6 +93,8 @@ const connectStomp = (apiUrl, voteUuid) => {
       // ✅ 1. 초기 투표 데이터 구독
       client?.subscribe(`/user/queue/${voteUuid}/initialResponse`, (message) => {
         const body = JSON.parse(message.body);
+        voteLimit = body.voteLimit;
+        previousVotes = body.previousVotes;
         broadcast({
           type: "INITIAL_RESPONSE",
           payload: {
@@ -89,6 +107,14 @@ const connectStomp = (apiUrl, voteUuid) => {
       // ✅ 2. 새 옵션 추가 이벤트 구독
       client?.subscribe(`/topic/vote/${voteUuid}/addOption`, (message) => {
         const body = JSON.parse(message.body);
+        previousVotes.push({
+          optionId: body.optionId,
+          optionName: body.optionName,
+          voteColor: body.voteColor,
+          voteCount: 0,
+          isVotedByUser: false,
+        });
+        console.log("<쉐어드> 새로 추가된 prev =>", previousVotes);
         broadcast({
           type: "NEW_OPTION_RECEIVED",
           payload: body,
@@ -98,12 +124,25 @@ const connectStomp = (apiUrl, voteUuid) => {
       // 3. 누가 투표했을 때 구독
       client?.subscribe(`/topic/vote/${voteUuid}`, (message) => {
         const body = JSON.parse(message.body);
+        previousVotes = previousVotes.map((prev) => {
+          return prev.optionId === body.changedOption.optionId
+            ? { ...prev, voteCount: body.changedOption.voteCount }
+            : prev;
+          // if (prev.optionId === body.changedOption.optionId) {
+          //   return { ...prev, voteCount: body.changedOption.voteCount };
+          // } else {
+          //   return prev
+          // }
+        });
+        console.log("<쉐어드> 누가 투표하고 난 뒤 prev =>", previousVotes);
         broadcast({ type: "SOMEONE_VOTED", payload: body });
       });
 
       // 4. 내가 투표했을 때 결과 구독
       client?.subscribe(`/user/queue/vote/${voteUuid}`, (message) => {
         const body = JSON.parse(message.body);
+        votedOptions = [...new Set([...votedOptions, body.result.changedOption.optionId])];
+        console.log("<쉐어드> 내가 투표한 optionId들 =>", votedOptions);
         broadcast({ type: "I_VOTED", payload: body });
       });
 
@@ -135,10 +174,5 @@ const connectStomp = (apiUrl, voteUuid) => {
 };
 
 const broadcast = (messageObj) => {
-  ports.forEach(({ port, tabId }) => {
-    port.postMessage({
-      ...messageObj,
-      tabId, // ✅ 각 포트에게 자신만의 tabId 포함해서 전송
-    });
-  });
+  ports.forEach((port) => port.postMessage(messageObj));
 };

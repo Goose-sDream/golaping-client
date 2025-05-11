@@ -13,12 +13,14 @@ import {
   SHRINKTHRESHOLD,
 } from "@/constants/vote";
 import { InitialResponse, RecievedMsg, useWebSocket, VotedEvent } from "@/contexts/WebSocketContext";
-import StorageController from "@/storage/storageController";
+// import StorageController from "@/storage/storageController";
 import { borderMap, optionColorMap, optionColors, PURPLE } from "@/styles/color";
+import { getStorage } from "@/util";
 
 const MakeCandidate = () => {
   const navigate = useNavigate();
-  const storage = new StorageController("session");
+  // const storage = new StorageController("session");
+  const storage = getStorage();
   const voteEndTime = storage.getItem("voteEndTime");
   const { client, voteLimit, voteUuid, connected, connectWebSocket, workerRef, registerListener } = useWebSocket();
 

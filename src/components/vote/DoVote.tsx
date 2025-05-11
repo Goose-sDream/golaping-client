@@ -13,10 +13,11 @@ import {
   SHRINKTHRESHOLD,
 } from "@/constants/vote";
 import { InitialResponse, RecievedMsg, SubDataUnion, useWebSocket, VotedEvent } from "@/contexts/WebSocketContext";
-import StorageController from "@/storage/storageController";
+// import StorageController from "@/storage/storageController";
 import { borderMap, optionColorMap, optionColors, PURPLE } from "@/styles/color";
+import { getStorage } from "@/util";
 
-const storage = new StorageController("session");
+const storage = getStorage();
 const voteEndTime = storage.getItem("voteEndTime");
 
 const DoVote = () => {
@@ -641,10 +642,9 @@ const DoVote = () => {
   // 보더
   const updateBorder = (ball: Body, isVotedByUser: boolean, voteLimit: number | null, parsedBalls: number[]) => {
     ball.render.lineWidth = voteLimit ? (isVotedByUser ? 8 : 0) : 8;
-    console.log("fillStyle 값:", ball.render.fillStyle);
     ball.render.strokeStyle = isVotedByUser ? chooseBorderColor(ball.render.fillStyle || "black") : "";
     parsedBalls.push(ball.id);
-    storage.setItem(`${voteUuid}`, JSON.stringify([...new Set(parsedBalls)]));
+    storage.setItem(`voted`, JSON.stringify([...new Set(parsedBalls)]));
   };
 
   const updateBallBorder = (targetBall: TargetBall, isVotedByUser: boolean) => {

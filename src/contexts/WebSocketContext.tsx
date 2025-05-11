@@ -1,11 +1,13 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Client } from "@stomp/stompjs";
-import { v4 as uuid } from "uuid";
-import StorageController from "@/storage/storageController";
+// import { v4 as uuid } from "uuid";
+// import StorageController from "@/storage/storageController";
+import { getStorage } from "@/util";
 import { isVoteExpired } from "@/utils/sessionUtils";
 
 const WebSocketContext = createContext<WebSocketContextType | null>(null);
-const storage = new StorageController("session");
+// const storage = new StorageController("session");
+const storage = getStorage();
 
 export const WebSocketProvider = ({ children }: { children: React.ReactNode }) => {
   const [step, setStep] = useState(0);
@@ -14,10 +16,10 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
   const [error, setError] = useState<string | null>(null);
   const clientRef = useRef<Client | null>(null);
   const workerRef = useRef<SharedWorker | null>(null);
-  const tabIdRef = useRef(uuid());
+  // const tabIdRef = useRef(uuid());
   const listenersRef = useRef<ListenersRef>({});
   const [eventQueue, setEventQueue] = useState<SubDataUnion[]>([]);
-  const [client, setClient] = useState<Client | null | undefined>(null);
+  // const [client, setClient] = useState<Client | null | undefined>(null);
 
   const voteUuid = storage.getItem("voteUuid");
 
@@ -34,24 +36,27 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
       return;
     }
 
-    // const isSharedWorkerSupported = typeof SharedWorker !== "undefined";
-    const isSharedWorkerSupported = false;
+    const isSharedWorkerSupported = typeof SharedWorker !== "undefined";
+    // const isSharedWorkerSupported = false;
 
     if (isSharedWorkerSupported) {
       console.log("sharedWorker 실행");
-      const worker = new SharedWorker(new URL("../worker/sharedWorker.js", import.meta.url), { type: "module" });
-      worker.port.start();
+      if (!workerRef.current) {
+        const worker = new SharedWorker(new URL("../worker/sharedWorker.js", import.meta.url), { type: "module" });
+        worker.port.start();
+        workerRef.current = worker;
+      }
 
-      worker.port.postMessage({
+      workerRef.current.port.postMessage({
         type: "INIT",
         payload: {
           apiUrl: process.env.API_URL,
           voteUuid: voteUuid,
-          tabId: tabIdRef.current,
+          // tabId: tabIdRef.current,
         },
       });
 
-      worker.port.onmessage = (e) => {
+      workerRef.current.port.onmessage = (e) => {
         subscribeSharedWebsocket(e.data, {
           onEvent: (event) => setEventQueue((prev) => [...prev, event]),
           onVoteLimit: (limit) => setVoteLimit(limit),
@@ -59,7 +64,7 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
         });
       };
 
-      workerRef.current = worker;
+      // workerRef.current = worker;
 
       // return () => {
       //   worker.port.close();
@@ -73,7 +78,6 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
         reconnectDelay: 500000000,
         onConnect: () => {
           clientRef.current = client;
-          setClient(client);
           subscribeGeneralWebSocket(client, voteUuid, {
             onEvent: (event) => setEventQueue((prev) => [...prev, event]),
             onVoteLimit: (limit) => setVoteLimit(limit),
@@ -105,8 +109,9 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
   };
 
   const subscribeSharedWebsocket = (data: BroadcastMsg, handlers: SubscribeHandlers) => {
-    const { type, payload, tabId } = data;
-    if (tabId !== tabIdRef.current) return;
+    const { type, payload } = data;
+    // if (tabId !== tabIdRef.current) return;
+    console.log("type =>", type);
     const { onEvent, onVoteLimit, debug } = handlers;
     switch (type) {
       case "CONNECTED":
@@ -158,14 +163,15 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
   ) => {
     console.log("여기여기 =>", voteUuid);
     const { onEvent, onVoteLimit, debug } = handlers;
-    client.publish({
-      destination: `/app/vote/connect`,
-    });
+
     client.subscribe(`/user/queue/${voteUuid}/initialResponse`, (message: { body: string }) => {
       const payload: InitialResponse = JSON.parse(message.body);
       debug?.("INITIAL_RESPONSE", payload);
       onEvent({ type: "INITIAL_RESPONSE", payload });
       onVoteLimit(payload.voteLimit);
+    });
+    client.publish({
+      destination: `/app/vote/connect`,
     });
     client.subscribe(`/topic/vote/${voteUuid}/addOption`, (message: { body: string }) => {
       const payload: RecievedMsg = JSON.parse(message.body);
@@ -223,7 +229,7 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
       setEventQueue,
       voteLimit,
       voteUuid,
-      client: client,
+      client: clientRef.current,
       connected,
       error,
       connectWebSocket: initializeWebSocket,
@@ -319,7 +325,7 @@ export type VotedEvent<T extends "me" | "someone"> = T extends "me"
 export type BroadcastMsg = {
   type: string;
   payload?: any;
-  tabId: string;
+  // tabId: string;
 };
 
 export type SubType =

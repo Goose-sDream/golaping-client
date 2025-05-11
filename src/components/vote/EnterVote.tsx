@@ -5,16 +5,37 @@ import LogoWithInput from "./LogoWithInput";
 import { Button } from "@/components/common";
 import { useWebSocket } from "@/contexts/WebSocketContext";
 import Request from "@/services/requests";
-import StorageController from "@/storage/storageController";
+// import StorageController from "@/storage/storageController";
 import { APIResponse } from "@/types/apiTypes";
+import { getStorage } from "@/util";
+// import { useEffect } from "react";
 
-const storage = new StorageController("session");
+// const storage = new StorageController("session");
+const storage = getStorage();
 
 const EnterVote = () => {
-  const { register, handleSubmit } = useForm();
   const { id, title } = useParams();
-  const request = Request();
   const { connectWebSocket } = useWebSocket();
+
+  const isSharedWorkerSupported = typeof SharedWorker !== "undefined";
+
+  if (isSharedWorkerSupported && id) {
+    // ✅ 웹소켓 연결 실행
+    connectWebSocket(id);
+  }
+
+  // useEffect(() => {
+  //   if (isSharedWorkerSupported && id) {
+  //     // ✅ 웹소켓 연결 실행
+  //     connectWebSocket(id);
+  //   }
+  // }, [isSharedWorkerSupported, id]);
+
+  // // ✅ SharedWorker 환경이면 아무것도 렌더링하지 않음
+  // if (isSharedWorkerSupported) return null;
+
+  const { register, handleSubmit } = useForm();
+  const request = Request();
 
   const onSubmit = async (data: FieldValues) => {
     try {

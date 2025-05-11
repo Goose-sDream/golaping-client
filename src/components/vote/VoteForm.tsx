@@ -5,13 +5,15 @@ import DoVote from "./DoVote";
 import EnterVote from "./EnterVote";
 // import MakeCandidate from "./MakeCandidate";
 import { useWebSocket } from "@/contexts/WebSocketContext";
-import StorageController from "@/storage/storageController";
+// import StorageController from "@/storage/storageController";
+import { getStorage } from "@/util";
 import { clearSession, isVoteExpired } from "@/utils/sessionUtils";
 
 const VoteForm = () => {
   const { step } = useWebSocket();
   const navigate = useNavigate();
-  const storage = new StorageController("session");
+  // const storage = new StorageController("session");
+  const storage = getStorage();
   const voteUuid = storage.getItem("voteUuid");
 
   useEffect(() => {
