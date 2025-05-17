@@ -6,15 +6,20 @@ import { getStorage } from "@/util";
 
 const CreatePage = () => {
   const isSharedWorkerSupported = typeof SharedWorker !== "undefined";
-  const storage = getStorage();
   const navigate = useNavigate();
+  const storage = getStorage();
+  const voteUuid = storage.getItem("voteUuid");
+  const title = storage.getItem("voteTitle");
 
   useEffect(() => {
-    if (isSharedWorkerSupported) {
-      const voteUuid = storage.getItem("voteUuid");
-      const title = storage.getItem("voteTitle");
+    if (isSharedWorkerSupported && voteUuid && title) {
       navigate(`votes/${voteUuid}/${title}`);
     }
+    // if (isSharedWorkerSupported) {
+    //   const voteUuid = storage.getItem("voteUuid");
+    //   const title = storage.getItem("voteTitle");
+    //   navigate(`votes/${voteUuid}/${title}`);
+    // }
   }, []);
 
   return (

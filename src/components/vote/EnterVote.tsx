@@ -15,16 +15,6 @@ const EnterVote = () => {
   const { id, title } = useParams();
   const { connectWebSocket } = useWebSocket();
 
-  // useEffect(() => {
-  //   if (isSharedWorkerSupported && id) {
-  //     // ✅ 웹소켓 연결 실행
-  //     connectWebSocket(id);
-  //   }
-  // }, [isSharedWorkerSupported, id]);
-
-  // // ✅ SharedWorker 환경이면 아무것도 렌더링하지 않음
-  // if (isSharedWorkerSupported) return null;
-
   const { register, handleSubmit } = useForm();
   const request = Request();
 

@@ -103,8 +103,7 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
 
   const subscribeSharedWebsocket = (data: BroadcastMsg, handlers: SubscribeHandlers) => {
     const { type, payload } = data;
-    // if (tabId !== tabIdRef.current) return;
-    console.log("type =>", type);
+
     const { onEvent, onVoteLimit, debug } = handlers;
     switch (type) {
       case "CONNECTED":
@@ -193,11 +192,24 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
   };
 
   useEffect(() => {
+    const handleBeforeUnload = () => {
+      const navEntries = performance.getEntriesByType("navigation") as PerformanceNavigationTiming[];
+      const isReload = navEntries[0]?.type === "reload";
+
+      if (!isReload) {
+        // 탭 닫기일 때만 clear
+        storage.clear();
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
     initializeWebSocket(voteUuid);
     return () => {
       console.log("끝??");
       disconnect();
       storage.clear();
+      window.removeEventListener("beforeunload", handleBeforeUnload);
       if (isSharedWorkerSupported && workerRef.current) workerRef.current.port.close();
     };
   }, []); // 처음 마운트될 때 한 번만 실행

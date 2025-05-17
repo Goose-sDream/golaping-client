@@ -6,7 +6,6 @@ let isConnected = false;
 let voteLimit;
 let previousVotes,
   votedOptions = [];
-// let initialResponse;
 
 console.log("[SharedWorker] New instance created!", Date.now());
 
