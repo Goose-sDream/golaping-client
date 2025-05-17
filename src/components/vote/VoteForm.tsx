@@ -4,14 +4,12 @@ import styled from "styled-components";
 import DoVote from "./DoVote";
 import EnterVote from "./EnterVote";
 import { useWebSocket } from "@/contexts/WebSocketContext";
-// import StorageController from "@/storage/storageController";
 import { getStorage } from "@/util";
 import { clearSession, isVoteExpired } from "@/utils/sessionUtils";
 
 const VoteForm = () => {
   const { step } = useWebSocket();
   const navigate = useNavigate();
-  // const storage = new StorageController("session");
   const storage = getStorage();
   const voteUuid = storage.getItem("voteUuid");
 
@@ -31,8 +29,6 @@ const VoteForm = () => {
       }; // 컴포넌트 언마운트 시 정리
     }
   }, []);
-
-  console.log("newStep =>", step);
 
   const steps: { [key: number]: JSX.Element } = {
     1: <EnterVote />,

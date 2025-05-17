@@ -20,9 +20,7 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
   const workerRef = useRef<SharedWorker | null>(null);
 
   const isSharedWorkerSupported = typeof SharedWorker !== "undefined";
-
   const voteUuid = storage.getItem("voteUuid");
-  console.log("WebSocketProvider 내 voteUuid", voteUuid);
 
   const initializeWebSocket = (voteUuid: string | null) => {
     if (isVoteExpired()) {
@@ -191,25 +189,24 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
     });
   };
 
+  const sendMessageToWorker = (type: string, destination: string, body?: any) => {
+    if (workerRef?.current) {
+      workerRef?.current.port.postMessage({
+        type,
+        payload: {
+          destination,
+          body,
+        },
+      });
+    }
+  };
+
   useEffect(() => {
-    const handleBeforeUnload = () => {
-      const navEntries = performance.getEntriesByType("navigation") as PerformanceNavigationTiming[];
-      const isReload = navEntries[0]?.type === "reload";
-
-      if (!isReload) {
-        // 탭 닫기일 때만 clear
-        storage.clear();
-      }
-    };
-
-    window.addEventListener("beforeunload", handleBeforeUnload);
-
     initializeWebSocket(voteUuid);
     return () => {
       console.log("끝??");
       disconnect();
       storage.clear();
-      window.removeEventListener("beforeunload", handleBeforeUnload);
       if (isSharedWorkerSupported && workerRef.current) workerRef.current.port.close();
     };
   }, []); // 처음 마운트될 때 한 번만 실행
@@ -235,7 +232,7 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
       connected,
       error,
       connectWebSocket: initializeWebSocket,
-      // sendMessageToWorker,
+      sendMessageToWorker,
       workerRef,
     }),
     [step, connected, error, voteLimit, eventQueue]
@@ -262,6 +259,7 @@ interface WebSocketContextType {
   client: Client | null | undefined;
   connected: boolean;
   error: string | null;
+  sendMessageToWorker: (type: string, destination: string, body?: any) => void;
   connectWebSocket: (voteUuid: string | null) => void; // 새로고침 없이 WebSocket 연결하는 함수 추가
   workerRef?: React.RefObject<SharedWorker | null>;
 }

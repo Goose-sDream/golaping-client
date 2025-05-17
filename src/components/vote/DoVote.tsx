@@ -23,8 +23,17 @@ const voteEndTime = storage.getItem("voteEndTime");
 const DoVote = () => {
   const navigate = useNavigate();
 
-  const { client, eventQueue, setEventQueue, voteLimit, voteUuid, connected, connectWebSocket, workerRef } =
-    useWebSocket();
+  const {
+    client,
+    eventQueue,
+    setEventQueue,
+    voteLimit,
+    voteUuid,
+    connected,
+    connectWebSocket,
+    workerRef,
+    sendMessageToWorker,
+  } = useWebSocket();
   const afterUpdateHandlerRef = useRef<((e: Matter.IEvent<Engine>) => void) | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const engineRef = useRef<Engine | null>(null);
@@ -306,16 +315,20 @@ const DoVote = () => {
     return { x, y };
   };
 
+  const getVotedBalls = () => {
+    const selectedBall = storage.getItem(`voted-${voteUuid}`);
+    const parsedBalls = selectedBall ? JSON.parse(selectedBall) : [];
+    return parsedBalls;
+  };
+
   const organizeBalls = (payload: InitialResponse, world: World) => {
     if (!candidatesRef.current) return;
 
     const { previousVotes: prevVotes, voteLimit } = payload;
 
-    const selectedBall = storage.getItem(`voted-${voteUuid}`);
-    const parsedBalls = selectedBall ? JSON.parse(selectedBall) : [];
-
     prevVotes.forEach((prev) => {
       if (!candidatesRef.current.some((candidate) => candidate.ball.id === prev.optionId)) {
+        const parsedBalls = getVotedBalls();
         const alreadyBordered = parsedBalls.some((id: number) => id === prev.optionId);
         makeNewBall(
           {
@@ -373,19 +386,6 @@ const DoVote = () => {
     setPendingPosition(null);
     updateUsedPercentage();
     updateZoom();
-  };
-
-  // 투표 publish
-  const sendMessageToWorker = (type: string, destination: string, body?: any) => {
-    if (workerRef?.current) {
-      workerRef?.current.port.postMessage({
-        type,
-        payload: {
-          destination,
-          body,
-        },
-      });
-    }
   };
 
   const sendNewOption = (optionObj: OptionObj) => {
@@ -541,17 +541,17 @@ const DoVote = () => {
 
   // 보더
   const updateBorder = (ball: Body, isVotedByUser: boolean, voteLimit: number | null, parsedBalls: number[]) => {
-    ball.render.lineWidth = voteLimit ? (isVotedByUser ? 8 : 0) : 8;
+    ball.render.lineWidth = isVotedByUser ? 8 : 0;
     ball.render.strokeStyle = isVotedByUser ? chooseBorderColor(ball.render.fillStyle || "black") : "";
+
     parsedBalls.push(ball.id);
     storage.setItem(`voted-${voteUuid}`, JSON.stringify([...new Set(parsedBalls)]));
   };
 
   const updateBallBorder = (targetBall: TargetBall, isVotedByUser: boolean) => {
     const { ball } = targetBall;
-    // console.log("업데이트 보더", "voteLimit =>", voteLimit, "isVotedByUser =>", isVotedByUser);
-    const selectedBall = storage.getItem(`voted-${voteUuid}`);
-    const parsedBalls: number[] = selectedBall ? JSON.parse(selectedBall) : [];
+    console.log("업데이트 보더", "voteLimit =>", voteLimit, "isVotedByUser =>", isVotedByUser);
+    const parsedBalls = getVotedBalls();
     if (voteLimit !== null) {
       updateBorder(ball, isVotedByUser, voteLimit, parsedBalls);
       if (isVotedByUser) {
