@@ -53,6 +53,7 @@ export const CreateForm = () => {
       storage.setItem("voteIdx", String(voteIdx));
       storage.setItem("limited", JSON.stringify(limited));
       storage.setItem("voteTitle", data.title);
+      storage.setItem("isSharedWorker", isSharedWorkerSupported ? "true" : "false");
       sessionStorage.setItem("isSharedWorker", isSharedWorkerSupported ? "true" : "false");
       setTitle(data.title);
       // 새로고침 시에도 "제한"/"무제한" 유지되도록 세션스토리지에 저장함
@@ -71,7 +72,18 @@ export const CreateForm = () => {
     navigate(randomLink + `/${title}`);
   };
 
+  const handleRestrict = () => {
+    if (isSharedWorkerSupported && storage.getItem("isSharedWorker")) {
+      alert("이미 동일한 브라우저에서 생성한 투표가 있습니다. \n기존 투표로 이동해서 투표를 종료해주세요.");
+      const voteUuid = storage.getItem("voteUuid");
+      const voteTitle = storage.getItem("voteTitle");
+      navigate(`votes/${voteUuid}/${voteTitle}`);
+      return;
+    }
+  };
+
   const handleNextStep = async (fields?: string[]) => {
+    handleRestrict();
     const isValid = fields ? await trigger(fields) : true;
 
     if (isValid) {

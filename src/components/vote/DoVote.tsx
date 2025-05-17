@@ -17,10 +17,8 @@ import { borderMap, optionColorMap, optionColors, PURPLE } from "@/styles/color"
 import { getStorage } from "@/util";
 import { clearSession } from "@/utils/sessionUtils";
 
-const storage = getStorage();
-const voteEndTime = storage.getItem("voteEndTime");
-
 const DoVote = () => {
+  const storage = getStorage();
   const navigate = useNavigate();
 
   const {
@@ -53,6 +51,8 @@ const DoVote = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const isAnimating = useRef(false);
   const [error, setError] = useState<string | null>(null);
+
+  const voteEndTime = storage.getItem("voteEndTime");
 
   useEffect(() => {
     if (workerRef?.current) return;

@@ -12,6 +12,7 @@ import { getStorage } from "@/util";
 const storage = getStorage();
 
 const EnterVote = () => {
+  const isSharedWorkerSupported = typeof SharedWorker !== "undefined";
   const { id, title } = useParams();
   const { connectWebSocket } = useWebSocket();
 
@@ -31,11 +32,11 @@ const EnterVote = () => {
         storage.setItem("voteEndTime", voteEndTime);
         storage.setItem("voteIdx", String(voteIdx));
         storage.setItem("voteTitle", String(title));
-        sessionStorage.setItem("isSharedWorker", "false");
-        console.log("스토리지 저장??");
-        if (id) {
-          connectWebSocket(id);
-        } // 새로고침 없이 웹소켓 재연결 실행
+        storage.setItem("isSharedWorker", isSharedWorkerSupported ? "true" : "false");
+        sessionStorage.setItem("isSharedWorker", isSharedWorkerSupported ? "true" : "false");
+
+        if (id) connectWebSocket(id);
+        // 새로고침 없이 웹소켓 재연결 실행
       }
     } catch (error) {
       console.error("Failed to enter vote:", error);
