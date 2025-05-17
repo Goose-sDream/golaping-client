@@ -12,7 +12,6 @@ import { getStorage } from "@/util";
 const storage = getStorage();
 
 const EnterVote = () => {
-  console.log("EnterVote 들어는오나");
   const { id, title } = useParams();
   const { connectWebSocket } = useWebSocket();
 
@@ -41,6 +40,7 @@ const EnterVote = () => {
         storage.setItem("voteUuid", id!);
         storage.setItem("voteEndTime", voteEndTime);
         storage.setItem("voteIdx", String(voteIdx));
+        storage.setItem("voteTitle", String(title));
         sessionStorage.setItem("isSharedWorker", "false");
         console.log("스토리지 저장??");
         if (id) {

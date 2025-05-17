@@ -33,7 +33,7 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
 
     if (!isSharedWorkerSupported) {
       if (!voteUuid || !sessionStorage.getItem("isSharedWorker")) {
-        console.log("No voteUuid found, skipping WebSocket connection.");
+        console.log("No voteUuid found, skipping WebSocket connection || 새로운 탭에서 접근합니다.");
         setStep(1);
         return;
       }

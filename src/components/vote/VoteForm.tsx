@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import DoVote from "./DoVote";
 import EnterVote from "./EnterVote";
-// import MakeCandidate from "./MakeCandidate";
 import { useWebSocket } from "@/contexts/WebSocketContext";
 // import StorageController from "@/storage/storageController";
 import { getStorage } from "@/util";
@@ -37,7 +36,6 @@ const VoteForm = () => {
 
   const steps: { [key: number]: JSX.Element } = {
     1: <EnterVote />,
-    // 2: <MakeCandidate />,
     2: <DoVote />,
   };
   return <Wrapper>{steps[step]}</Wrapper>;

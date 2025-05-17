@@ -13,7 +13,6 @@ import {
   SHRINKTHRESHOLD,
 } from "@/constants/vote";
 import { InitialResponse, RecievedMsg, SubDataUnion, useWebSocket, VotedEvent } from "@/contexts/WebSocketContext";
-// import StorageController from "@/storage/storageController";
 import { borderMap, optionColorMap, optionColors, PURPLE } from "@/styles/color";
 import { getStorage } from "@/util";
 import { clearSession } from "@/utils/sessionUtils";
@@ -29,7 +28,6 @@ const DoVote = () => {
   const afterUpdateHandlerRef = useRef<((e: Matter.IEvent<Engine>) => void) | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const engineRef = useRef<Engine | null>(null);
-  // const world = engineRef.current?.world;
   const renderRef = useRef<Render | null>(null);
   const runnerRef = useRef<Runner | null>(null);
   const candidatesRef = useRef<TargetBall[]>([]);
@@ -231,7 +229,6 @@ const DoVote = () => {
       // 원 클릭하면
       const targetBall = candidatesRef.current[targetId];
       publishVoteCount(targetBall);
-      // subscribeVoted();
     }
   };
 
@@ -259,8 +256,6 @@ const DoVote = () => {
       text,
     } = newBallObj;
 
-    console.log("isLimited =>", isLimited);
-
     const newBall = Bodies.circle(x, y, BASERADIUS, {
       restitution: 0.8,
       render: {
@@ -269,8 +264,8 @@ const DoVote = () => {
         strokeStyle: Bordered ? chooseBorderColor(color) || "black" : "",
       },
       collisionFilter: {
-        category: isLimited ? 0x0001 : 0x0002, // ✅ 제한이면 드래그 가능 (0x0001), 무제한이면 드래그 불가 (0x0002)
-        mask: isLimited ? 0x0001 | 0x0008 : 0x0002 | 0x0008, // ✅  충돌 허용
+        category: isLimited ? 0x0002 : 0x0001, // ✅ 제한이면 드래그 가능 (0x0001), 무제한이면 드래그 불가 (0x0002)
+        mask: isLimited ? 0x0002 | 0x0008 : 0x0001 | 0x0008, // ✅  충돌 허용
       },
     });
     if (ballId) newBall.id = ballId;
@@ -445,14 +440,6 @@ const DoVote = () => {
     }
   };
 
-  // 구독
-  // const subscribeAll = (currentVoteLimit: number | null) => {
-  //   subscribeNewOption(currentVoteLimit);
-  //   subscribeVoted();
-  //   subscribeCloseVote();
-  //   subscribeError();
-  // };
-
   const onSubscribeAction = () => {
     const latestEvent = eventQueue[0];
     const { type, payload } = latestEvent as SubDataUnion;
@@ -536,14 +523,10 @@ const DoVote = () => {
 
   const updateBallsize = () => {
     let totalCircleArea = 0;
-    // console.log("candidatesRef =>", candidatesRef.current);
     candidatesRef.current.forEach((candidate) => {
-      // console.log("candidate.count =>", candidate.count);
-      // console.log("usedPercentageRef.current.count =>", usedPercentageRef.current.count);
       let growthRate = BASEGROWTHRATE; // 투표 수당 증가량
       // 축소 횟수에 따라 성장률 점진적 감소
       growthRate *= Math.pow(SHRINKFACTOR, usedPercentageRef.current.count);
-      // console.log("growthRate =>", growthRate);
       const r = candidate.ball.circleRadius || 0;
       // 투표 수에 비례한 반지름
       const newRadius = Math.min(BASERADIUS + candidate.count * growthRate, MAXRADIUS);
@@ -566,14 +549,13 @@ const DoVote = () => {
 
   const updateBallBorder = (targetBall: TargetBall, isVotedByUser: boolean) => {
     const { ball } = targetBall;
-    console.log("업데이트 보더", "voteLimit =>", voteLimit, "isVotedByUser =>", isVotedByUser);
+    // console.log("업데이트 보더", "voteLimit =>", voteLimit, "isVotedByUser =>", isVotedByUser);
     const selectedBall = storage.getItem(`voted-${voteUuid}`);
     const parsedBalls: number[] = selectedBall ? JSON.parse(selectedBall) : [];
     if (voteLimit !== null) {
       updateBorder(ball, isVotedByUser, voteLimit, parsedBalls);
       if (isVotedByUser) {
         // 투표 시
-        console.log("들어오나요");
         parsedBalls.push(ball.id);
         storage.setItem(`voted-${voteUuid}`, JSON.stringify([...new Set(parsedBalls)]));
       } else {
@@ -746,7 +728,6 @@ const shake = keyframes`
 const StyledSection = styled.section`
   width: 800px;
   height: 600px;
-  border: 5px solid black;
   position: relative;
 `;
 
