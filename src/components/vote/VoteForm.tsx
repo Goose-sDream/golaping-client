@@ -27,9 +27,13 @@ const VoteForm = () => {
         console.log("check vote expired");
       }, 1000); // 1초마다 실행
 
-      return () => clearInterval(intervalId); // 컴포넌트 언마운트 시 정리
+      return () => {
+        clearInterval(intervalId);
+      }; // 컴포넌트 언마운트 시 정리
     }
   }, []);
+
+  console.log("newStep =>", step);
 
   const steps: { [key: number]: JSX.Element } = {
     1: <EnterVote />,

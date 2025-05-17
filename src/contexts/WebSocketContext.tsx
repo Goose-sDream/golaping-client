@@ -14,14 +14,15 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
   const [voteLimit, setVoteLimit] = useState<number | null>(null);
   const [connected, setConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [eventQueue, setEventQueue] = useState<SubDataUnion[]>([]);
+
   const clientRef = useRef<Client | null>(null);
   const workerRef = useRef<SharedWorker | null>(null);
-  // const tabIdRef = useRef(uuid());
-  const listenersRef = useRef<ListenersRef>({});
-  const [eventQueue, setEventQueue] = useState<SubDataUnion[]>([]);
-  // const [client, setClient] = useState<Client | null | undefined>(null);
+
+  const isSharedWorkerSupported = typeof SharedWorker !== "undefined";
 
   const voteUuid = storage.getItem("voteUuid");
+  console.log("WebSocketProvider 내 voteUuid", voteUuid);
 
   const initializeWebSocket = (voteUuid: string | null) => {
     if (isVoteExpired()) {
@@ -30,14 +31,13 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
       return;
     }
 
-    if (!voteUuid) {
-      console.log("No voteUuid found, skipping WebSocket connection.");
-      setStep(1);
-      return;
+    if (!isSharedWorkerSupported) {
+      if (!voteUuid || !sessionStorage.getItem("isSharedWorker")) {
+        console.log("No voteUuid found, skipping WebSocket connection.");
+        setStep(1);
+        return;
+      }
     }
-
-    const isSharedWorkerSupported = typeof SharedWorker !== "undefined";
-    // const isSharedWorkerSupported = false;
 
     if (isSharedWorkerSupported) {
       console.log("sharedWorker 실행");
@@ -52,7 +52,6 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
         payload: {
           apiUrl: process.env.API_URL,
           voteUuid: voteUuid,
-          // tabId: tabIdRef.current,
         },
       });
 
@@ -63,12 +62,6 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
           debug: (label, payload) => console.log(`[${label}]`, payload),
         });
       };
-
-      // workerRef.current = worker;
-
-      // return () => {
-      //   worker.port.close();
-      // };
     } else {
       console.log("sharedWorker 실행 안 됌");
 
@@ -161,7 +154,6 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
     voteUuid: string | null | undefined,
     handlers: SubscribeHandlers
   ) => {
-    console.log("여기여기 =>", voteUuid);
     const { onEvent, onVoteLimit, debug } = handlers;
 
     client.subscribe(`/user/queue/${voteUuid}/initialResponse`, (message: { body: string }) => {
@@ -205,6 +197,8 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
     return () => {
       console.log("끝??");
       disconnect();
+      storage.clear();
+      if (isSharedWorkerSupported && workerRef.current) workerRef.current.port.close();
     };
   }, []); // 처음 마운트될 때 한 번만 실행
 
@@ -215,10 +209,6 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
       setConnected(false);
       setError(null);
     }
-  };
-
-  const registerListener = <T extends keyof typeof listenersRef.current>(type: T, fn: (payload?: any) => void) => {
-    listenersRef.current[type] = fn;
   };
 
   const contextValue = useMemo(
@@ -235,7 +225,6 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
       connectWebSocket: initializeWebSocket,
       // sendMessageToWorker,
       workerRef,
-      registerListener,
     }),
     [step, connected, error, voteLimit, eventQueue]
   );
@@ -262,8 +251,6 @@ interface WebSocketContextType {
   connected: boolean;
   error: string | null;
   connectWebSocket: (voteUuid: string | null) => void; // 새로고침 없이 WebSocket 연결하는 함수 추가
-  // sendMessageToWorker: any;
-  registerListener?: any;
   workerRef?: React.RefObject<SharedWorker | null>;
 }
 
@@ -353,12 +340,3 @@ export type SubData<T extends SubType> = {
 export type SubDataUnion = {
   [K in SubType]: SubData<K>;
 }[SubType];
-
-type ListenersRef = {
-  initialResponse?: (payload: InitialResponse) => void;
-  onNewOption?: (payload: any) => void;
-  onSomeoneVoted?: (payload: any) => void;
-  onMyVoteResult?: (payload: any) => void;
-  onVoteClosed?: (payload: any) => void;
-  onVoteError?: (payload: any) => void;
-};

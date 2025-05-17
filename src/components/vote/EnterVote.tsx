@@ -8,21 +8,13 @@ import Request from "@/services/requests";
 // import StorageController from "@/storage/storageController";
 import { APIResponse } from "@/types/apiTypes";
 import { getStorage } from "@/util";
-// import { useEffect } from "react";
 
-// const storage = new StorageController("session");
 const storage = getStorage();
 
 const EnterVote = () => {
+  console.log("EnterVote 들어는오나");
   const { id, title } = useParams();
   const { connectWebSocket } = useWebSocket();
-
-  const isSharedWorkerSupported = typeof SharedWorker !== "undefined";
-
-  if (isSharedWorkerSupported && id) {
-    // ✅ 웹소켓 연결 실행
-    connectWebSocket(id);
-  }
 
   // useEffect(() => {
   //   if (isSharedWorkerSupported && id) {
@@ -49,7 +41,11 @@ const EnterVote = () => {
         storage.setItem("voteUuid", id!);
         storage.setItem("voteEndTime", voteEndTime);
         storage.setItem("voteIdx", String(voteIdx));
-        if (id) connectWebSocket(id); // 새로고침 없이 웹소켓 재연결 실행
+        sessionStorage.setItem("isSharedWorker", "false");
+        console.log("스토리지 저장??");
+        if (id) {
+          connectWebSocket(id);
+        } // 새로고침 없이 웹소켓 재연결 실행
       }
     } catch (error) {
       console.error("Failed to enter vote:", error);

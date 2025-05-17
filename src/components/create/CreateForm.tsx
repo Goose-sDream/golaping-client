@@ -17,6 +17,7 @@ import { getStorage } from "@/util";
 const storage = getStorage();
 
 export const CreateForm = () => {
+  const isSharedWorkerSupported = typeof SharedWorker !== "undefined";
   const methods = useForm({
     mode: "onBlur",
   });
@@ -51,6 +52,7 @@ export const CreateForm = () => {
       storage.setItem("voteEndTime", voteEndTime);
       storage.setItem("voteIdx", String(voteIdx));
       storage.setItem("limited", JSON.stringify(limited));
+      sessionStorage.setItem("isSharedWorker", isSharedWorkerSupported ? "true" : "false");
       setTitle(data.title);
       // 새로고침 시에도 "제한"/"무제한" 유지되도록 세션스토리지에 저장함
     } else {

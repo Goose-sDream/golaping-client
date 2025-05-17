@@ -12,5 +12,6 @@ export const shake = keyframes`
 
 export const getStorage = () => {
   const isSharedWorkerSupported = typeof SharedWorker !== "undefined";
-  return new StorageController(isSharedWorkerSupported ? "local" : "session");
+  const storage = new StorageController(isSharedWorkerSupported ? "local" : "session");
+  return storage;
 };

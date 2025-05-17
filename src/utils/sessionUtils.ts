@@ -3,6 +3,7 @@ import { getStorage } from "@/util";
 
 // const storage = new StorageController("session");
 const storage = getStorage();
+const voteUuid = storage.getItem("voteUuid");
 
 const removeItems = (keys: string[]) => {
   keys.forEach((key) => storage.removeItem(key));
@@ -30,13 +31,13 @@ export const clearSession = (onPurpose: boolean = false) => {
   const endTime = new Date(voteEndTime).getTime();
   if (onPurpose || Date.now() >= endTime) {
     // 투표 시간이 만료되었거나 사용자가 의도적으로 초기화한 경우
-    removeItems(["voteUuid", "voteEndTime", "limited", "voteIdx", "voted"]);
+    removeItems(["voteUuid", "voteEndTime", "limited", "voteIdx", `voted-${voteUuid}}`]);
     console.log("세션을 초기화했습니다.");
 
     // 만약 시간 만료 후 초기화하는 경우, 시간을 기다리는 로직
     if (!onPurpose && Date.now() < endTime) {
       setTimeout(() => {
-        removeItems(["voteUuid", "voteEndTime", "limited", "voteIdx", "voted"]);
+        removeItems(["voteUuid", "voteEndTime", "limited", "voteIdx", "voted", `voted-${voteUuid}}`]);
         console.log("투표 시간이 만료되어 세션을 초기화했습니다.");
       }, endTime - Date.now());
     }

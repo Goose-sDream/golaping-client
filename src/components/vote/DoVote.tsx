@@ -16,6 +16,7 @@ import { InitialResponse, RecievedMsg, SubDataUnion, useWebSocket, VotedEvent } 
 // import StorageController from "@/storage/storageController";
 import { borderMap, optionColorMap, optionColors, PURPLE } from "@/styles/color";
 import { getStorage } from "@/util";
+import { clearSession } from "@/utils/sessionUtils";
 
 const storage = getStorage();
 const voteEndTime = storage.getItem("voteEndTime");
@@ -23,17 +24,8 @@ const voteEndTime = storage.getItem("voteEndTime");
 const DoVote = () => {
   const navigate = useNavigate();
 
-  const {
-    client,
-    eventQueue,
-    setEventQueue,
-    voteLimit,
-    voteUuid,
-    connected,
-    connectWebSocket,
-    workerRef,
-    // registerListener,
-  } = useWebSocket();
+  const { client, eventQueue, setEventQueue, voteLimit, voteUuid, connected, connectWebSocket, workerRef } =
+    useWebSocket();
   const afterUpdateHandlerRef = useRef<((e: Matter.IEvent<Engine>) => void) | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const engineRef = useRef<Engine | null>(null);
@@ -67,7 +59,10 @@ const DoVote = () => {
   }, [connected]);
 
   useEffect(() => {
-    cleanupMatterJsEngine();
+    return () => {
+      cleanupMatterJsEngine();
+      clearSession();
+    };
   }, []);
 
   useEffect(() => {
@@ -321,7 +316,7 @@ const DoVote = () => {
 
     const { previousVotes: prevVotes, voteLimit } = payload;
 
-    const selectedBall = storage.getItem(`${voteUuid}`);
+    const selectedBall = storage.getItem(`voted-${voteUuid}`);
     const parsedBalls = selectedBall ? JSON.parse(selectedBall) : [];
 
     prevVotes.forEach((prev) => {
@@ -491,25 +486,6 @@ const DoVote = () => {
     setEventQueue((prev) => prev.slice(1));
   };
 
-  // const subscribeNewOption = (currentVoteLimit: number | null) => {
-  //   try {
-  //     if (workerRef?.current) {
-  //       registerListener("onNewOption", (payload: RecievedMsg) => {
-  //         onNewOption(payload, currentVoteLimit);
-  //       });
-  //     } else if (client?.connected) {
-  //       if (voteUuid) {
-  //         client.subscribe(`/topic/vote/${voteUuid}/addOption`, (message: { body: string }) => {
-  //           console.log("Received: 추가한 뒤 응답", JSON.parse(message.body));
-  //           onNewOption(JSON.parse(message.body), voteLimit);
-  //         });
-  //       }
-  //     }
-  //   } catch (error) {
-  //     console.error("Failed to subscribe a new message:", error);
-  //   }
-  // };
-
   const onNewOption = (payload: RecievedMsg, currentVoteLimit: number | null) => {
     if (!engineRef.current) return;
     const world = engineRef.current?.world;
@@ -523,32 +499,6 @@ const DoVote = () => {
     console.log("voteLimittted =>", currentVoteLimit);
     makeNewBall(newBall, optionId, false, currentVoteLimit !== null, world);
   };
-
-  // 투표 카운트 구독
-  // const subscribeVoted = () => {
-  //   try {
-  //     let countedBall: TargetBall | undefined;
-  //     if (workerRef?.current) {
-  //       registerListener("onSomeoneVoted", (payload: VotedEvent<"someone">) => {
-  //         countedBall = onSomeoneVote(payload);
-  //       });
-  //       registerListener("onMyVoteResult", (payload: VotedEvent<"me">) => {
-  //         if (countedBall) onMyVote(payload, countedBall);
-  //       });
-  //     } else if (client?.connected) {
-  //       if (voteUuid) {
-  //         client.subscribe(`/topic/vote/${voteUuid}`, (message: { body: string }) => {
-  //           countedBall = onSomeoneVote(JSON.parse(message.body));
-  //         });
-  //         client.subscribe(`/user/queue/vote/${voteUuid}`, (message: { body: string }) => {
-  //           if (countedBall) onMyVote(JSON.parse(message.body), countedBall);
-  //         });
-  //       }
-  //     }
-  //   } catch (error) {
-  //     console.error("Failed to subscribe a voted message:", error);
-  //   }
-  // };
 
   const onSomeoneVote = (payload: VotedEvent<"someone">) => {
     const {
@@ -570,43 +520,10 @@ const DoVote = () => {
     setTotalVoteCount(totalVoteCount);
   };
 
-  // const subscribeCloseVote = () => {
-  //   try {
-  //     if (workerRef?.current) {
-  //       registerListener("onVoteClosed", (payload: any) => {
-  //         onVoteClose(payload);
-  //       });
-  //     } else if (client?.connected) {
-  //       if (voteUuid) {
-  //         client.subscribe(`/topic/vote/${voteUuid}/closed`, (message: { body: string }) => {
-  //           console.log("Received: 투표 종료 응답", JSON.parse(message.body));
-  //           onVoteClose(message.body);
-  //         });
-  //       }
-  //     }
-  //   } catch (error) {
-  //     console.error("Failed to subscribe a close message:", error);
-  //   }
-  // };
-
   const onVoteClose = (payload: any) => {
     storage.setItem("voteData", payload);
     navigate(`/votes/${voteUuid}/results`);
   };
-
-  // const subscribeError = () => {
-  //   if (workerRef?.current) {
-  //     registerListener("onVoteError", (payload: any) => {
-  //       console.error("에러 수신:", payload);
-  //       setError("투표 중 문제가 발생했어요.");
-  //     });
-  //   } else if (client?.connected) {
-  //     client.subscribe(`/user/queue/errors`, (message: { body: string }) => {
-  //       console.log("message =>", message);
-  //       console.log("Received: 투표한 뒤 에러", JSON.parse(message.body));
-  //     });
-  //   }
-  // };
 
   // 투표 UI
   const updateCount = (ball: Body, voteCount: number) => {
@@ -644,13 +561,13 @@ const DoVote = () => {
     ball.render.lineWidth = voteLimit ? (isVotedByUser ? 8 : 0) : 8;
     ball.render.strokeStyle = isVotedByUser ? chooseBorderColor(ball.render.fillStyle || "black") : "";
     parsedBalls.push(ball.id);
-    storage.setItem(`voted`, JSON.stringify([...new Set(parsedBalls)]));
+    storage.setItem(`voted-${voteUuid}`, JSON.stringify([...new Set(parsedBalls)]));
   };
 
   const updateBallBorder = (targetBall: TargetBall, isVotedByUser: boolean) => {
     const { ball } = targetBall;
     console.log("업데이트 보더", "voteLimit =>", voteLimit, "isVotedByUser =>", isVotedByUser);
-    const selectedBall = storage.getItem(`${voteUuid}`);
+    const selectedBall = storage.getItem(`voted-${voteUuid}`);
     const parsedBalls: number[] = selectedBall ? JSON.parse(selectedBall) : [];
     if (voteLimit !== null) {
       updateBorder(ball, isVotedByUser, voteLimit, parsedBalls);
@@ -658,11 +575,11 @@ const DoVote = () => {
         // 투표 시
         console.log("들어오나요");
         parsedBalls.push(ball.id);
-        storage.setItem(`${voteUuid}`, JSON.stringify([...new Set(parsedBalls)]));
+        storage.setItem(`voted-${voteUuid}`, JSON.stringify([...new Set(parsedBalls)]));
       } else {
         // 투표 해제 시
         const renewedBalls = parsedBalls.filter((id: number) => id !== ball.id);
-        storage.setItem(`${voteUuid}`, JSON.stringify(renewedBalls));
+        storage.setItem(`voted-${voteUuid}`, JSON.stringify(renewedBalls));
       }
     } else {
       // 무제한일 때
