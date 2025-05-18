@@ -53,6 +53,9 @@ const GlobalStyle = createGlobalStyle`
     background-color: #fff;
     color: #000;
     line-height: 1.5;
+    overflow: hidden;       /* ✅ 스크롤 막기 */
+    overscroll-behavior: none; /* ✅ 모바일 사파리 bounce 방지 (선택사항) */
+    touch-action: none;     /* ✅ 터치 스크롤 차단 (드래그 막고 싶을 때만) */
   }
 `;
 
