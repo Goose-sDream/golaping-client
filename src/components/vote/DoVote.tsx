@@ -739,14 +739,20 @@ const HeaderSection = styled.div`
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
+  padding: 15px;
 `;
 
 const CloseButton = styled.button`
   position: relative;
-  background-color: black;
+  background-color: ${PURPLE};
   color: white;
   border-radius: 20px;
-  font-size: 24px;
+  font-size: 18px;
+  padding: 6px 8px;
+
+  &:hover {
+    background-color: black;
+  }
 `;
 
 /* ✅ 모달 스타일 */
