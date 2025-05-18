@@ -13,7 +13,7 @@ jobs:
       EC2_HOST: ${{ secrets.EC2_HOST }}
       EC2_USERNAME: ${{ secrets.EC2_USERNAME }}
       EC2_KEY: ${{ secrets.EC2_KEY }}
-      DOCKER_IMAGE: ${{ secrets.DOCKER_USERNAME }}/golaping-app
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
       API_URL: ${{ secrets.API_URL }}
 
     steps:
@@ -45,8 +45,8 @@ jobs:
 
       - name: Build and Push Docker Image
         run: |
-          docker build -t $DOCKER_IMAGE:latest .
-          docker push $DOCKER_IMAGE:latest
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/golaping-app:latest .
+          docker push ${{ secrets.DOCKER_USERNAME }}/golaping-app:latest
 
       - name: Deploy to EC2
         uses: appleboy/ssh-action@v1.0.0
@@ -55,22 +55,27 @@ jobs:
           username: ${{ env.EC2_USERNAME }}
           key: ${{ env.EC2_KEY }}
           script: |
+            IMAGE=${{ secrets.DOCKER_USERNAME }}/golaping-app:latest
+
             echo "🛠 Stopping and removing old container..."
             docker stop golaping-app || true
             docker rm golaping-app || true
 
             echo "⬇️ Pulling latest image..."
-            docker pull $DOCKER_IMAGE:latest
+            docker pull $IMAGE
 
             echo "🚀 Running container with mounted certs and config..."
             docker run -d --name golaping-app \
               -p 80:80 -p 443:443 \
               -v /etc/letsencrypt:/etc/letsencrypt:ro \
               -v /etc/nginx:/etc/nginx:ro \
-              -e API_URL=$API_URL \
-              $DOCKER_IMAGE:latest
+              -e API_URL=${{ secrets.API_URL }} \
+              $IMAGE
 
-            echo "🔄 Restarting container to reflect possible cert changes..."
+            echo "✅ Checking nginx configuration..."
+            docker exec golaping-app nginx -t
+
+            echo "🔄 Restarting container to reload Nginx with new certs..."
             docker restart golaping-app
 
             echo "🧹 Cleaning up unused containers and images..."
