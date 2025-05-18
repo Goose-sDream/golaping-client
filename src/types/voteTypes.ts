@@ -34,3 +34,8 @@ export interface InputStyleProps {
 
   errMsgMarginTop?: string;
 }
+
+export interface ShareVoteProps {
+  randomLink: string;
+  title: string;
+}
