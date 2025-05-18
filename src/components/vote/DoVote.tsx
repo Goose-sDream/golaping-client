@@ -3,16 +3,9 @@ import { Engine, Render, Mouse, World, Bodies, MouseConstraint, Runner, Events, 
 import { useNavigate } from "react-router-dom";
 import styled, { keyframes } from "styled-components";
 import VoteInfo from "./VoteInfo";
-import {
-  BASEGROWTHRATE,
-  BASERADIUS,
-  MAXRADIUS,
-  MINRADIUS,
-  SHRINKFACTOR,
-  SHRINKTERM,
-  SHRINKTHRESHOLD,
-} from "@/constants/vote";
+import { SHRINKFACTOR, SHRINKTERM, SHRINKTHRESHOLD } from "@/constants/vote";
 import { InitialResponse, RecievedMsg, SubDataUnion, useWebSocket, VotedEvent } from "@/contexts/WebSocketContext";
+import { useResponsiveRadius } from "@/customhooks/useVote";
 import { borderMap, optionColorMap, optionColors, PURPLE } from "@/styles/color";
 import { getStorage } from "@/util";
 import { clearSession } from "@/utils/sessionUtils";
@@ -46,6 +39,7 @@ const DoVote = () => {
     count: 0,
   });
   const usedColorRef = useRef<string[]>([]);
+  const { BASERADIUS, MAXRADIUS, MINRADIUS, BASEGROWTHRATE } = useResponsiveRadius();
   const [totalVoteCount, setTotalVoteCount] = useState(0);
   const [pendingPosition, setPendingPosition] = useState<{ x: number; y: number } | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
@@ -74,31 +68,22 @@ const DoVote = () => {
   }, []);
 
   useEffect(() => {
-    const handleResize = () => {
-      if (!renderRef.current || !containerRef.current) return;
+    if (!renderRef.current || !containerRef.current) return;
 
-      const width = containerRef.current.clientWidth;
-      const height = containerRef.current.clientHeight;
+    const width = containerRef.current.clientWidth;
+    const height = containerRef.current.clientHeight;
 
-      // ✅ canvas 크기 업데이트
-      renderRef.current.canvas.width = width;
-      renderRef.current.canvas.height = height;
-      renderRef.current.options.width = width;
-      renderRef.current.options.height = height;
+    renderRef.current.canvas.width = width;
+    renderRef.current.canvas.height = height;
+    renderRef.current.options.width = width;
+    renderRef.current.options.height = height;
 
-      // ✅ Matter.Render 다시 실행
-      Render.stop(renderRef.current);
-      Render.run(renderRef.current);
+    // ✅ Matter.Render 다시 실행
+    Render.stop(renderRef.current);
+    Render.run(renderRef.current);
 
-      // ✅ 면적 비율 다시 계산
-      updateUsedPercentage();
-    };
-
-    window.addEventListener("resize", handleResize);
-    return () => {
-      window.removeEventListener("resize", handleResize);
-    };
-  }, []);
+    updateUsedPercentage();
+  }, [BASERADIUS]);
 
   useEffect(() => {
     if (eventQueue.length === 0) return;

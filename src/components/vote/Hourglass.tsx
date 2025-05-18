@@ -145,9 +145,9 @@ const TopProgress = styled.div`
 const Line = styled.div`
   position: absolute;
   z-index: 2;
-  top: 0.625rem;
-  left: calc(50% - 0.5px);
-  height: 0;
+  top: 50%;
+  transform: translate(-50%, -35%);
+  left: 50%;
   width: 0;
   border-left: 1px solid ${PINK};
   animation: ${lineProgress} 60s linear infinite;
