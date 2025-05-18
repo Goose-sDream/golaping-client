@@ -11,7 +11,7 @@ interface VoteInfoProps {
 const VoteInfo = ({ voteEndTime, totalVoteCount, voteLimit }: VoteInfoProps) => {
   return (
     <Container>
-      <VoteIcon />
+      <VoteIcon width="1.3rem" height="1.7rem" />
       {voteLimit ? (
         <Title>
           {totalVoteCount}/{voteLimit}
@@ -29,14 +29,14 @@ const Container = styled.div`
   flex-direction: row;
   align-items: center;
   background-color: black;
-  padding: 10px;
-  border-radius: 20px;
+  padding: 8px;
+  border-radius: 15px;
   width: fit-content;
-  gap: 10px;
+  gap: 6px;
 `;
 
 const Title = styled.h1`
-  font-size: 24px;
+  font-size: 18px;
   color: white;
 `;
 

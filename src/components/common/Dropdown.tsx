@@ -32,7 +32,7 @@ const Dropdown = ({ label, options, value, onChange, error }: DropdownProps) => 
               <OptionItem
                 key={option.value}
                 onClick={() => handleSelect(option.value)}
-                isSelected={option.value === value}
+                $isSelected={option.value === value}
               >
                 {option.label}
               </OptionItem>
@@ -89,7 +89,7 @@ const OptionsList = styled.ul`
   background-color: #efefef;
 `;
 
-const OptionItem = styled.li<{ isSelected: boolean }>`
+const OptionItem = styled.li<{ $isSelected: boolean }>`
   padding: 18px;
   font-size: 16px;
   cursor: pointer;
@@ -98,7 +98,7 @@ const OptionItem = styled.li<{ isSelected: boolean }>`
   justify-content: space-between;
   align-items: center;
 
-  ${({ isSelected }) => isSelected && `font-weight: bold;`}
+  ${({ $isSelected }) => $isSelected && `font-weight: bold;`}
 `;
 
 const ErrorMessage = styled.p`

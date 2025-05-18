@@ -1,9 +1,9 @@
-<svg width="50" height="53" viewBox="0 0 50 53" fill="none" xmlns="http://www.w3.org/2000/svg">
-<mask id="path-1-inside-1_281_288" fill="white">
-<rect y="14.9287" width="50" height="38.0714" rx="2"/>
-</mask>
-<rect y="14.9287" width="50" height="38.0714" rx="2" stroke="#FF4191" stroke-width="6" mask="url(#path-1-inside-1_281_288)"/>
-<line x1="1.5" y1="30.1428" x2="48.5" y2="30.1428" stroke="#FF4191" stroke-width="3" stroke-linecap="round"/>
-<path d="M14.8937 23.75L36.1703 23.75" stroke="#FF4191" stroke-width="3" stroke-linecap="round"/>
-<rect width="16.9744" height="16.9744" rx="1" transform="matrix(0.753377 -0.657589 0.753377 0.657589 12.766 13.0906)" stroke="#FF4191" stroke-width="3"/>
+<svg viewBox="0 0 50 53" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <mask id="path-1-inside-1_281_288" fill="white">
+    <rect y="14.9287" width="50" height="38.0714" rx="2"/>
+  </mask>
+  <rect y="14.9287" width="50" height="38.0714" rx="2" stroke="#FF4191" stroke-width="7" mask="url(#path-1-inside-1_281_288)"/>
+  <line x1="1.5" y1="30.1428" x2="48.5" y2="30.1428" stroke="#FF4191" stroke-width="4" stroke-linecap="round"/>
+  <path d="M14.8937 23.75L36.1703 23.75" stroke="#FF4191" stroke-width="4" stroke-linecap="round"/>
+  <rect width="16.9744" height="16.9744" rx="1" transform="matrix(0.753377 -0.657589 0.753377 0.657589 12.766 12)" stroke="#FF4191" stroke-width="4"/>
 </svg>

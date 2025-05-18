@@ -3,8 +3,9 @@ import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { Button } from "../common";
 import Request from "@/services/requests";
-import StorageController from "@/storage/storageController";
+// import StorageController from "@/storage/storageController";
 import { APIResponse } from "@/types/apiTypes";
+import { getStorage } from "@/util";
 
 interface VoteData {
   title: string;
@@ -19,7 +20,8 @@ interface VoteResult {
   voteColor: string;
 }
 
-const storage = new StorageController("session");
+// const storage = new StorageController("session");
+const storage = getStorage();
 
 const initialVoteData: VoteResult[] | null = storage.getItem("voteData")
   ? JSON.parse(storage.getItem("voteData")!)
