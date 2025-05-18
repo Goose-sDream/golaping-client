@@ -3,6 +3,7 @@ import { Engine, Render, Mouse, World, Bodies, MouseConstraint, Runner, Events, 
 import { useNavigate } from "react-router-dom";
 import styled, { keyframes } from "styled-components";
 import VoteInfo from "./VoteInfo";
+import CopyButton from "../common/CopyButton";
 import { SHRINKFACTOR, SHRINKTERM, SHRINKTHRESHOLD } from "@/constants/vote";
 import { InitialResponse, RecievedMsg, SubDataUnion, useWebSocket, VotedEvent } from "@/contexts/WebSocketContext";
 import { useFocusOut, useResponsiveRadius, useViewportHeight } from "@/customhooks/useVote";
@@ -46,6 +47,7 @@ const DoVote = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const voteEndTime = storage.getItem("voteEndTime");
+  const voteTitle = storage.getItem("voteTitle");
   const thickness = 20;
 
   const { BASERADIUS, MAXRADIUS, MINRADIUS, BASEGROWTHRATE } = useResponsiveRadius();
@@ -711,14 +713,17 @@ const DoVote = () => {
     <StyledSection ref={containerRef}>
       <HeaderSection>
         <VoteInfo voteEndTime={voteEndTime!} voteLimit={voteLimit} totalVoteCount={totalVoteCount} />
-        <CloseButton onClick={publishVoteClose}>투표 종료</CloseButton>
+        <VoteButtonContainer>
+          <CopyButton randomLink={voteUuid as string} title={voteTitle as string} />
+          <CloseButton onClick={publishVoteClose}>투표 종료</CloseButton>
+        </VoteButtonContainer>
       </HeaderSection>
       {modalVisible && (
         <ModalWrapper ref={candidateModalRef}>
           <ModalContent>
-            <h3>텍스트 입력</h3>
+            <h3>투표 항목을 생성해주세요.</h3>
             <StyledForm onSubmit={makeNewOption}>
-              <StyledInput ref={inputRef} autoFocus placeholder="텍스트를 입력하세요" />
+              <StyledInput ref={inputRef} autoFocus placeholder="ex. 췩힌" />
               {error && <ErrorMessage>{error}</ErrorMessage>}
               <ButtonContainer>
                 <Button type="submit">확인</Button>
@@ -772,6 +777,13 @@ const HeaderSection = styled.div`
   padding: 15px;
 `;
 
+const VoteButtonContainer = styled.div`
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+`;
+
 const CloseButton = styled.button`
   position: relative;
   background-color: ${PURPLE};
@@ -804,6 +816,7 @@ const ModalContent = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
+  font-size: 18px;
   gap: 8px;
 `;
 
@@ -816,7 +829,7 @@ const StyledForm = styled.form`
 const StyledInput = styled.input`
   width: 200px;
   height: 30px;
-  font-size: 16px;
+  font-size: 14px;
   text-align: center;
   border: 1px solid black;
   background-color: #fff;
