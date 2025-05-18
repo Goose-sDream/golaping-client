@@ -13,7 +13,6 @@ jobs:
       EC2_HOST: ${{ secrets.EC2_HOST }}
       EC2_USERNAME: ${{ secrets.EC2_USERNAME }}
       EC2_KEY: ${{ secrets.EC2_KEY }}
-      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
       API_URL: ${{ secrets.API_URL }}
 
     steps:
@@ -45,8 +44,8 @@ jobs:
 
       - name: Build and Push Docker Image
         run: |
-          docker build -t $DOCKER_IMAGE:latest .
-          docker push $DOCKER_IMAGE:latest
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/golaping-app:latest .
+          docker push ${{ secrets.DOCKER_USERNAME }}/golaping-app:latest
 
       - name: Deploy to EC2
         uses: appleboy/ssh-action@v1.0.0
