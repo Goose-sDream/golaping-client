@@ -16,10 +16,36 @@ self.onconnect = (e) => {
   port.onmessage = (e) => {
     const { type, payload } = e.data;
     console.log("[Worker] Received message:", type, payload);
+    // if (!client) {
+
+    // }
 
     switch (type) {
       case "INIT":
-        connectStomp(payload.apiUrl, payload.voteUuid);
+        if (!client) {
+          connectStomp(payload.apiUrl, payload.voteUuid);
+        } else if (isConnected && client) {
+          broadcast({ type: "CONNECTED" });
+          console.log("[Worker] WebSocket connected");
+          // ✅ 서버에 연결 알림
+          client.publish({
+            destination: `/app/vote/connect`,
+          });
+          console.log("[Worker] Publishing /app/vote/connect...", commonVoteUuid);
+
+          client.subscribe(`/user/queue/${commonVoteUuid}/initialResponse`, (message) => {
+            const body = JSON.parse(message.body);
+            voteLimit = body.voteLimit;
+            previousVotes = body.previousVotes;
+            broadcast({
+              type: "INITIAL_RESPONSE",
+              payload: {
+                previousVotes: body.previousVotes,
+                voteLimit: body.voteLimit,
+              },
+            });
+          });
+        }
         break;
       case "SEND":
         if (!isConnected) {
@@ -56,16 +82,15 @@ self.onconnect = (e) => {
 
 const connectStomp = (apiUrl, voteUuid) => {
   commonVoteUuid = voteUuid;
-  console.log("안들어오나");
   if (client) return;
 
-  console.log("들어오나");
   client = new self.StompJs.Client({
     brokerURL: `wss://${apiUrl}/ws/votes`,
     reconnectDelay: 5000,
 
     onConnect: () => {
       isConnected = true;
+
       broadcast({ type: "CONNECTED" });
       console.log("[Worker] WebSocket connected");
       // ✅ 서버에 연결 알림
