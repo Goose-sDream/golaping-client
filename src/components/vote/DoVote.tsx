@@ -45,7 +45,6 @@ const DoVote = () => {
   const [pendingPosition, setPendingPosition] = useState<{ x: number; y: number } | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
   const voteEndTime = storage.getItem("voteEndTime");
   const thickness = 20;
 
