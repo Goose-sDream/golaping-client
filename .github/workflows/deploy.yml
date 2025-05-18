@@ -32,16 +32,10 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Prepare .env
-        run: |
-          echo "API_URL=${{ secrets.API_URL }}" > .env
-          echo "📄 .env file contents:"
-          cat .env
+        run: echo "API_URL=${{ secrets.API_URL }}" > .env
 
       - name: Build Project
-        run: |
-          # 전달된 환경변수를 Webpack 빌드에서 사용할 수 있도록 .env 파일로 설정
-          echo "API_URL=${{ secrets.API_URL }}" > .env
-          pnpm build
+        run: pnpm build
 
       - name: Log in to DockerHub
         uses: docker/login-action@v3
@@ -51,8 +45,8 @@ jobs:
 
       - name: Build and Push Docker Image
         run: |
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/golaping-app:latest .
-          docker push ${{ secrets.DOCKER_USERNAME }}/golaping-app:latest
+          docker build -t $DOCKER_IMAGE:latest .
+          docker push $DOCKER_IMAGE:latest
 
       - name: Deploy to EC2
         uses: appleboy/ssh-action@v1.0.0
@@ -61,37 +55,30 @@ jobs:
           username: ${{ env.EC2_USERNAME }}
           key: ${{ env.EC2_KEY }}
           script: |
-            echo "Deploying with image: ${DOCKER_IMAGE}:latest"
+            echo "🛠 Stopping and removing old container..."
             docker stop golaping-app || true
             docker rm golaping-app || true
-            docker pull ${{ secrets.DOCKER_USERNAME }}/golaping-app:latest
 
-            # 컨테이너 실행
-            docker run -d --name golaping-app -p 80:80 -p 443:443 \
-            -v /etc/letsencrypt:/etc/letsencrypt \
-            -e API_URL=${{ secrets.API_URL }} \
-            ${{ secrets.DOCKER_USERNAME }}/golaping-app:latest
+            echo "⬇️ Pulling latest image..."
+            docker pull $DOCKER_IMAGE:latest
 
-            # 컨테이너 내부에 /etc/letsencrypt/ 디렉터리 생성
-            sudo docker exec -it golaping-app mkdir -p /etc/letsencrypt/live/golaping.site
-            sudo docker exec -it golaping-app mkdir -p /etc/letsencrypt/archive/golaping.site
+            echo "🚀 Running container with mounted certs and config..."
+            docker run -d --name golaping-app \
+              -p 80:80 -p 443:443 \
+              -v /etc/letsencrypt:/etc/letsencrypt:ro \
+              -v /etc/nginx:/etc/nginx:ro \
+              -e API_URL=$API_URL \
+              $DOCKER_IMAGE:latest
 
-            # 원본 인증서 파일을 컨테이너 내부로 직접 복사
-            sudo docker cp /etc/letsencrypt/archive/golaping.site/cert1.pem golaping-app:/etc/letsencrypt/live/golaping.site/cert.pem
-            sudo docker cp /etc/letsencrypt/archive/golaping.site/chain1.pem golaping-app:/etc/letsencrypt/live/golaping.site/chain.pem
-            sudo docker cp /etc/letsencrypt/archive/golaping.site/fullchain1.pem golaping-app:/etc/letsencrypt/live/golaping.site/fullchain.pem
-            sudo docker cp /etc/letsencrypt/archive/golaping.site/privkey1.pem golaping-app:/etc/letsencrypt/live/golaping.site/privkey.pem
+            echo "🔄 Restarting container to reflect possible cert changes..."
+            docker restart golaping-app
 
-            # Nginx 설정 파일을 컨테이너 내부로 복사
-            sudo docker cp /etc/nginx/nginx.conf golaping-app:/etc/nginx/nginx.conf
-            sudo docker cp /etc/nginx/conf.d golaping-app:/etc/nginx/
-
-            # Nginx 설정 확인 후 재시작
-            sudo docker exec -it golaping-app nginx -t
-            sudo docker restart golaping-app
-
+            echo "🧹 Cleaning up unused containers and images..."
             docker container prune -f
             docker image prune -af
+
+            echo "📦 Final container list:"
             docker ps -a
+
+            echo "📜 Nginx logs:"
             docker logs golaping-app
-            sudo lsof -i :80
