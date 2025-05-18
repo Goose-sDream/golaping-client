@@ -5,7 +5,7 @@ import styled, { keyframes } from "styled-components";
 import VoteInfo from "./VoteInfo";
 import { SHRINKFACTOR, SHRINKTERM, SHRINKTHRESHOLD } from "@/constants/vote";
 import { InitialResponse, RecievedMsg, SubDataUnion, useWebSocket, VotedEvent } from "@/contexts/WebSocketContext";
-import { useResponsiveRadius } from "@/customhooks/useVote";
+import { useFocusOut, useResponsiveRadius, useViewportHeight } from "@/customhooks/useVote";
 import { borderMap, optionColorMap, optionColors, PURPLE } from "@/styles/color";
 import { getStorage } from "@/util";
 import { clearSession } from "@/utils/sessionUtils";
@@ -38,16 +38,19 @@ const DoVote = () => {
     time: 0,
     count: 0,
   });
+  const isAnimating = useRef(false);
+
   const usedColorRef = useRef<string[]>([]);
-  const { BASERADIUS, MAXRADIUS, MINRADIUS, BASEGROWTHRATE } = useResponsiveRadius();
   const [totalVoteCount, setTotalVoteCount] = useState(0);
   const [pendingPosition, setPendingPosition] = useState<{ x: number; y: number } | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
-  const isAnimating = useRef(false);
   const [error, setError] = useState<string | null>(null);
-
   const voteEndTime = storage.getItem("voteEndTime");
   const thickness = 20;
+
+  const { BASERADIUS, MAXRADIUS, MINRADIUS, BASEGROWTHRATE } = useResponsiveRadius();
+  useViewportHeight();
+  useFocusOut();
 
   useEffect(() => {
     if (workerRef?.current) return;
@@ -112,7 +115,6 @@ const DoVote = () => {
 
     runnerRef.current = runner;
     renderRef.current = render;
-    console.log("initialResponse => ", initialResponse);
     initMatterJsEngine(initialResponse);
   };
 
@@ -753,8 +755,8 @@ const shake = keyframes`
 `;
 
 const StyledSection = styled.section`
-  width: 100vw; // ✅ 화면 전체 너비 강제
-  height: 100vh; // ✅ 화면 전체 높이 강제
+  width: 100vw;
+  height: calc(var(--vh, 1vh) * 100);
   position: relative;
   overflow: hidden;
 `;
