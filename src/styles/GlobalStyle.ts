@@ -49,13 +49,13 @@ const GlobalStyle = createGlobalStyle`
 
   /* 기본 폰트 및 색상 설정 */
   body {
-    font-family: 'Noto Sans KR', sans-serif;
-    background-color: #fff;
-    color: #000;
-    line-height: 1.5;
-    overflow: hidden;       /* ✅ 스크롤 막기 */
-    overscroll-behavior: none; /* ✅ 모바일 사파리 bounce 방지 (선택사항) */
-    touch-action: none;     /* ✅ 터치 스크롤 차단 (드래그 막고 싶을 때만) */
+  font-family: 'Noto Sans KR', sans-serif;
+  background-color: #fff;
+  color: #000;
+  line-height: 1.5;
+  overflow: hidden;
+  overscroll-behavior: none;
+  touch-action: manipulation; /* ✅ 탭/스크롤은 허용하고, 줌 등만 제한 */
   }
 `;
 
