@@ -94,5 +94,9 @@ module.exports = (webpackEnv) => {
     resolve,
     module,
     plugins,
+    stats: {
+      children: true, // ✅ 에러 로그 자세히 보기
+      errorDetails: true, // ✅ 추가!
+    },
   };
 };

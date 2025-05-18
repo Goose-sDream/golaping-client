@@ -7,6 +7,7 @@ interface HourglassProps {
 }
 
 const Hourglass = ({ voteEndTime }: HourglassProps) => {
+  console.log("voteEndTime =>", voteEndTime);
   const [remainingTime, setRemainingTime] = useState<string>("");
   useEffect(() => {
     if (!voteEndTime) return;
@@ -56,7 +57,7 @@ const Container = styled.div`
 `;
 
 const TimeText = styled.p`
-  font-size: 24px;
+  font-size: 18px;
   color: white;
 `;
 
@@ -70,7 +71,7 @@ const rotate = keyframes`
 `;
 
 const topProgress = keyframes`
-  3% {
+  10% {
     transform: scale(1) translateY(0);
   }
   90% {
@@ -82,8 +83,9 @@ const topProgress = keyframes`
 `;
 
 const lineProgress = keyframes`
-  10% { height: 25px; }
-  90% { height: 25px; }
+  10% { height: 18px; }
+  80% { height: 18px; }
+  90% { height: 0; }
   100% { height: 0; }
 `;
 
@@ -95,13 +97,16 @@ const bottomProgress = keyframes`
     transform: scale(1) translateY(0);
   }
   100% {
-    transform: scale(1) translateY(-5px);
+    transform: scale(1) translateY(0);
   }
 `;
 
 const HourglassContainer = styled.div`
-  height: 30px;
-  width: 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 1.5rem;
+  width: 1.5rem;
   animation: ${rotate} 60s cubic-bezier(0.7, 0, 0.2, 1) infinite;
 `;
 
@@ -112,25 +117,24 @@ const Top = styled.div`
 const TopBg = styled.div`
   position: absolute;
   z-index: 0;
-  top: -10px;
-  width: 100%;
-  height: 15px;
-  border-top: 5px solid ${PINK};
+  top: -0.1rem;
+  width: 95%;
+  border-top: 2px solid ${PINK};
 
   &::after {
     content: "";
     position: absolute;
-    bottom: -10px;
-    border-top: 15px solid transparent;
-    border-right: 15px solid transparent;
-    border-left: 15px solid transparent;
+    bottom: -0.4375rem;
+    border-top: 0.625rem solid transparent;
+    border-right: 0.625 solid transparent;
+    border-left: 0.625rem solid transparent;
   }
 `;
 
 const TopProgress = styled.div`
-  border-top: 15px solid ${PINK};
-  border-right: 15px solid transparent;
-  border-left: 15px solid transparent;
+  border-top: 0.625rem solid ${PINK};
+  border-right: 0.625rem solid transparent;
+  border-left: 0.625rem solid transparent;
   height: 0;
   width: 1px;
   transform: scale(1) translateY(0);
@@ -141,9 +145,9 @@ const TopProgress = styled.div`
 const Line = styled.div`
   position: absolute;
   z-index: 2;
-  top: 15px;
-  left: 15px;
-  height: 0;
+  top: 50%;
+  transform: translate(-50%, -35%);
+  left: 50%;
   width: 0;
   border-left: 1px solid ${PINK};
   animation: ${lineProgress} 60s linear infinite;
@@ -156,28 +160,28 @@ const Bottom = styled.div`
 const BottomBg = styled.div`
   position: absolute;
   z-index: 0;
-  width: 100%;
-  height: 20px;
-  border-bottom: 5px solid ${PINK};
+  width: 95%;
+  bottom: 0;
+  border-bottom: 2px solid ${PINK};
 
   &::after {
     content: "";
     position: absolute;
     z-index: 0;
-    top: -5px;
-    border-bottom: 15px solid transparent;
-    border-right: 15px solid transparent;
-    border-left: 15px solid transparent;
+    top: -0.25rem;
+    border-bottom: 0.625rem solid transparent;
+    border-right: 0.625rem solid transparent;
+    border-left: 0.625rem solid transparent;
   }
 `;
 
 const BottomProgress = styled.div`
-  border-right: 15px solid transparent;
-  border-bottom: 15px solid ${PINK};
-  border-left: 15px solid transparent;
+  border-right: 0.625rem solid transparent;
+  border-bottom: 0.625rem solid ${PINK};
+  border-left: 0.625rem solid transparent;
   height: 0;
   width: 1px;
-  margin-top: 10px;
+  margin-top: 0.625rem;
   transform: scale(0) translateY(0);
   transform-origin: 50% 100%;
   animation: ${bottomProgress} 60s linear infinite;

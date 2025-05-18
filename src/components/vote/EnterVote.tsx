@@ -1,4 +1,3 @@
-// import { Dispatch, SetStateAction, useEffect } from "react";
 import { FieldValues, useForm } from "react-hook-form";
 import { useParams } from "react-router-dom";
 import styled from "styled-components";
@@ -6,16 +5,19 @@ import LogoWithInput from "./LogoWithInput";
 import { Button } from "@/components/common";
 import { useWebSocket } from "@/contexts/WebSocketContext";
 import Request from "@/services/requests";
-import StorageController from "@/storage/storageController";
+// import StorageController from "@/storage/storageController";
 import { APIResponse } from "@/types/apiTypes";
+import { getStorage } from "@/util";
 
-const storage = new StorageController("session");
+const storage = getStorage();
 
 const EnterVote = () => {
-  const { register, handleSubmit } = useForm();
+  const isSharedWorkerSupported = typeof SharedWorker !== "undefined";
   const { id, title } = useParams();
-  const request = Request();
   const { connectWebSocket } = useWebSocket();
+
+  const { register, handleSubmit } = useForm();
+  const request = Request();
 
   const onSubmit = async (data: FieldValues) => {
     try {
@@ -29,7 +31,12 @@ const EnterVote = () => {
         storage.setItem("voteUuid", id!);
         storage.setItem("voteEndTime", voteEndTime);
         storage.setItem("voteIdx", String(voteIdx));
-        connectWebSocket(); // 새로고침 없이 웹소켓 재연결 실행
+        storage.setItem("voteTitle", String(title));
+        storage.setItem("isSharedWorker", isSharedWorkerSupported ? "true" : "false");
+        sessionStorage.setItem("isSharedWorker", isSharedWorkerSupported ? "true" : "false");
+
+        if (id) connectWebSocket(id);
+        // 새로고침 없이 웹소켓 재연결 실행
       }
     } catch (error) {
       console.error("Failed to enter vote:", error);
