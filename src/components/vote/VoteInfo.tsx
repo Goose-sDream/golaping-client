@@ -29,7 +29,7 @@ const Container = styled.div`
   flex-direction: row;
   align-items: center;
   background-color: black;
-  padding: 10px;
+  padding: 8px;
   border-radius: 15px;
   width: fit-content;
   gap: 6px;

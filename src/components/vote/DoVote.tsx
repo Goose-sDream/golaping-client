@@ -20,7 +20,6 @@ import { clearSession } from "@/utils/sessionUtils";
 const DoVote = () => {
   const storage = getStorage();
   const navigate = useNavigate();
-
   const {
     client,
     eventQueue,
@@ -32,6 +31,7 @@ const DoVote = () => {
     workerRef,
     sendMessageToWorker,
   } = useWebSocket();
+
   const afterUpdateHandlerRef = useRef<((e: Matter.IEvent<Engine>) => void) | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const engineRef = useRef<Engine | null>(null);
@@ -53,6 +53,7 @@ const DoVote = () => {
   const [error, setError] = useState<string | null>(null);
 
   const voteEndTime = storage.getItem("voteEndTime");
+  const thickness = 20;
 
   useEffect(() => {
     if (workerRef?.current) return;
@@ -69,6 +70,33 @@ const DoVote = () => {
     return () => {
       cleanupMatterJsEngine();
       clearSession();
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (!renderRef.current || !containerRef.current) return;
+
+      const width = containerRef.current.clientWidth;
+      const height = containerRef.current.clientHeight;
+
+      // ✅ canvas 크기 업데이트
+      renderRef.current.canvas.width = width;
+      renderRef.current.canvas.height = height;
+      renderRef.current.options.width = width;
+      renderRef.current.options.height = height;
+
+      // ✅ Matter.Render 다시 실행
+      Render.stop(renderRef.current);
+      Render.run(renderRef.current);
+
+      // ✅ 면적 비율 다시 계산
+      updateUsedPercentage();
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
     };
   }, []);
 
@@ -99,7 +127,7 @@ const DoVote = () => {
 
     runnerRef.current = runner;
     renderRef.current = render;
-
+    console.log("initialResponse => ", initialResponse);
     initMatterJsEngine(initialResponse);
   };
 
@@ -107,7 +135,14 @@ const DoVote = () => {
     if (!renderRef.current || !runnerRef.current || !engineRef.current) return;
 
     const world = engineRef.current?.world;
-    World.add(world, makeWalls());
+    const width = containerRef.current?.clientWidth || 800;
+    const height = containerRef.current?.clientHeight || 600;
+
+    // 새로 추가
+    World.add(world, makeWalls(width, height));
+
+    renderRef.current.canvas.width = width;
+    renderRef.current.canvas.height = height;
 
     const mouse = Mouse.create(renderRef.current.canvas);
     const mouseConstraint = MouseConstraint.create(engineRef.current, {
@@ -179,22 +214,24 @@ const DoVote = () => {
     candidatesRef.current = [];
   };
 
-  const makeWalls = () => {
-    const rentangleInfo = [
-      [400, 0, 800, 20],
-      [400, 600, 800, 20],
-      [0, 300, 20, 600],
-      [800, 300, 20, 600],
-    ];
+  const makeWalls = (width: number, height: number) => {
+    const thickness = 20;
 
-    return rentangleInfo.map((info) => {
-      const [x, y, width, height] = info;
-      return makeSingleWall(x, y, width, height);
-    });
+    return [
+      // 상단
+      makeSingleWall(width / 2, 0, width, thickness),
+      // 하단
+      makeSingleWall(width / 2, height, width, thickness),
+      // 왼쪽
+      makeSingleWall(0, height / 2, thickness, height),
+      // 오른쪽
+      makeSingleWall(width, height / 2, thickness, height),
+    ];
   };
 
   const makeSingleWall = (x: number, y: number, width: number, height: number) => {
     return Bodies.rectangle(x, y, width, height, {
+      label: "wall",
       isStatic: true,
       render: {
         fillStyle: PURPLE, // 빨간색
@@ -242,13 +279,18 @@ const DoVote = () => {
   };
 
   const handleMouseConstraints = (mouseConstraint: MouseConstraint, event: Matter.IMouseEvent<MouseConstraint>) => {
+    if (!containerRef.current) return;
     const { mouse } = event.source;
     const { x, y } = mouse.position;
+
+    const width = containerRef.current.clientWidth;
+    const height = containerRef.current.clientHeight;
+
     // 벽 안쪽 범위 (조정 가능)
-    const minX = 50,
-      maxX = 750;
-    const minY = 50,
-      maxY = 550;
+    const minX = thickness;
+    const maxX = width - thickness;
+    const minY = thickness;
+    const maxY = height - thickness;
     if (x < minX || x > maxX || y < minY || y > maxY) {
       if (mouseConstraint.constraint.bodyB) {
         mouseConstraint.constraint.bodyB = null; // 드래그 해제
@@ -726,9 +768,10 @@ const shake = keyframes`
 `;
 
 const StyledSection = styled.section`
-  width: 800px;
-  height: 600px;
+  width: 100vw; // ✅ 화면 전체 너비 강제
+  height: 100vh; // ✅ 화면 전체 높이 강제
   position: relative;
+  overflow: hidden;
 `;
 
 const HeaderSection = styled.div`

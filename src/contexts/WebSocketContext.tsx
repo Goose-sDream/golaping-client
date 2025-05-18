@@ -207,7 +207,10 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
       console.log("끝??");
       disconnect();
       storage.clear();
-      if (isSharedWorkerSupported && workerRef.current) workerRef.current.port.close();
+      if (isSharedWorkerSupported && workerRef.current) {
+        workerRef.current.port.close();
+        sessionStorage.clear();
+      }
     };
   }, []); // 처음 마운트될 때 한 번만 실행
 
