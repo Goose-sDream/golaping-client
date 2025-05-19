@@ -25,13 +25,15 @@ export const CreateForm = () => {
   const { limited } = useRecoilValue(limitState);
   const request = Request();
 
+  console.log("누굴 뽑을 것인가".replaceAll(" ", "_"));
+
   const createVote = async (data: FieldValues) => {
     const timeLimit = data.hour * 60 + data.minute;
     const link = `${window.location.origin}${generateLink()}`;
     const response = await request.post<APIResponse<{ voteUuid: string; voteEndTime: string; voteIdx: number }>>(
       "/api/votes",
       {
-        title: data.title,
+        title: data.title.replaceAll(" ", "_"),
         nickname: data.nickname,
         type: data.type,
         userVoteLimit: data.userVoteLimit,
