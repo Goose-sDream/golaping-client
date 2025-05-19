@@ -7,6 +7,7 @@ import { v4 as uuid } from "uuid";
 import { BasicForm, LandingForm, OptionForm, ShareVote } from "./steps";
 import { limitState } from "@/atoms/createAtom";
 import { Button, Stepper } from "@/components/common";
+import { ZINDEX } from "@/constants/common";
 import Request from "@/services/requests";
 import { APIResponse } from "@/types/apiTypes";
 import { getStorage } from "@/util";
@@ -25,13 +26,15 @@ export const CreateForm = () => {
   const { limited } = useRecoilValue(limitState);
   const request = Request();
 
+  console.log("누굴 뽑을 것인가".replaceAll(" ", "_"));
+
   const createVote = async (data: FieldValues) => {
     const timeLimit = data.hour * 60 + data.minute;
     const link = `${window.location.origin}${generateLink()}`;
     const response = await request.post<APIResponse<{ voteUuid: string; voteEndTime: string; voteIdx: number }>>(
       "/api/votes",
       {
-        title: data.title,
+        title: data.title.replaceAll(" ", "_"),
         nickname: data.nickname,
         type: data.type,
         userVoteLimit: data.userVoteLimit,
@@ -151,5 +154,5 @@ const ButtonContainer = styled.div`
   justify-content: center;
   padding: 0 20px;
   box-sizing: border-box;
-  z-index: 100;
+  z-index: ${ZINDEX.createBtn};
 `;

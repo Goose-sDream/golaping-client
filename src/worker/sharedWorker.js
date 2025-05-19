@@ -16,17 +16,13 @@ self.onconnect = (e) => {
   port.onmessage = (e) => {
     const { type, payload } = e.data;
     console.log("[Worker] Received message:", type, payload);
-    // if (!client) {
-
-    // }
-
     switch (type) {
       case "INIT":
         if (!client) {
           connectStomp(payload.apiUrl, payload.voteUuid);
         } else if (isConnected && client) {
           broadcast({ type: "CONNECTED" });
-          console.log("[Worker] WebSocket connected");
+          console.log("이미 있는 [Worker] WebSocket connected");
           // ✅ 서버에 연결 알림
           client.publish({
             destination: `/app/vote/connect`,
@@ -102,7 +98,7 @@ const connectStomp = (apiUrl, voteUuid) => {
       // ✅ 1. 초기 투표 데이터 구독
       client.subscribe(`/user/queue/${voteUuid}/initialResponse`, (message) => {
         const body = JSON.parse(message.body);
-        console.log("왜 안나와");
+        console.log("body =>", body);
         voteLimit = body.voteLimit;
         previousVotes = body.previousVotes;
         broadcast({

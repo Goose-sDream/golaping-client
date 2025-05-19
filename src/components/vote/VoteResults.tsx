@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { Button } from "../common";
+import { ZINDEX } from "@/constants/common";
 import Request from "@/services/requests";
 // import StorageController from "@/storage/storageController";
 import { APIResponse } from "@/types/apiTypes";
@@ -75,7 +76,7 @@ const VoteResults = () => {
       ))}
       <Button
         type="button"
-        style={{ position: "absolute", bottom: 20, zIndex: 100 }}
+        style={{ position: "absolute", bottom: 20, zIndex: `${ZINDEX.createBtn}` }}
         onClick={() => {
           storage.clear();
           navigate("/");
