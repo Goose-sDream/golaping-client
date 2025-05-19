@@ -51,7 +51,7 @@ export const CreateForm = () => {
       storage.setItem("voteEndTime", voteEndTime);
       storage.setItem("voteIdx", String(voteIdx));
       storage.setItem("limited", JSON.stringify(limited));
-      storage.setItem("voteTitle", data.title);
+      storage.setItem("voteTitle", data.title.replaceAll(" ", "_"));
       storage.setItem("isSharedWorker", isSharedWorkerSupported ? "true" : "false");
       sessionStorage.setItem("isSharedWorker", isSharedWorkerSupported ? "true" : "false");
       setTitle(data.title);
