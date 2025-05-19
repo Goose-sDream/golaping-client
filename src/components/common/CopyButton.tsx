@@ -4,7 +4,7 @@ import { ShareVoteProps } from "@/types/voteTypes";
 
 const CopyButton = ({ randomLink, title }: ShareVoteProps) => {
   const handleCopy = () => {
-    const fullUrl = `${window.location.origin}/${randomLink}/${title}`;
+    const fullUrl = `${window.location.origin}/votes/${randomLink}/${title}`;
     navigator.clipboard
       .writeText(fullUrl)
       .then(() => alert("링크가 클립보드에 복사되었습니다!"))
