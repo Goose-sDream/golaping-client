@@ -59,13 +59,13 @@ export const CreateForm = () => {
   };
 
   const generateLink = () => {
-    const link = `/votes/${uuid()}`;
+    const link = `${uuid()}`;
     setRandomLink(link);
-    return link;
+    return `votes/${link}`;
   };
 
   const handleNavigate = () => {
-    navigate(randomLink + `/${title}`);
+    navigate(`votes/${randomLink}/${title}`);
   };
 
   const handleRestrict = () => {
