@@ -16,10 +16,6 @@ self.onconnect = (e) => {
   port.onmessage = (e) => {
     const { type, payload } = e.data;
     console.log("[Worker] Received message:", type, payload);
-    // if (!client) {
-
-    // }
-
     switch (type) {
       case "INIT":
         if (!client) {
