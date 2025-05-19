@@ -18,6 +18,8 @@ const OptionForm = () => {
   const userVoteLimit = Array.from({ length: 5 }, (_, i) => i + 1);
   const [hasError, setHasError] = useState<string>("");
 
+  console.log("userVoteLimit =>", userVoteLimit);
+
   useEffect(() => {
     if (timeRef && timeRef.current) {
       const handleClickOutside = (e: MouseEvent) => {
@@ -36,6 +38,14 @@ const OptionForm = () => {
       };
     }
   }, [timeOpen]);
+
+  useEffect(() => {
+    if (limited === "제한") {
+      setValue("userVoteLimit", 1);
+    } else {
+      setValue("userVoteLimit", 0);
+    }
+  }, [limited, setValue]);
 
   const handleRadioChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setLimited((prev) => ({ ...prev, limited: e.target.value }));
@@ -176,7 +186,6 @@ const OptionForm = () => {
         <Controller
           name="userVoteLimit"
           control={control}
-          defaultValue={0}
           rules={{ required: false, min: 0, max: 5 }}
           render={({ field, fieldState: { error } }) => (
             <Select
