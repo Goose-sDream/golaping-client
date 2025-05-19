@@ -718,6 +718,10 @@ const DoVote = () => {
           <CloseButton onClick={publishVoteClose}>투표 종료</CloseButton>
         </VoteButtonContainer>
       </HeaderSection>
+      <GuidTextDiv>
+        <h1>원하는 항목을 클릭해서 투표해주세요.</h1>
+        <h1>빈 곳을 클릭하여 직접 후보를 만들어보세요!</h1>
+      </GuidTextDiv>
       {modalVisible && (
         <ModalWrapper ref={candidateModalRef}>
           <ModalContent>
@@ -774,7 +778,19 @@ const HeaderSection = styled.div`
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
-  padding: 15px;
+  padding: 15px 20px;
+`;
+
+const GuidTextDiv = styled.div`
+  position: fixed;
+  top: 45%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 70%;
+  text-align: center;
+  pointer-events: none;
+  color: gray;
+  font-size: 1.125rem;
 `;
 
 const VoteButtonContainer = styled.div`

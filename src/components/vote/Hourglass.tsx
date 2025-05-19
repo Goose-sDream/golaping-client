@@ -7,7 +7,7 @@ interface HourglassProps {
 }
 
 const Hourglass = ({ voteEndTime }: HourglassProps) => {
-  console.log("voteEndTime =>", voteEndTime);
+  // console.log("voteEndTime =>", voteEndTime);
   const [remainingTime, setRemainingTime] = useState<string>("");
   useEffect(() => {
     if (!voteEndTime) return;
