@@ -7,6 +7,7 @@ import { v4 as uuid } from "uuid";
 import { BasicForm, LandingForm, OptionForm, ShareVote } from "./steps";
 import { limitState } from "@/atoms/createAtom";
 import { Button, Stepper } from "@/components/common";
+import { ZINDEX } from "@/constants/common";
 import Request from "@/services/requests";
 import { APIResponse } from "@/types/apiTypes";
 import { getStorage } from "@/util";
@@ -153,5 +154,5 @@ const ButtonContainer = styled.div`
   justify-content: center;
   padding: 0 20px;
   box-sizing: border-box;
-  z-index: 100;
+  z-index: ${ZINDEX.createBtn};
 `;

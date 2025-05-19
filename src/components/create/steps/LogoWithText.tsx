@@ -1,4 +1,5 @@
 import styled from "styled-components";
+import { ZINDEX } from "@/constants/common";
 
 interface LogoWithTextProps {
   text: string;
@@ -55,6 +56,6 @@ const LogoText = styled.p`
   font-size: 24px;
   color: black;
   text-align: center;
-  z-index: 100;
+  z-index: ${ZINDEX.createBtn};
   white-space: pre-line;
 `;

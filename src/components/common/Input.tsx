@@ -52,7 +52,6 @@ const InputWrapper = styled.div<{ name: string | undefined; $styleProps?: InputS
   justify-content: center;
   min-height: ${({ $styleProps }) => $styleProps?.minHeight || "140px"};
   gap: 8px;
-  margin-bottom: ${({ name }) => (name === "타이머" ? 0 : "20px")};
 `;
 
 const Label = styled.label<{ $styleProps?: InputStyleProps }>`

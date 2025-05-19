@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import styled from "styled-components";
 import LogoWithInput from "./LogoWithInput";
 import { Button } from "@/components/common";
+import { ZINDEX } from "@/constants/common";
 import { useWebSocket } from "@/contexts/WebSocketContext";
 import Request from "@/services/requests";
 // import StorageController from "@/storage/storageController";
@@ -47,7 +48,7 @@ const EnterVote = () => {
   return (
     <Wrapper onSubmit={handleSubmit(onSubmit)}>
       <Title>{title}</Title>
-      <Button type="submit" style={{ position: "absolute", bottom: 20, zIndex: 100 }}>
+      <Button type="submit" style={{ position: "absolute", bottom: 20, zIndex: `${ZINDEX.createBtn}` }}>
         투표 입장하기
       </Button>
       <LogoWithInput register={register} />

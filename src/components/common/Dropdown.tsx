@@ -1,6 +1,7 @@
 import { useState } from "react";
 import styled from "styled-components";
 import ArrowIcon from "@/assets/Arrow.svg";
+import { ZINDEX } from "@/constants/common";
 
 interface DropdownProps {
   label?: string;
@@ -49,7 +50,6 @@ const Wrapper = styled.div`
   display: flex;
   flex-direction: column;
   justify-content: center;
-
   min-height: 140px;
 `;
 
@@ -84,21 +84,26 @@ const OptionsList = styled.ul`
   list-style: none;
   padding: 0;
   margin: 0;
-  border: None;
+  border: none;
   border-radius: 0 0 12px 12px;
   background-color: #efefef;
+  z-index: ${ZINDEX.createBtn + 1};
 `;
 
 const OptionItem = styled.li<{ $isSelected: boolean }>`
-  padding: 18px;
+  padding: 16px;
   font-size: 16px;
   cursor: pointer;
   color: black;
   font-size: 20px;
   justify-content: space-between;
   align-items: center;
-
   ${({ $isSelected }) => $isSelected && `font-weight: bold;`}
+  &:hover {
+    background-color: white;
+    border-radius: 12px;
+    color: black;
+  }
 `;
 
 const ErrorMessage = styled.p`
